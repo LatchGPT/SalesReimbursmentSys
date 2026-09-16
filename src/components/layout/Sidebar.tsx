@@ -20,7 +20,7 @@ const getNavItems = (role: UserRole): NavItem[] => {
     { label: 'Dashboard', icon: 'dashboard', path: '/', section: 'Overview' },
   ];
 
-  if (role === UserRole.REQUESTOR) {
+    if (role === UserRole.REQUESTOR) {
     return [
       ...common,
       { label: 'My Requests', icon: 'description', path: '/claims', section: 'Claims' },
@@ -28,9 +28,6 @@ const getNavItems = (role: UserRole): NavItem[] => {
       { label: 'Expenses & Receipts', icon: 'receipt_long', path: '/receipts', section: 'Claims' },
       { label: 'Minutes & Agreements', icon: 'meeting_room', path: '/moms', section: 'Meetings' },
       { label: 'Calendar', icon: 'calendar_month', path: '/calendar', section: 'Meetings' },
-      { label: 'Notifications', icon: 'notifications', path: '/notifications', section: 'Account', badgeKey: 'notifications' },
-      { label: 'Support', icon: 'help', path: '/support', section: 'Account' },
-      { label: 'Settings', icon: 'settings', path: '/settings', section: 'Account' },
     ];
   }
 
@@ -43,9 +40,6 @@ const getNavItems = (role: UserRole): NavItem[] => {
       { label: 'Approvals', icon: 'assignment_turned_in', path: '/approvals', section: 'Review', badgeKey: 'approvals' },
       { label: 'Minutes & Agreements', icon: 'meeting_room', path: '/moms', section: 'Meetings' },
       { label: 'Calendar', icon: 'calendar_month', path: '/calendar', section: 'Meetings' },
-      { label: 'Notifications', icon: 'notifications', path: '/notifications', section: 'Account', badgeKey: 'notifications' },
-      { label: 'Support', icon: 'help', path: '/support', section: 'Account' },
-      { label: 'Settings', icon: 'settings', path: '/settings', section: 'Account', badgeKey: 'delegation' },
     ];
   }
 
@@ -56,9 +50,6 @@ const getNavItems = (role: UserRole): NavItem[] => {
       { label: 'Ready to Claim', icon: 'outbox', path: '/ready-to-claim', section: 'Operations', badgeKey: 'readyToClaim' },
       { label: 'Transaction History', icon: 'history', path: '/transactions', section: 'Operations' },
       { label: 'Analytics', icon: 'monitoring', path: '/custodian/analytics', section: 'Insights' },
-      { label: 'Notifications', icon: 'notifications', path: '/notifications', section: 'Account', badgeKey: 'notifications' },
-      { label: 'Support', icon: 'help', path: '/support', section: 'Account' },
-      { label: 'Settings', icon: 'settings', path: '/settings', section: 'Account' },
     ];
   }
 
@@ -69,9 +60,6 @@ const getNavItems = (role: UserRole): NavItem[] => {
       { label: 'Financial Receipts', icon: 'receipt_long', path: '/receipts', section: 'Financials' },
       { label: 'Paid & Completed', icon: 'history', path: '/transactions', section: 'Financials' },
       { label: 'Analytics', icon: 'monitoring', path: '/finance/analytics', section: 'Insights' },
-      { label: 'Notifications', icon: 'notifications', path: '/notifications', section: 'Account', badgeKey: 'notifications' },
-      { label: 'Support', icon: 'help', path: '/support', section: 'Account' },
-      { label: 'Settings', icon: 'settings', path: '/settings', section: 'Account' },
     ];
   }
 
@@ -83,9 +71,6 @@ const getNavItems = (role: UserRole): NavItem[] => {
       { label: 'Historical Import', icon: 'upload_file', path: '/admin/import', section: 'Administration' },
       { label: 'Admin Reporting', icon: 'bar_chart', path: '/admin/reports', section: 'Reporting' },
       { label: 'System Activity', icon: 'manage_history', path: '/admin/activity', section: 'Reporting' },
-      { label: 'Notifications', icon: 'notifications', path: '/notifications', section: 'Account', badgeKey: 'notifications' },
-      { label: 'Support', icon: 'help', path: '/support', section: 'Account' },
-      { label: 'Settings', icon: 'settings', path: '/settings', section: 'Account' },
     ];
   }
 
@@ -276,32 +261,6 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
             );
           })}
         </nav>
-        
-        {/* User Profile Card Footer */}
-        <div className={cn(
-          "mt-auto pt-4 transition-all duration-300",
-          isCollapsed ? "px-6 lg:px-2" : "px-6"
-        )}>
-          <div 
-            className={cn(
-              "p-3 bg-black/10 rounded-xl flex items-center gap-3 transition-all duration-300",
-              isCollapsed ? "lg:justify-center lg:p-2" : ""
-            )}
-            title={isCollapsed ? `${currentUser.name} (${currentUser.jobTitle})` : undefined}
-          >
-            {currentUser.avatarUrl ? (
-              <img src={currentUser.avatarUrl} alt={currentUser.name} loading="lazy" width="36" height="36" className="w-9 h-9 rounded-full border-2 border-white/20 object-cover flex-shrink-0" />
-            ) : (
-              <div className="w-9 h-9 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center text-white font-bold flex-shrink-0 text-sm">
-                {currentUser.name.charAt(0)}
-              </div>
-            )}
-            <div className={cn("overflow-hidden transition-all duration-200", isCollapsed ? "lg:hidden" : "block")}>
-              <p className="text-white font-label-md text-label-md truncate">{currentUser.name}</p>
-              <p className="text-white/90 font-body-sm text-body-sm truncate">{currentUser.jobTitle}</p>
-            </div>
-          </div>
-        </div>
       </aside>
     </>
   );
