@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '../../../components/ui/Card';
 import { Claim, ClaimStatus, ClaimType, StatusHistory, User } from '../../../types';
 import { formatDateTime } from '../../../lib/date';
 
@@ -54,112 +53,265 @@ function currentlyWith(claim: Claim, users: User[]): string {
   }
 }
 
-/** The most recent claim's lifecycle at a glance: which stages are done,
- *  which is current, and whose court the ball is in right now. Shared
- *  between the Requestor dashboard and the Approver's "My Requests" (both
- *  show "your own" claims the same way). */
+export interface ClaimProgressTrackerProps {
+  claim: Claim | undefined;
+  users: User[];
+  statusHistory?: StatusHistory[];
+  className?: string;
+}
+
+/**
+ * Modern horizontal progress stepper tracking the most recent claim's lifecycle.
+ * Visualizes completed stages, current active stage, and pending steps.
+ */
 export function ClaimProgressTracker({
   claim,
   users,
   statusHistory = [],
-}: {
-  claim: Claim | undefined;
-  users: User[];
-  statusHistory?: StatusHistory[];
-}) {
+  className = '',
+}: ClaimProgressTrackerProps) {
   const navigate = useNavigate();
 
   if (!claim) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center text-outline">
-          <span className="material-symbols-outlined text-3xl mb-2 opacity-50">timeline</span>
-          <p className="text-sm">No claims yet to track.</p>
-        </CardContent>
-      </Card>
+      <div className={`rounded-xl border border-slate-200/80 bg-white p-6 text-center shadow-xs ${className}`}>
+        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.5"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"
+            />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-slate-500">No claims yet to track.</p>
+      </div>
     );
   }
 
-  const flow = STAGE_FLOWS[claim.type];
+  const flow = STAGE_FLOWS[claim.type] || STAGE_FLOWS['Reimbursement'];
   const isBranched = BRANCH_STATUSES.includes(claim.status);
   const currentIndex = flow.indexOf(claim.status);
+
   const latestComment = statusHistory
     .filter(h => h.claimId === claim.id && h.comment?.trim())
     .slice()
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
   const commentAuthor = latestComment
     ? users.find(user => user.id === latestComment.changedBy)?.name || 'System'
     : '';
 
   return (
-    <Card className="cursor-pointer hover:border-primary/40 transition-colors" onClick={() => navigate(`/claims/${claim.id}`)}>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-1">
-          <h4 className="font-headline-md text-on-surface">Most Recent Claim</h4>
-          <span className="font-mono-data text-xs text-primary font-bold">{claim.ref}</span>
-        </div>
-        <p className="text-body-sm text-outline mb-5 truncate">{claim.purpose}</p>
+    <div
+      className={`group relative rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs transition-all duration-200 hover:border-blue-300 hover:shadow-md cursor-pointer ${className}`}
+      onClick={() => navigate(`/claims/${claim.id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(`/claims/${claim.id}`);
+        }
+      }}
+    >
+      {/* Card Header: Title & Claim Reference */}
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <h4 className="text-sm font-semibold text-slate-900 tracking-tight">
+          Most Recent Claim
+        </h4>
+        <span className="inline-flex items-center rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 font-mono text-xs font-semibold text-blue-700">
+          {claim.ref}
+        </span>
+      </div>
 
-        {isBranched ? (
-          <div className={`flex items-center gap-2 p-3 rounded-lg ${claim.status === ClaimStatus.REJECTED ? 'bg-error-container/20 text-error' : 'bg-tertiary-container/20 text-tertiary'}`}>
-            <span className="material-symbols-outlined text-[20px]">
-              {claim.status === ClaimStatus.REJECTED ? 'cancel' : 'edit_note'}
-            </span>
-            <span className="font-label-md">{claim.status}</span>
+      {/* Purpose Subtitle */}
+      <p className="text-xs text-slate-500 mb-5 truncate" title={claim.purpose}>
+        {claim.purpose}
+      </p>
+
+      {/* Branched Status (Rejected / Returned) */}
+      {isBranched ? (
+        <div
+          className={`my-2 flex items-center gap-3 rounded-lg border p-3 ${
+            claim.status === ClaimStatus.REJECTED
+              ? 'border-rose-200 bg-rose-50/70 text-rose-700'
+              : 'border-amber-200 bg-amber-50/70 text-amber-800'
+          }`}
+        >
+          <div
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
+              claim.status === ClaimStatus.REJECTED ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'
+            }`}
+          >
+            {claim.status === ClaimStatus.REJECTED ? (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+                />
+              </svg>
+            )}
           </div>
-        ) : (
-          <div className="grid mt-2 w-full" style={{ gridTemplateColumns: `repeat(${flow.length}, minmax(0, 1fr))` }}>
-            {flow.map((stage, i) => {
-              const isDone = currentIndex > i;
-              const isCurrent = currentIndex === i;
-              return (
-                <div key={stage} className="relative flex flex-col items-center text-center">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 relative z-10 ${
-                    isDone ? 'bg-primary text-white' : isCurrent ? 'bg-primary/20 text-primary ring-2 ring-primary' : 'bg-surface-container-high text-outline'
-                  }`}>
-                    {isDone ? (
-                      <span className="material-symbols-outlined text-[16px]">check</span>
-                    ) : (
-                      <span className="text-[12px] font-bold">{i + 1}</span>
-                    )}
-                  </div>
-                  <span className={`text-[11px] mt-1.5 block leading-tight break-words px-0.5 ${isCurrent ? 'text-primary font-bold' : 'text-outline'}`}>
-                    {STAGE_LABELS[stage]}
-                  </span>
-                  
-                  {i < flow.length - 1 && (
-                    <div className={`absolute top-[13px] left-[50%] w-full h-0.5 ${isDone ? 'bg-primary' : 'bg-surface-container-high'}`} />
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-wider">
+              {claim.status}
+            </p>
+            <p className="text-xs opacity-80">
+              {claim.status === ClaimStatus.REJECTED
+                ? 'This request was rejected and cannot be processed further.'
+                : 'Returned for revision. Check approver feedback and update.'}
+            </p>
+          </div>
+        </div>
+      ) : (
+        /* Standard Stepper Grid */
+        <div
+          className="grid w-full mt-2"
+          style={{ gridTemplateColumns: `repeat(${flow.length}, minmax(0, 1fr))` }}
+        >
+          {flow.map((stage, i) => {
+            const isDone = currentIndex !== -1 && currentIndex > i;
+            const isCurrent = currentIndex !== -1 ? currentIndex === i : i === 0;
+
+            return (
+              <div key={stage} className="relative flex flex-col items-center text-center">
+                {/* Horizontal Connecting Line behind nodes */}
+                {i < flow.length - 1 && (
+                  <div
+                    className={`absolute top-4 left-1/2 w-full h-0.5 -translate-y-1/2 transition-colors duration-200 ${
+                      currentIndex > i ? 'bg-emerald-500' : 'bg-slate-200'
+                    }`}
+                    aria-hidden="true"
+                  />
+                )}
+
+                {/* Node Circle */}
+                <div
+                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                    isDone
+                      ? 'bg-emerald-600 text-white shadow-xs ring-4 ring-white'
+                      : isCurrent
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-4 ring-blue-100'
+                      : 'border-2 border-slate-200 bg-white text-slate-400 ring-4 ring-white'
+                  }`}
+                  title={STAGE_LABELS[stage] || stage}
+                >
+                  {isDone ? (
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="2.5"
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4.5 12.75l6 6 9-13.5"
+                      />
+                    </svg>
+                  ) : (
+                    <span className={`text-xs ${isCurrent ? 'font-bold' : 'font-medium'}`}>
+                      {i + 1}
+                    </span>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        )}
 
-        {latestComment && (
-          <div className="mt-5 rounded-lg border border-outline-variant bg-surface-container-low p-3">
-            <div className="flex items-start gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary mt-0.5">comment</span>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-on-surface">
-                  {STAGE_LABELS[latestComment.newStatus] || latestComment.newStatus}
-                  <span className="font-normal text-outline"> · {commentAuthor}</span>
-                </p>
-                <p className="text-body-sm text-on-surface-variant mt-1 line-clamp-3">{latestComment.comment}</p>
-                <p className="text-[11px] text-outline mt-1">{formatDateTime(latestComment.timestamp)}</p>
+                {/* Node Label (fixed height for clean multi-line baseline alignment) */}
+                <div className="mt-2 min-h-[30px] px-0.5 flex items-start justify-center">
+                  <span
+                    className={`text-[11px] sm:text-xs leading-tight text-center transition-colors ${
+                      isCurrent
+                        ? 'font-bold text-blue-600'
+                        : isDone
+                        ? 'font-medium text-slate-700'
+                        : 'font-normal text-slate-400'
+                    }`}
+                  >
+                    {STAGE_LABELS[stage] || stage}
+                  </span>
+                </div>
               </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Latest Comment Pill */}
+      {latestComment && (
+        <div className="mt-4 rounded-lg border border-slate-200/80 bg-slate-50/80 p-3 text-xs">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center text-slate-400">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z"
+                />
+              </svg>
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-slate-800">
+                {STAGE_LABELS[latestComment.newStatus] || latestComment.newStatus}
+                <span className="font-normal text-slate-400"> · {commentAuthor}</span>
+              </p>
+              <p className="mt-0.5 text-slate-600 italic line-clamp-2">
+                “{latestComment.comment}”
+              </p>
+              <p className="mt-1 text-[10px] text-slate-400 font-normal">
+                {formatDateTime(latestComment.timestamp)}
+              </p>
             </div>
           </div>
-        )}
-
-        <div className="mt-5 pt-4 border-t border-outline-variant flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-outline">person_pin_circle</span>
-          <span className="text-body-sm text-on-surface-variant">
-            {isBranched ? 'Ended:' : 'Currently with:'} <span className="font-semibold text-on-surface">{currentlyWith(claim, users)}</span>
-          </span>
-          <span className="ml-auto text-xs font-semibold text-primary whitespace-nowrap">View activity</span>
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      {/* Card Footer: Currently With & View Activity */}
+      <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+              />
+            </svg>
+          </span>
+          <span className="truncate text-slate-600">
+            <span className="text-slate-400">{isBranched ? 'Ended:' : 'Currently with:'}</span>{' '}
+            <span className="font-semibold text-slate-900">{currentlyWith(claim, users)}</span>
+          </span>
+        </div>
+
+        <span className="inline-flex items-center gap-1 font-semibold text-blue-600 transition-colors group-hover:text-blue-700 shrink-0">
+          View activity
+          <svg
+            className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="2.5"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </span>
+      </div>
+    </div>
   );
 }
