@@ -98,16 +98,16 @@ export function Receipts() {
 
   const scopedReceipts = isFinance
     ? derivedReceipts.filter(receipt => {
-        const parentClaim = claims.find(claim => claim.id === receipt.claimId);
-        return Boolean(parentClaim && isFinanceVisibleClaim(parentClaim));
-      })
+      const parentClaim = claims.find(claim => claim.id === receipt.claimId);
+      return Boolean(parentClaim && isFinanceVisibleClaim(parentClaim));
+    })
     : !isApprover
       ? derivedReceipts
       : derivedReceipts.filter(receipt => {
-          if (!isRequestorInScope(receipt.requestorId)) return false;
-          if (scope !== 'team') return true;
-          return claims.find(claim => claim.id === receipt.claimId)?.status !== ClaimStatus.DRAFT;
-        });
+        if (!isRequestorInScope(receipt.requestorId)) return false;
+        if (scope !== 'team') return true;
+        return claims.find(claim => claim.id === receipt.claimId)?.status !== ClaimStatus.DRAFT;
+      });
   const scopedLineItems = lineItems.filter(item => {
     const parentClaim = claims.find(c => c.id === item.claimId);
     if (isFinance) return Boolean(parentClaim && isFinanceVisibleClaim(parentClaim));
@@ -266,7 +266,7 @@ export function Receipts() {
             <div className="flex justify-between items-center text-xs text-outline mt-2 pt-2 border-t border-outline-variant/40">
               <span>{receipt.date}</span>
               {receipt.claimRef && (
-                <span className="bg-primary-container/20 text-primary font-mono-data px-1.5 py-0.5 rounded text-[12px]">
+                <span className="bg-primary-container/16 text-primary font-mono-data px-1.5 py-0.5 rounded text-[12px]">
                   {receipt.claimRef}
                 </span>
               )}
@@ -277,7 +277,11 @@ export function Receipts() {
     </div>
   );
 
-  const renderReceiptTable = (items: ReceiptRecord[], showRequestor: boolean) => (
+  const renderReceiptTable = (
+    items: ReceiptRecord[],
+    showRequestor: boolean,
+    summary?: { total: number; coverage: number; attached: number; count: number }
+  ) => (
     <div className="overflow-x-auto">
       <table className="w-full text-left min-w-[980px]">
         <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
@@ -339,6 +343,23 @@ export function Receipts() {
             </tr>
           ))}
         </tbody>
+        {summary && (
+          <tfoot className="border-t-2 border-outline-variant bg-surface-container-low/40">
+            <tr>
+              <td colSpan={showRequestor ? 7 : 6} className="px-5 py-4" />
+              <td className="px-5 py-4 text-right align-top">
+                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px]">Subtotal</p>
+                <p className="font-mono-data font-bold text-primary mt-0.5">{formatMoney(summary.total)}</p>
+              </td>
+              <td className="px-5 py-4 text-right align-top">
+                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px]">Receipt coverage</p>
+                <p className="font-mono-data font-semibold text-on-surface mt-0.5">
+                  {summary.coverage}% <span className="text-outline font-normal text-xs">({summary.attached}/{summary.count})</span>
+                </p>
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   );
@@ -500,73 +521,68 @@ export function Receipts() {
       ) : groupBy !== 'none' ? (
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <p className="text-sm text-outline">
+            <p className="text-sm text-outline pl-2">
               {receiptGroups.length} {groupBy === 'member' ? (receiptGroups.length === 1 ? 'team member' : 'team members') : (receiptGroups.length === 1 ? 'client' : 'clients')}
               {' · '}{filteredReceipts.length} record{filteredReceipts.length === 1 ? '' : 's'}
             </p>
           </div>
           {receiptGroups.map(group => (
             <Card key={group.key} className="overflow-hidden">
-              <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-4 bg-surface-container-low/40">
+              <div className="p-5 border-b border-outline-variant flex items-center justify-between gap-4 bg-surface-container-low/40">
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="material-symbols-outlined text-primary">{groupBy === 'member' ? 'person' : 'domain'}</span>
+                  <span className="material-symbols-outlined text-primary text-[22px]">{groupBy === 'member' ? 'person' : 'domain'}</span>
                   <div className="min-w-0">
-                    <h2 className="font-headline-sm text-on-surface truncate">{group.label}</h2>
-                    <p className="text-xs text-outline">{group.items.length} expense{group.items.length === 1 ? '' : 's'}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
-                    <p className="font-label-sm text-outline uppercase tracking-wider text-[11px]">Subtotal</p>
-                    <p className="font-mono-data font-bold text-primary">{formatMoney(group.total)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-label-sm text-outline uppercase tracking-wider text-[11px]">Receipt coverage</p>
-                    <p className="font-mono-data font-semibold text-on-surface">{group.coverage}% <span className="text-outline font-normal">({group.attached}/{group.items.length})</span></p>
+                    <h2 className="text-[16px] font-bold text-on-surface truncate">{group.label}</h2>
+                    <p className="text-sm text-outline mt-0.5">{group.items.length} expense{group.items.length === 1 ? '' : 's'}</p>
                   </div>
                 </div>
               </div>
-              {renderReceiptTable(group.items, groupBy !== 'member' && showRequestorCol)}
+              {renderReceiptTable(group.items, groupBy !== 'member' && showRequestorCol, {
+                total: group.total,
+                coverage: group.coverage,
+                attached: group.attached,
+                count: group.items.length,
+              })}
             </Card>
           ))}
         </div>
       ) : (
         <Card className="overflow-hidden">
-        <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
-          <div>
-            <h2 className="font-headline-sm text-on-surface">Expense records</h2>
-            <p className="text-xs text-outline mt-1">Inspect each purchase, its claim status, and whether evidence is attached.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="font-label-sm text-outline whitespace-nowrap">{filteredReceipts.length} records</span>
-            <div className="flex rounded-lg border border-outline-variant bg-white p-1" aria-label="Expense view">
-              <button
-                type="button"
-                aria-label="Grid view"
-                title="Grid view"
-                onClick={() => setViewMode('grid')}
-                className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
-              >
-                <span className="material-symbols-outlined text-[18px]">grid_view</span>
-              </button>
-              <button
-                type="button"
-                aria-label="List view"
-                title="List view"
-                onClick={() => setViewMode('list')}
-                className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'list' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
-              >
-                <span className="material-symbols-outlined text-[18px]">view_list</span>
-              </button>
+          <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
+            <div>
+              <h2 className="text-[16px] font-bold text-on-surface">Expense records</h2>
+              <p className="text-sm text-outline mt-1">Inspect each purchase, its claim status, and whether evidence is attached.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-label-sm text-outline whitespace-nowrap">{filteredReceipts.length} records</span>
+              <div className="flex rounded-lg border border-outline-variant bg-white p-1" aria-label="Expense view">
+                <button
+                  type="button"
+                  aria-label="Grid view"
+                  title="Grid view"
+                  onClick={() => setViewMode('grid')}
+                  className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">grid_view</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="List view"
+                  title="List view"
+                  onClick={() => setViewMode('list')}
+                  className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'list' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">view_list</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        {viewMode === 'grid' ? renderReceiptGrid(paginatedReceipts, showRequestorCol) : renderReceiptTable(paginatedReceipts, showRequestorCol)}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-        />
+          {viewMode === 'grid' ? renderReceiptGrid(paginatedReceipts, showRequestorCol) : renderReceiptTable(paginatedReceipts, showRequestorCol)}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </Card>
       )}
 
