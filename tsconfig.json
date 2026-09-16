@@ -18,6 +18,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@server/*": [
+        "./src/server/*"
       ]
     },
     "allowImportingTsExtensions": true,

@@ -55,6 +55,13 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
     window.location.reload();
   };
 
+  const handleMarkAllRead = () => {
+    const unreadIds = emails.filter(e => e.recipientId === currentUser.id && !e.read).map(e => e.id);
+    if (unreadIds.length > 0) {
+      markEmailsRead(unreadIds);
+    }
+  };
+
   return (
     <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
       <div className="flex min-w-0 flex-1 items-center gap-4">
@@ -90,12 +97,34 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               )}
             </button>
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-surface border border-outline-variant rounded-lg shadow-lg overflow-hidden flex flex-col max-h-96">
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface border border-outline-variant rounded-lg shadow-lg overflow-hidden flex flex-col max-h-96 z-50">
                 <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
-                  <span className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary" onClick={() => { setShowNotifications(false); navigate('/notifications'); }}>Notifications</span>
-                  {currentUser.role === 'Admin' && (
-                    <button onClick={() => navigate('/admin/activity?tab=messages')} className="text-xs text-primary hover:underline">System Activity</button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary" onClick={() => { setShowNotifications(false); navigate('/notifications'); }}>Notifications</span>
+                    {unreadCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-error/10 text-error text-[11px] font-bold">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      disabled={unreadCount === 0}
+                      onClick={handleMarkAllRead}
+                      className={`text-xs font-medium transition-colors ${
+                        unreadCount > 0
+                          ? 'text-primary hover:underline cursor-pointer'
+                          : 'text-on-surface-variant/40 cursor-default'
+                      }`}
+                      title={unreadCount > 0 ? "Mark all unread notifications as read" : "No unread notifications"}
+                    >
+                      Mark all read
+                    </button>
+                    {currentUser.role === 'Admin' && (
+                      <button onClick={() => { setShowNotifications(false); navigate('/admin/activity?tab=messages'); }} className="text-xs text-primary hover:underline">System Activity</button>
+                    )}
+                  </div>
                 </div>
                 <div className="overflow-y-auto flex-1 p-2 space-y-1">
                   {userNotifications.length === 0 ? (
@@ -129,37 +158,34 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               </div>
             )}
           </div>
-          <button aria-label="Help and support" className="hidden sm:block p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-full focus:ring-2 focus:ring-primary focus-visible:outline-none transition-colors cursor-pointer active:opacity-70" onClick={() => navigate('/support')}>
-            <span className="material-symbols-outlined">help_outline</span>
-          </button>
         </div>
         
         <div className="h-8 w-px bg-outline-variant hidden md:block"></div>
 
-        <div className="relative" ref={profileRef}>
+        <div className="relative shrink-0" ref={profileRef}>
           <button
             type="button"
             aria-label={`Open account menu for ${currentUser.name}`}
             aria-haspopup="menu"
             aria-expanded={showProfileMenu}
-            className="flex items-center gap-2 rounded-full p-1 pr-1.5 text-left transition-colors hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-1.5 text-left transition-all duration-150 hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer select-none"
             onClick={() => {
               setShowProfileMenu(!showProfileMenu);
               setShowNotifications(false);
             }}
           >
-            <span className="hidden xl:block max-w-[180px] text-right">
-              <span className="block truncate font-label-md text-label-md text-on-surface">{currentUser.name}</span>
+            <span className="hidden lg:block max-w-[260px] 2xl:max-w-[320px] text-right">
+              <span className="block truncate font-label-md text-label-md text-on-surface" title={currentUser.name}>{currentUser.name}</span>
               <span className="block text-[11px] font-semibold uppercase tracking-wider text-outline">{currentUser.role}</span>
             </span>
             {currentUser.avatarUrl ? (
-              <img src={currentUser.avatarUrl} alt="" loading="lazy" width="36" height="36" className="h-9 w-9 rounded-full border-2 border-outline-variant object-cover" />
+              <img src={currentUser.avatarUrl} alt="" loading="lazy" width="36" height="36" className="h-9 w-9 rounded-full border-2 border-outline-variant object-cover shrink-0" />
             ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary-container font-bold text-on-secondary-container font-label-md">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary-container font-bold text-on-secondary-container font-label-md shrink-0">
                 {currentUser.name.split(' ').map(n => n[0]).join('')}
               </span>
             )}
-            <span aria-hidden="true" className={`hidden sm:block material-symbols-outlined text-[18px] text-outline transition-transform ${showProfileMenu ? 'rotate-180' : ''}`}>expand_more</span>
+            <span aria-hidden="true" className={`hidden sm:block material-symbols-outlined text-[18px] text-outline transition-transform shrink-0 ${showProfileMenu ? 'rotate-180' : ''}`}>expand_more</span>
           </button>
 
           {showProfileMenu && (
@@ -171,7 +197,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                   {currentUser.role}
                 </span>
               </div>
-              <div className="p-1.5">
+              <div className="p-1.5 space-y-0.5">
                 <button
                   type="button"
                   role="menuitem"
@@ -183,6 +209,18 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                 >
                   <span aria-hidden="true" className="material-symbols-outlined text-[19px] text-on-surface-variant">manage_accounts</span>
                   Account settings
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-on-surface transition-colors hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    navigate('/support');
+                  }}
+                >
+                  <span aria-hidden="true" className="material-symbols-outlined text-[19px] text-on-surface-variant">help</span>
+                  Support
                 </button>
               </div>
               <div className="border-t border-outline-variant p-1.5">
