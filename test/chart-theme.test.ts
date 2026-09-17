@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculatePercentChange } from '../src/lib/chartTheme';
+import { calculatePercentChange } from '../frontend/src/lib/chartTheme';
 
 describe('calculatePercentChange', () => {
   it('calculates increases and decreases against the previous period', () => {

@@ -9,7 +9,7 @@ import {
   recordDbSuccess,
   getPersistenceHealth,
   resetPersistenceHealth,
-} from '../src/db/persistenceHealth';
+} from '../backend/src/db/persistenceHealth';
 
 beforeEach(() => {
   resetPersistenceHealth();

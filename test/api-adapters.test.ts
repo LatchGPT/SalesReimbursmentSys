@@ -3,8 +3,8 @@ import {
   fromServerCashAdvance,
   fromServerExpense,
   fromServerLiquidation,
-} from '../src/lib/api';
-import { ClaimStatus } from '../src/types';
+} from '../frontend/src/lib/api';
+import { ClaimStatus } from '../frontend/src/types';
 
 describe('workspace API adapters', () => {
   it('keeps an OR number separate from the receipt filename', () => {
