@@ -1,10 +1,13 @@
 import { defineConfig } from 'drizzle-kit';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import path from 'path';
 
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+
 export default defineConfig({
-  schema: path.resolve(__dirname, 'src/db/schema.ts'),
-  out: path.resolve(__dirname, 'drizzle'),
+  // This config runs from backend/ (directly or through npm workspaces).
+  schema: './src/db/schema.ts',
+  out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
     // drizzle-kit only reads this for `push`/`studio` (live-DB commands);
