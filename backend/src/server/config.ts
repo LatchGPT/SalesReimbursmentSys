@@ -1,10 +1,15 @@
 import dotenv from 'dotenv';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { fileURLToPath } from 'url';
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(currentDir, '..', '..', '..');
+// npm workspace commands run from backend/, while integration tests run from
+// the repository root. This avoids import.meta.url so the production CommonJS
+// bundle works on Render too.
+const workingDir = process.cwd();
+const projectRoot = fs.existsSync(path.join(workingDir, 'src', 'server'))
+  ? path.resolve(workingDir, '..')
+  : workingDir;
 dotenv.config({ path: path.join(projectRoot, '.env') });
 
 export const config = {
