@@ -72,4 +72,29 @@ describe('validateDynamicFields', () => {
     const fields = [field({ key: 't', input_type: 'text', validation: { pattern: '([' } })];
     expect(validateDynamicFields(fields, { t: 'anything' }).firstError).toBeNull();
   });
+
+  it('requires specify text when allow_other is true and Other is selected', () => {
+    const fields = [
+      field({
+        key: 'category',
+        label: 'Category',
+        input_type: 'dropdown',
+        options: ['Sales Call', 'Client Servicing'],
+        allow_other: true,
+      }),
+    ];
+
+    expect(validateDynamicFields(fields, { category: 'Sales Call' }).firstError).toBeNull();
+
+    const emptyOther = validateDynamicFields(fields, { category: 'Other' });
+    expect(emptyOther.errors.category_other).toBe('Please specify category.');
+    expect(emptyOther.firstError?.key).toBe('category_other');
+
+    const whitespaceOther = validateDynamicFields(fields, { category: 'Other', category_other: '   ' });
+    expect(whitespaceOther.errors.category_other).toBe('Please specify category.');
+
+    const validOther = validateDynamicFields(fields, { category: 'Other', category_other: 'Project Planning' });
+    expect(validOther.firstError).toBeNull();
+    expect(validOther.errors).toEqual({});
+  });
 });

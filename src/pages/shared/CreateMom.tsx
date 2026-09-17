@@ -40,6 +40,7 @@ export function CreateMom() {
     editing?.documentType === 'LOA' ? 'LOA' : 'MoM',
   );
   const [customFields, setCustomFields] = useState<Record<string, string>>(editing?.customFields || {});
+  const [momErrors, setMomErrors] = useState<Record<string, string>>({});
   const initialContacts = contactsFromMom(editing?.contactPerson, editing?.customFields?.contact_person_designation);
   const [contacts, setContacts] = useState<MomContact[]>(initialContacts.length ? initialContacts : [{ name: '', designation: '' }]);
   const [clientEmails, setClientEmails] = useState<string[]>(splitEmails(editing?.contactPersonEmail));
@@ -129,11 +130,13 @@ export function CreateMom() {
     const activeMomFields = fieldDefinitions.filter(
       fd => fd.entity === 'mom' && fd.active && fd.key !== 'contact_person_designation',
     );
-    const { firstError } = validateDynamicFields(activeMomFields, customFields);
+    const { errors: fieldErrors, firstError } = validateDynamicFields(activeMomFields, customFields);
     if (firstError) {
+      setMomErrors(fieldErrors);
       addToast(firstError.message, 'error');
       return;
     }
+    setMomErrors({});
     // Fold a half-typed address in the box into the list before validating.
     const pending = emailDraft.trim().replace(/,$/, '');
     const emails = pending && EMAIL_RE.test(pending) && !clientEmails.includes(pending)
@@ -336,7 +339,23 @@ export function CreateMom() {
               <h2 className="font-headline-sm text-on-surface">Meeting classification</h2>
               <p className="text-body-sm text-outline mt-1">Add the account and reporting details used to categorize this meeting.</p>
             </div>
-            <DynamicFieldRenderer entity="mom" values={customFields} onChange={(key, value) => setCustomFields(current => ({ ...current, [key]: value }))} excludeKeys={['contact_person_designation']} />
+            <DynamicFieldRenderer
+              entity="mom"
+              values={customFields}
+              onChange={(key, value) => {
+                setCustomFields(current => ({ ...current, [key]: value }));
+                if (momErrors[key] || (key.endsWith('_other') && momErrors[key.replace('_other', '')])) {
+                  setMomErrors(p => {
+                    const next = { ...p };
+                    delete next[key];
+                    if (key.endsWith('_other')) delete next[key.replace('_other', '')];
+                    return next;
+                  });
+                }
+              }}
+              errors={momErrors}
+              excludeKeys={['contact_person_designation']}
+            />
           </section>
 
           <section className="pt-5 border-t border-outline-variant space-y-5">

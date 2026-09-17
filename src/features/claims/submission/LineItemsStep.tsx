@@ -25,6 +25,8 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
     setCashAdvancePurpose,
     claimCustomFields,
     setClaimCustomFields,
+    claimErrors,
+    setClaimErrors,
     isReimbursement,
     earliestEligiblePurchaseDate,
     filingDate,
@@ -106,7 +108,18 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
               entity="claim"
               claimType={claimType}
               values={claimCustomFields}
-              onChange={(key, value) => setClaimCustomFields(p => ({ ...p, [key]: value }))}
+              onChange={(key, value) => {
+                setClaimCustomFields(p => ({ ...p, [key]: value }));
+                if (claimErrors[key] || (key.endsWith('_other') && claimErrors[key.replace('_other', '')])) {
+                  setClaimErrors(p => {
+                    const next = { ...p };
+                    delete next[key];
+                    if (key.endsWith('_other')) delete next[key.replace('_other', '')];
+                    return next;
+                  });
+                }
+              }}
+              errors={claimErrors}
             />
           </div>
         )}
