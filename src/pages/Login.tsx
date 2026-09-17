@@ -111,23 +111,11 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   const continueAsDemo = () => {
     if (!selectedUserId) return;
 
-    // Give every role its own sessionStorage-backed browser context. The
-    // launcher stays on this screen so a presenter can immediately choose the
-    // next role and open another independent tab.
-    const demoTab = window.open('about:blank', '_blank');
-    if (!demoTab) {
-      setNotice('Your browser blocked the demo tab. Allow pop-ups for this site and try again.');
-      return;
-    }
-
     try {
-      login(selectedUserId, demoTab.sessionStorage);
-      demoTab.opener = null;
-      demoTab.location.replace('/');
-      setNotice(`${selectedUser?.name || 'The selected account'} opened in a new demo tab.`);
+      login(selectedUserId);
+      onLoggedIn();
     } catch {
-      demoTab.close();
-      setNotice('The demo tab could not be prepared. Please try again.');
+      setNotice('The demo session could not be prepared. Please try again.');
     }
   };
 
