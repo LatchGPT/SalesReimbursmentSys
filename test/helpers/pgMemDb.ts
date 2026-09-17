@@ -20,9 +20,9 @@ import fs from 'fs';
 import path from 'path';
 import { newDb } from 'pg-mem';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from '../../src/db/schema';
+import * as schema from '../../backend/src/db/schema';
 
-const MIGRATIONS_DIR = path.resolve(__dirname, '..', '..', 'drizzle');
+const MIGRATIONS_DIR = path.resolve(__dirname, '..', '..', 'backend', 'drizzle');
 
 function readMigrationFiles(): string[] {
   return fs.readdirSync(MIGRATIONS_DIR)

@@ -16,9 +16,9 @@ process.env.NODE_ENV = 'production';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
 import type { AddressInfo } from 'net';
-import { getTodayIsoDate, shiftIsoDate } from '../src/lib/reimbursementPolicy';
+import { getTodayIsoDate, shiftIsoDate } from '../frontend/src/lib/reimbursementPolicy';
 
-const { createApp } = await import('../server');
+const { createApp } = await import('../backend/server');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.
