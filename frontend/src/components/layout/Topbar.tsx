@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { logout } from '../../lib/api';
 import { formatDateTime } from '../../lib/date';
 import { GlobalSearch } from './GlobalSearch';
+import { NotificationsModal } from '../shared/NotificationsModal';
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -13,6 +14,8 @@ interface TopbarProps {
 export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
   const { currentUser, emails, markEmailsRead } = useAppContext();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [selectedModalNotificationId, setSelectedModalNotificationId] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -63,8 +66,8 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
   };
 
   return (
-    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
-      <div className="flex min-w-0 flex-1 items-center gap-4">
+    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-4 sm:px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
         <button 
           aria-label="Toggle sidebar"
           className="lg:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full focus:ring-2 focus:ring-primary focus-visible:outline-none transition-colors"
@@ -72,12 +75,12 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <h2 className="hidden md:block font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
+        <h2 className="hidden md:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
         
         <GlobalSearch />
       </div>
       
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 ml-3 md:ml-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-4 ml-2 sm:ml-3 md:ml-4">
         <div className="flex items-center gap-2">
           <div className="relative" ref={notificationsRef}>
             <button 
@@ -100,7 +103,16 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface border border-outline-variant rounded-lg shadow-lg overflow-hidden flex flex-col max-h-96 z-50">
                 <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary" onClick={() => { setShowNotifications(false); navigate('/notifications'); }}>Notifications</span>
+                    <span
+                      className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary"
+                      onClick={() => {
+                        setShowNotifications(false);
+                        setSelectedModalNotificationId(null);
+                        setShowNotificationsModal(true);
+                      }}
+                    >
+                      Notifications
+                    </span>
                     {unreadCount > 0 && (
                       <span className="px-1.5 py-0.2 rounded-full bg-error/10 text-error text-[11px] font-bold">
                         {unreadCount}
@@ -137,8 +149,8 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                         onClick={() => {
                           if (!notif.read) markEmailsRead([notif.id]);
                           setShowNotifications(false);
-                          // Open the full message on the Notifications page, preselected.
-                          navigate(`/notifications?id=${notif.id}`);
+                          setSelectedModalNotificationId(notif.id);
+                          setShowNotificationsModal(true);
                         }}
                       >
                         <p className="text-on-surface">{notif.subject || notif.body}</p>
@@ -149,8 +161,13 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                 </div>
                 <div className="p-2 border-t border-outline-variant bg-surface-container-lowest text-center">
                   <button 
-                    onClick={() => { setShowNotifications(false); navigate('/notifications'); }}
-                    className="text-sm font-medium text-primary hover:underline"
+                    type="button"
+                    onClick={() => {
+                      setShowNotifications(false);
+                      setSelectedModalNotificationId(null);
+                      setShowNotificationsModal(true);
+                    }}
+                    className="text-sm font-medium text-primary hover:underline cursor-pointer"
                   >
                     View All Notifications
                   </button>
@@ -238,6 +255,12 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
           )}
         </div>
       </div>
+
+      <NotificationsModal
+        isOpen={showNotificationsModal}
+        onClose={() => setShowNotificationsModal(false)}
+        initialSelectedId={selectedModalNotificationId}
+      />
     </header>
   );
 }

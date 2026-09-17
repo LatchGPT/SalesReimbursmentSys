@@ -172,7 +172,7 @@ export function GlobalSearch() {
   };
 
   return (
-    <div ref={rootRef} className="relative ml-0 w-10 shrink-0 sm:w-full sm:max-w-md md:ml-8">
+    <div ref={rootRef} className="relative ml-0 w-10 shrink-0 sm:min-w-0 sm:flex-1 sm:max-w-md md:ml-4">
       <span aria-hidden="true" className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
       <input
         ref={inputRef}

@@ -2,6 +2,14 @@
 
 Sales Reimbursement System is a role-based web application for managing sales reimbursements, transport reimbursements, cash advances, liquidations, client meeting records, approvals, release processing, receipts, and support requests.
 
+## Project folders
+
+- `frontend/` — React/Vite SPA source, static assets, and frontend build output.
+- `backend/` — Express API, server/domain code, database repositories, Drizzle migrations, and backend build output.
+- `test/` — integration and shared verification tests.
+
+The repository keeps one root `package.json` and test configuration so the existing `npm run dev`, test, build, and database commands continue to work without installing dependencies twice.
+
 It is a high-fidelity **prototype and demonstration system**. Core workflows are functional against an Express backend backed by a real Supabase Postgres database (see [Database persistence](#database-persistence)), but identity is still demo-only (no Microsoft Entra yet). It is not yet safe for real employee, client, or financial data.
 
 > **Source of truth:** this README reflects the local codebase as reviewed on 2026-08-04, after a design-consistency/workflow-hardening pass and a database-persistence migration (see [Recent hardening pass](#recent-hardening-pass-2026-08-04) and [Database persistence](#database-persistence)). The current implementation takes precedence over older screenshots, historical audits, and previous GitHub snapshots.
@@ -500,9 +508,16 @@ npm install
 npm.cmd run dev
 ```
 
-Open `http://127.0.0.1:3000/` or `http://localhost:3000/`.
+`npm install` installs both npm workspaces and the root development tools. Then
+`npm run dev` starts the frontend and backend concurrently:
 
-The development command runs `tsx server.ts`; Vite is used as Express middleware. In normal demo configuration, the server automatically seeds data unless `AUTO_SEED=false`.
+- Frontend: `http://localhost:5173/`
+- Backend API: `http://localhost:3000/`
+
+The Vite development server proxies `/api`, `/uploads`, `/healthz`, and
+`/readyz` to the backend automatically.
+
+The frontend and backend can also be started separately with `npm run dev:frontend` and `npm run dev:backend`. In normal demo configuration, the backend automatically seeds data unless `AUTO_SEED=false`.
 
 ### Production-style local run
 
@@ -520,8 +535,8 @@ Useful commands:
 | `npm.cmd run dev:ui-only` | Vite UI only; not suitable for full backend workflows. |
 | `npm.cmd run lint` | TypeScript check with `tsc --noEmit`. |
 | `npm.cmd test` | Vitest test suite. |
-| `npm.cmd run build` | Vite frontend build and esbuild server bundle. |
-| `npm.cmd start` | Serve `dist/server.cjs`. |
+| `npm.cmd run build` | Builds `frontend/dist/` and `backend/dist/server.cjs`. |
+| `npm.cmd start` | Serves `backend/dist/server.cjs`. |
 | `npm.cmd run db:generate` | Generate Drizzle migrations. |
 | `npm.cmd run db:push` | Push Drizzle schema when a database is configured. |
 | `npm.cmd run db:studio` | Open Drizzle Studio when a database is configured. |

@@ -204,7 +204,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
         )}
         
         {/* Navigation List */}
-        <nav className="flex-1 space-y-1 overflow-y-auto px-0">
+        <nav className="sidebar-navigation min-h-0 flex-1 space-y-1 overflow-y-auto px-0">
           {navItems.map((item, index) => {
             const count = item.badgeKey ? badgeCounts[item.badgeKey] || 0 : 0;
             const to = item.badgeKey === 'delegation' && count > 0 ? `${item.path}?tab=delegation` : item.path;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calculateTeamAnalytics } from '../src/lib/teamAnalytics';
-import { ClaimStatus, type Claim, type ExpenseLineItem, type User } from '../src/types';
+import { calculateTeamAnalytics } from '../frontend/src/lib/teamAnalytics';
+import { ClaimStatus, type Claim, type ExpenseLineItem, type User } from '../frontend/src/types';
 
 describe('team analytics', () => {
   it('scopes rollups to team members and uses paid reimbursement timestamps for the weekly total', () => {

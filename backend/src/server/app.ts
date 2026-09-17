@@ -164,9 +164,10 @@ export async function createApp() {
   app.use('/api', adminRouter);
 
   // Frontend: Vite dev middleware locally; static build in production.
-  if (!config.isProduction) {
+  if (!config.isProduction && process.env.SERVE_FRONTEND !== 'false') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
+      configFile: path.join(config.projectRoot, 'frontend', 'vite.config.ts'),
       server: { middlewareMode: true },
       appType: 'spa',
     });
