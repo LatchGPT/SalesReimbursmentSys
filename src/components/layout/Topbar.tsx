@@ -75,7 +75,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <h2 className="hidden min-[1800px]:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
+        <h2 className="hidden md:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
         
         <GlobalSearch />
       </div>
@@ -191,7 +191,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               setShowNotifications(false);
             }}
           >
-            <span className="hidden min-[1800px]:block max-w-[320px] text-right">
+            <span className="hidden lg:block max-w-[260px] 2xl:max-w-[320px] text-right">
               <span className="block truncate font-label-md text-label-md text-on-surface" title={currentUser.name}>{currentUser.name}</span>
               <span className="block text-[11px] font-semibold uppercase tracking-wider text-outline">{currentUser.role}</span>
             </span>
