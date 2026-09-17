@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { logout } from '../../lib/api';
 import { formatDateTime } from '../../lib/date';
 import { GlobalSearch } from './GlobalSearch';
+import { NotificationsModal } from '../shared/NotificationsModal';
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -13,6 +14,8 @@ interface TopbarProps {
 export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
   const { currentUser, emails, markEmailsRead } = useAppContext();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [selectedModalNotificationId, setSelectedModalNotificationId] = useState<string | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -100,7 +103,16 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface border border-outline-variant rounded-lg shadow-lg overflow-hidden flex flex-col max-h-96 z-50">
                 <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary" onClick={() => { setShowNotifications(false); navigate('/notifications'); }}>Notifications</span>
+                    <span
+                      className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary"
+                      onClick={() => {
+                        setShowNotifications(false);
+                        setSelectedModalNotificationId(null);
+                        setShowNotificationsModal(true);
+                      }}
+                    >
+                      Notifications
+                    </span>
                     {unreadCount > 0 && (
                       <span className="px-1.5 py-0.2 rounded-full bg-error/10 text-error text-[11px] font-bold">
                         {unreadCount}
@@ -137,8 +149,8 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                         onClick={() => {
                           if (!notif.read) markEmailsRead([notif.id]);
                           setShowNotifications(false);
-                          // Open the full message on the Notifications page, preselected.
-                          navigate(`/notifications?id=${notif.id}`);
+                          setSelectedModalNotificationId(notif.id);
+                          setShowNotificationsModal(true);
                         }}
                       >
                         <p className="text-on-surface">{notif.subject || notif.body}</p>
@@ -149,8 +161,13 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                 </div>
                 <div className="p-2 border-t border-outline-variant bg-surface-container-lowest text-center">
                   <button 
-                    onClick={() => { setShowNotifications(false); navigate('/notifications'); }}
-                    className="text-sm font-medium text-primary hover:underline"
+                    type="button"
+                    onClick={() => {
+                      setShowNotifications(false);
+                      setSelectedModalNotificationId(null);
+                      setShowNotificationsModal(true);
+                    }}
+                    className="text-sm font-medium text-primary hover:underline cursor-pointer"
                   >
                     View All Notifications
                   </button>
@@ -238,6 +255,12 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
           )}
         </div>
       </div>
+
+      <NotificationsModal
+        isOpen={showNotificationsModal}
+        onClose={() => setShowNotificationsModal(false)}
+        initialSelectedId={selectedModalNotificationId}
+      />
     </header>
   );
 }
