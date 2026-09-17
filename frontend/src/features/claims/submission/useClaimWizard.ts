@@ -71,7 +71,9 @@ export function useClaimWizard() {
   const [refundMethod, setRefundMethod] = useState('');
   const [documentType, setDocumentType] = useState<MomDocumentType>('MoM');
   const [momData, setMomData] = useState<Record<string, any>>({});
+  const [momErrors, setMomErrors] = useState<Record<string, string>>({});
   const [claimCustomFields, setClaimCustomFields] = useState<Record<string, string>>({});
+  const [claimErrors, setClaimErrors] = useState<Record<string, string>>({});
   const [autofilling, setAutofilling] = useState(false);
 
   const steps = [
@@ -230,11 +232,13 @@ export function useClaimWizard() {
         fd.entity === 'claim' && fd.active &&
         (!fd.applicableClaimTypes || fd.applicableClaimTypes.length === 0 || fd.applicableClaimTypes.includes(claimType))
       );
-      const { firstError } = validateDynamicFields(activeClaimFields, claimCustomFields);
+      const { errors: claimFieldErrors, firstError } = validateDynamicFields(activeClaimFields, claimCustomFields);
       if (firstError) {
+        setClaimErrors(claimFieldErrors);
         addToast(firstError.message, 'error');
         return;
       }
+      setClaimErrors({});
     }
     if (step === 2) {
       if (!momCore.client.trim() || !momCore.purpose.trim() || !momCore.meetingDate) {
@@ -242,11 +246,13 @@ export function useClaimWizard() {
         return;
       }
       const activeMomFields = fieldDefinitions.filter(fd => fd.entity === 'mom' && fd.active);
-      const { firstError } = validateDynamicFields(activeMomFields, momData);
+      const { errors: fieldErrors, firstError } = validateDynamicFields(activeMomFields, momData);
       if (firstError) {
+        setMomErrors(fieldErrors);
         addToast(firstError.message, 'error');
         return;
       }
+      setMomErrors({});
     }
     const nextIndex = flowPosition + 1;
     if (nextIndex < stepFlow.length) setStep(stepFlow[nextIndex]);
@@ -332,7 +338,12 @@ export function useClaimWizard() {
       .forEach(fd => {
         if (fd.required || fd.default_value) {
           const v = sampleFieldValue(fd);
-          if (v) out[fd.key] = v;
+          if (v) {
+            out[fd.key] = v;
+            if (v === 'Other' && fd.allow_other) {
+              out[`${fd.key}_other`] = 'General Discussion';
+            }
+          }
         }
       });
     return out;
@@ -428,6 +439,9 @@ export function useClaimWizard() {
     actionItems: momCore.actionItems,
     preparedBy: currentUser.name,
     typeOfAccount: momData['type_of_account'],
+    category: momData['category'] === 'Other' && momData['category_other']
+      ? `Other (${momData['category_other']})`
+      : (momData['category'] || undefined),
     customFields: momData,
   };
 
@@ -459,7 +473,9 @@ export function useClaimWizard() {
     refundMethod, setRefundMethod,
     documentType, setDocumentType,
     momData, setMomData,
+    momErrors, setMomErrors,
     claimCustomFields, setClaimCustomFields,
+    claimErrors, setClaimErrors,
     autofilling,
     totalAmount,
     reimbursableAmount,

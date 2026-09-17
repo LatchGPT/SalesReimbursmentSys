@@ -39,10 +39,11 @@ export function validateDynamicFields(
   const errors: Record<string, string> = {};
   let firstError: DynamicFieldError | null = null;
 
-  const fail = (fd: FieldDefinition, message: string) => {
-    if (errors[fd.key]) return; // one message per field; keep the first
-    errors[fd.key] = message;
-    if (!firstError) firstError = { key: fd.key, label: fd.label, message };
+  const fail = (fd: FieldDefinition, message: string, keyOverride?: string) => {
+    const errorKey = keyOverride || fd.key;
+    if (errors[errorKey]) return; // one message per field; keep the first
+    errors[errorKey] = message;
+    if (!firstError) firstError = { key: errorKey, label: fd.label, message };
   };
 
   for (const fd of fields) {
@@ -51,6 +52,15 @@ export function validateDynamicFields(
     if (value === '') {
       if (fd.required) fail(fd, `${fd.label} is required.`);
       continue; // optional-and-empty has nothing left to validate
+    }
+
+    if (fd.input_type === 'dropdown' && fd.allow_other && value === 'Other') {
+      const otherValue = (values[`${fd.key}_other`] ?? '').trim();
+      if (!otherValue) {
+        fail(fd, `Please specify ${fd.label.toLowerCase()}.`, `${fd.key}_other`);
+        errors[fd.key] = `Please specify ${fd.label.toLowerCase()}.`;
+        continue;
+      }
     }
 
     if (fd.input_type === 'number') {

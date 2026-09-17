@@ -92,7 +92,7 @@ export const buildInitialFieldDefinitions = (): FieldDefinition[] => {
     {
       entity: 'mom', key: 'category', label: 'Category', input_type: 'dropdown',
       required: false, active: true, display_order: 2,
-      options: ['Sales Call', 'Client Servicing', 'Business Review', 'Contract/Negotiation', 'Other'],
+      options: ['Sales Call', 'Client Servicing', 'Business Review', 'Contract/Negotiation'],
       allow_other: true,
     },
     {

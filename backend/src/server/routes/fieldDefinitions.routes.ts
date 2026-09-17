@@ -33,7 +33,16 @@ export const validateRequiredCustomFields = (entity: FieldDefinition['entity'], 
   const missing = state.fieldDefinitions.find(f =>
     f.entity === entity && f.active && f.required && !(customFields && String(customFields[f.key] ?? '').trim())
   );
-  return missing ? `${missing.label} is required.` : null;
+  if (missing) return `${missing.label} is required.`;
+
+  const missingOther = state.fieldDefinitions.find(f =>
+    f.entity === entity && f.active && f.allow_other &&
+    customFields && String(customFields[f.key] ?? '').trim() === 'Other' &&
+    !String(customFields[`${f.key}_other`] ?? '').trim()
+  );
+  if (missingOther) return `Please specify ${missingOther.label.toLowerCase()}.`;
+
+  return null;
 };
 
 fieldDefinitionsRouter.get('/field-definitions', (req, res) => {

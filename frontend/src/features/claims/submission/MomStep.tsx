@@ -28,6 +28,8 @@ export function MomStep({ wizard }: { wizard: ReturnType<typeof useClaimWizard> 
     clientEmailInputRef,
     momData,
     setMomData,
+    momErrors,
+    setMomErrors,
   } = wizard;
 
   return (
@@ -155,7 +157,23 @@ export function MomStep({ wizard }: { wizard: ReturnType<typeof useClaimWizard> 
                 <h5 className="font-headline-sm text-on-surface">Meeting classification</h5>
                 <p className="text-body-sm text-outline mt-1">Add the account and reporting details used to categorize this meeting.</p>
               </div>
-              <DynamicFieldRenderer entity="mom" values={momData} onChange={(key, value) => setMomData(p => ({ ...p, [key]: value }))} excludeKeys={['contact_person_designation']} />
+              <DynamicFieldRenderer
+                entity="mom"
+                values={momData}
+                onChange={(key, value) => {
+                  setMomData(p => ({ ...p, [key]: value }));
+                  if (momErrors[key] || (key.endsWith('_other') && momErrors[key.replace('_other', '')])) {
+                    setMomErrors(p => {
+                      const next = { ...p };
+                      delete next[key];
+                      if (key.endsWith('_other')) delete next[key.replace('_other', '')];
+                      return next;
+                    });
+                  }
+                }}
+                errors={momErrors}
+                excludeKeys={['contact_person_designation']}
+              />
             </section>
             <section className="pt-6 border-t border-outline-variant space-y-5">
               <div>
