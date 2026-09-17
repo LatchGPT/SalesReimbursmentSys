@@ -23,7 +23,7 @@ export function Layout() {
         isCollapsed={isCollapsed}
       />
       <main className={`pt-[64px] min-h-screen transition-all duration-300 ${isCollapsed ? 'lg:pl-[80px]' : 'lg:pl-[220px]'}`}>
-        <div className="max-w-[1440px] mx-auto p-6 md:p-8">
+        <div className="max-w-[1728px] mx-auto p-6 md:p-8">
           {/* Always-present way back to the previous view — hidden on "/". */}
           <BackButton />
           {/* Keyed by pathname so navigating away from a broken page recovers
