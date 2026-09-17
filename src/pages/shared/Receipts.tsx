@@ -293,8 +293,8 @@ export function Receipts() {
             <th className="px-5 py-3">Status</th>
             <th className="px-5 py-3">Category</th>
             <th className="px-5 py-3">Date of Purchase</th>
-            <th className="px-5 py-3 text-right">Amount</th>
-            <th className="px-5 py-3 text-right">Attachment</th>
+            <th className="px-5 py-3 text-right whitespace-nowrap">Amount</th>
+            <th className="px-5 py-3 text-right whitespace-nowrap">Attachment</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-outline-variant">
@@ -333,8 +333,8 @@ export function Receipts() {
                 </span>
               </td>
               <td className="px-5 py-4 text-body-sm text-on-surface-variant whitespace-nowrap">{receipt.date}</td>
-              <td className="px-5 py-4 text-right font-mono-data font-bold text-on-surface">{formatMoney(receipt.amount)}</td>
-              <td className="px-5 py-4 text-right">
+              <td className="px-5 py-4 text-right font-mono-data font-bold text-on-surface whitespace-nowrap">{formatMoney(receipt.amount)}</td>
+              <td className="px-5 py-4 text-right whitespace-nowrap">
                 <span className={`inline-flex items-center gap-1 text-xs font-semibold ${receipt.fileUrl ? 'text-primary' : 'text-tertiary'}`}>
                   {receipt.fileUrl ? 'View receipt' : 'Missing receipt'}
                   <span className="material-symbols-outlined text-[16px]">{receipt.fileUrl ? 'open_in_new' : 'warning'}</span>
@@ -347,13 +347,13 @@ export function Receipts() {
           <tfoot className="border-t-2 border-outline-variant bg-surface-container-low/40">
             <tr>
               <td colSpan={showRequestor ? 7 : 6} className="px-5 py-4" />
-              <td className="px-5 py-4 text-right align-top">
-                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px]">Subtotal</p>
-                <p className="font-mono-data font-bold text-primary mt-0.5">{formatMoney(summary.total)}</p>
+              <td className="px-5 py-4 text-right align-top whitespace-nowrap">
+                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px] whitespace-nowrap">Subtotal</p>
+                <p className="font-mono-data font-bold text-primary mt-0.5 whitespace-nowrap">{formatMoney(summary.total)}</p>
               </td>
-              <td className="px-5 py-4 text-right align-top">
-                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px]">Receipt coverage</p>
-                <p className="font-mono-data font-semibold text-on-surface mt-0.5">
+              <td className="px-5 py-4 text-right align-top whitespace-nowrap">
+                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px] whitespace-nowrap">Receipt coverage</p>
+                <p className="font-mono-data font-semibold text-on-surface mt-0.5 whitespace-nowrap">
                   {summary.coverage}% <span className="text-outline font-normal text-xs">({summary.attached}/{summary.count})</span>
                 </p>
               </td>
