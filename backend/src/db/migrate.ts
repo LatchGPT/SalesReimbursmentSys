@@ -15,10 +15,16 @@
  *
  * Usage: `npm run db:migrate` (requires DATABASE_URL; see .env.example).
  */
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
+
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(currentDir, '..', '..', '..');
+dotenv.config({ path: path.join(projectRoot, '.env') });
 
 async function main() {
   const connectionString = process.env.DATABASE_URL;

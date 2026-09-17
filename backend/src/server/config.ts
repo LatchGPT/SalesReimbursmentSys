@@ -1,10 +1,11 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import * as path from 'path';
 import * as os from 'os';
 import { fileURLToPath } from 'url';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(currentDir, '..', '..', '..');
+dotenv.config({ path: path.join(projectRoot, '.env') });
 
 export const config = {
   port: process.env.PORT ? Number(process.env.PORT) : 3000,

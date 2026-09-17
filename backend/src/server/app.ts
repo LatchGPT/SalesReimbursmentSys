@@ -3,7 +3,8 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { config } from './config';
 import { state } from './state';
-import { httpLogger } from './middleware/logging';
+import { Request, Response } from 'express';
+// import { httpLogger } from './middleware/logging';
 import { configureSecurityMiddleware } from './middleware/security';
 import { financeReadOnlyMiddleware } from './middleware/auth';
 import { healthRouter } from './routes/health.routes';
@@ -40,10 +41,16 @@ import {
   loadDelegationsFromDb, loadDelegationHistoryFromDb,
   loadReviewMeetingsFromDb, loadSupportRequestsFromDb
 } from '../db/workflowExtrasRepo';
+import morgan from 'morgan';
 
 export async function createApp() {
   const app = express();
+  app.use (morgan("dev"))
   app.disable('x-powered-by');
+
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({Health: "ok!"})
+});
 
   const demoModeEnabled = config.demoMode;
 
@@ -130,7 +137,7 @@ export async function createApp() {
   }
 
   // HTTP logger
-  app.use(httpLogger);
+  // app.use(httpLogger);
 
   // Security middleware (Helmet, CORS, Rate Limiters)
   configureSecurityMiddleware(app);
