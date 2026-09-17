@@ -66,8 +66,8 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
   };
 
   return (
-    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
-      <div className="flex min-w-0 flex-1 items-center gap-4">
+    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-4 sm:px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
         <button 
           aria-label="Toggle sidebar"
           className="lg:hidden p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full focus:ring-2 focus:ring-primary focus-visible:outline-none transition-colors"
@@ -75,12 +75,12 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <h2 className="hidden md:block font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
+        <h2 className="hidden min-[1800px]:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
         
         <GlobalSearch />
       </div>
       
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 ml-3 md:ml-4">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-4 ml-2 sm:ml-3 md:ml-4">
         <div className="flex items-center gap-2">
           <div className="relative" ref={notificationsRef}>
             <button 
@@ -191,7 +191,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               setShowNotifications(false);
             }}
           >
-            <span className="hidden lg:block max-w-[260px] 2xl:max-w-[320px] text-right">
+            <span className="hidden min-[1800px]:block max-w-[320px] text-right">
               <span className="block truncate font-label-md text-label-md text-on-surface" title={currentUser.name}>{currentUser.name}</span>
               <span className="block text-[11px] font-semibold uppercase tracking-wider text-outline">{currentUser.role}</span>
             </span>
