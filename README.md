@@ -517,7 +517,7 @@ npm.cmd run dev
 The Vite development server proxies `/api`, `/uploads`, `/healthz`, and
 `/readyz` to the backend automatically.
 
-The frontend and backend can also be started separately with `npm run dev:frontend` and `npm run dev:backend`. In normal demo configuration, the backend automatically seeds data unless `AUTO_SEED=false`.
+The frontend and backend can also be started separately with `npm run dev:frontend` and `npm run dev:backend`. Vite hot-reloads frontend changes, while `tsx watch` restarts the backend when its TypeScript files change. In normal demo configuration, the backend automatically seeds data unless `AUTO_SEED=false`.
 
 ### Production-style local run
 

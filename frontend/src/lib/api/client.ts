@@ -75,11 +75,11 @@ export interface ApiError extends Error {
 // Set VITE_API_BASE_URL to the Render web-service URL when the SPA is hosted
 // separately on Vercel.
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-const toApiUrl = (url: string) => url.startsWith('/') ? `${apiBaseUrl}${url}` : url;
+export const apiUrl = (url: string) => url.startsWith('/') ? `${apiBaseUrl}${url}` : url;
 
 export async function apiFetch<T = any>(url: string, options: RequestInit = {}): Promise<T> {
   const currentUserId = getCurrentUserId();
-  const res = await fetch(toApiUrl(url), {
+  const res = await fetch(apiUrl(url), {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -107,13 +107,13 @@ export async function apiFetch<T = any>(url: string, options: RequestInit = {}):
 export const uploadUrl = (url?: string) => {
   if (!url) return undefined;
   if (!url.startsWith('/uploads/')) return url;
-  return `${toApiUrl(url)}?uid=${encodeURIComponent(getCurrentUserId())}`;
+  return `${apiUrl(url)}?uid=${encodeURIComponent(getCurrentUserId())}`;
 };
 
 export async function uploadFile(file: File): Promise<{ url: string; filename: string }> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(toApiUrl('/api/upload'), {
+  const res = await fetch(apiUrl('/api/upload'), {
     method: 'POST',
     headers: { 'X-User-Id': getCurrentUserId() },
     body: form,
