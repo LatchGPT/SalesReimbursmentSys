@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
-import { Timeline, TimelineEvent } from '../src/components/ui/Timeline';
-import { ClaimTimeline } from '../src/features/claims/detail/ClaimTimeline';
-import { ClaimProgressTracker } from '../src/features/claims/components/ClaimProgressTracker';
-import { StatusHistory, User, ClaimStatus, Claim, UserRole } from '../src/types';
+import { Timeline, TimelineEvent } from '../frontend/src/components/ui/Timeline';
+import { ClaimTimeline } from '../frontend/src/features/claims/detail/ClaimTimeline';
+import { ClaimProgressTracker } from '../frontend/src/features/claims/components/ClaimProgressTracker';
+import { StatusHistory, User, ClaimStatus, Claim, UserRole } from '../frontend/src/types';
 
 describe('Timeline component', () => {
   const sampleEvents: TimelineEvent[] = [

@@ -17,10 +17,10 @@
     "jsx": "react-jsx",
     "paths": {
       "@/*": [
-        "./*"
+        "./frontend/src/*"
       ],
       "@server/*": [
-        "./src/server/*"
+        "./backend/src/server/*"
       ]
     },
     "allowImportingTsExtensions": true,
@@ -28,14 +28,15 @@
     "strict": true
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "server.ts",
-    "api/**/*.ts",
+    "frontend/src/**/*.ts",
+    "frontend/src/**/*.tsx",
+    "backend/src/**/*.ts",
+    "backend/server.ts",
+    "backend/api/**/*.ts",
     "test/**/*.ts",
-    "vite.config.ts",
+    "frontend/vite.config.ts",
     "vitest.config.ts",
-    "drizzle.config.ts"
+    "backend/drizzle.config.ts"
   ],
   "exclude": [
     "node_modules",
@@ -43,6 +44,7 @@
     "build",
     "coverage",
     "tmp",
-    "uploads"
+    "uploads",
+    "backend/uploads"
   ]
 }

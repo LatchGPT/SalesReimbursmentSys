@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { login } from '../lib/api';
+import { apiUrl, login } from '../lib/api';
 
 interface DemoUser {
   id: string;
@@ -53,14 +53,14 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
 
     async function loadLogin() {
       try {
-        const configResponse = await fetch('/api/auth/config');
+        const configResponse = await fetch(apiUrl('/api/auth/config'));
         if (!configResponse.ok) throw new Error('Could not load sign-in configuration.');
         const nextConfig = await configResponse.json() as AuthConfig;
         if (!active) return;
         setConfig(nextConfig);
 
         if (nextConfig.demoLoginEnabled) {
-          const usersResponse = await fetch('/api/demo-users');
+          const usersResponse = await fetch(apiUrl('/api/demo-users'));
           if (!usersResponse.ok) throw new Error('Could not load demo accounts.');
           const nextUsers = await usersResponse.json() as DemoUser[];
           if (!active) return;
@@ -98,7 +98,7 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
 
   const startMicrosoftSignIn = () => {
     if (config?.microsoft.configured) {
-      window.location.assign(config.microsoft.loginUrl);
+      window.location.assign(apiUrl(config.microsoft.loginUrl));
       return;
     }
     setNotice('Microsoft sign-in is awaiting your organization\'s Entra setup. Use a demo account below for now.');
@@ -111,23 +111,11 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
   const continueAsDemo = () => {
     if (!selectedUserId) return;
 
-    // Give every role its own sessionStorage-backed browser context. The
-    // launcher stays on this screen so a presenter can immediately choose the
-    // next role and open another independent tab.
-    const demoTab = window.open('about:blank', '_blank');
-    if (!demoTab) {
-      setNotice('Your browser blocked the demo tab. Allow pop-ups for this site and try again.');
-      return;
-    }
-
     try {
-      login(selectedUserId, demoTab.sessionStorage);
-      demoTab.opener = null;
-      demoTab.location.replace('/');
-      setNotice(`${selectedUser?.name || 'The selected account'} opened in a new demo tab.`);
+      login(selectedUserId);
+      onLoggedIn();
     } catch {
-      demoTab.close();
-      setNotice('The demo tab could not be prepared. Please try again.');
+      setNotice('The demo session could not be prepared. Please try again.');
     }
   };
 

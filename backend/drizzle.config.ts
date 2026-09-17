@@ -1,7 +1,11 @@
 import { defineConfig } from 'drizzle-kit';
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 export default defineConfig({
+  // This config runs from backend/ (directly or through npm workspaces).
   schema: './src/db/schema.ts',
   out: './drizzle',
   dialect: 'postgresql',
