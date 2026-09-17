@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, Claim, StatusHistory, ClaimStatus, ExpenseLineItem, MOM, FieldDefinition, MasterData, ReviewMeeting, SupportRequest, ImportBatch, ApproverDelegation, Company, SystemEmail } from '../types';
 import {
+  apiUrl,
   loadWorkspace, setCurrentUserId, decideOnClaim,
   markReadyForClaim, confirmReceipt, releaseCashAdvance, markEmailsRead,
   collectLiquidationRefund,
@@ -173,8 +174,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const headers = { 'Content-Type': 'application/json', 'X-User-Id': currentUser?.id || '' };
     // Reset alone empties every transactional table — immediately reseed with
     // the chosen options so the app lands on the exact dataset requested.
-    await fetch('/api/admin/reset', { method: 'POST', headers });
-    await fetch('/api/admin/seed-year', {
+    await fetch(apiUrl('/api/admin/reset'), { method: 'POST', headers });
+    await fetch(apiUrl('/api/admin/seed-year'), {
       method: 'POST', headers,
       body: JSON.stringify({ options }),
     });
@@ -192,7 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
    */
   const clearData = useCallback(async () => {
     const headers = { 'Content-Type': 'application/json', 'X-User-Id': currentUser?.id || '' };
-    await fetch('/api/admin/reset', { method: 'POST', headers });
+    await fetch(apiUrl('/api/admin/reset'), { method: 'POST', headers });
     setLoading(true);
     refresh();
   }, [refresh, currentUser]);
