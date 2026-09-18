@@ -48,7 +48,8 @@ const ROLE_DEEP_LINK: Record<string, string> = {
  * before the login gate is evaluated.
  */
 export const applyDeepLinkLogin = (): boolean => {
-  const demoDeepLinksEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_LOGIN === 'true';
+  const demoDeepLinksEnabled = process.env.NODE_ENV !== 'production'
+    || process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === 'true';
   if (!demoDeepLinksEnabled) return false;
 
   const params = new URLSearchParams(window.location.search);
@@ -71,10 +72,9 @@ export interface ApiError extends Error {
   body?: any;
 }
 
-// Empty in local development, where Vite proxies API traffic to port 3000.
-// Set VITE_API_BASE_URL to the Render web-service URL when the SPA is hosted
-// separately on Vercel.
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+// Set this to http://localhost:3000 for a fully local pair, or to the Render
+// web-service URL when the Next.js frontend is hosted on Vercel.
+const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/$/, '');
 export const apiUrl = (url: string) => url.startsWith('/') ? `${apiBaseUrl}${url}` : url;
 
 export async function apiFetch<T = any>(url: string, options: RequestInit = {}): Promise<T> {

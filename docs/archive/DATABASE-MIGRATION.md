@@ -100,10 +100,10 @@ Vercel serverless functions without further work.
 3. **`POST /api/admin/reset` clears and re-persists reference data, but this
    is the one route doing bulk multi-table clear+reseed** — worth a second
    look if its scope grows further.
-4. **Migrations still run via `drizzle-kit push`** (live schema sync), not
+4. **Migrations still ran via the legacy schema-push command** (live schema sync), not
    generated SQL files applied through a proper migration runner. Fine for
    active development; before a real release pipeline exists, switch to
-   `drizzle-kit generate` + an explicit `migrate()` step so schema changes
+   a generated migration plus an explicit apply step so schema changes
    are reviewable, ordered files instead of an implicit diff-and-apply.
 5. **Mock email/outbox, `last_seen`, and `import_batches` remain
    intentionally in-memory-only** — see the README for why. Migrate them

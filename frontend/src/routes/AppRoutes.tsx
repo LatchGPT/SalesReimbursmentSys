@@ -10,32 +10,32 @@ import { RequireRoles } from './RequireRoles';
 // fetched on first navigation rather than bundled into the initial load.
 // Dashboard is the common landing page. Admin analytics is kept in its own
 // chunk because its charting dependency is not needed by other roles.
-import { Dashboard } from '../pages/Dashboard';
-const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+import { Dashboard } from '../screens/Dashboard';
+const AdminDashboard = lazy(() => import('../screens/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
-const ClaimsList = lazy(() => import('../pages/shared/ClaimsList').then(m => ({ default: m.ClaimsList })));
-const Payouts = lazy(() => import('../pages/shared/Payouts').then(m => ({ default: m.Payouts })));
-const SubmitClaim = lazy(() => import('../pages/shared/SubmitClaim').then(m => ({ default: m.SubmitClaim })));
-const ClaimDetail = lazy(() => import('../pages/shared/ClaimDetail').then(m => ({ default: m.ClaimDetail })));
-const ApprovalQueue = lazy(() => import('../pages/approver/ApprovalQueue').then(m => ({ default: m.ApprovalQueue })));
-const ProcessingQueue = lazy(() => import('../pages/custodian/ProcessingQueue').then(m => ({ default: m.ProcessingQueue })));
-const ReadyToClaimQueue = lazy(() => import('../pages/custodian/ReadyToClaimQueue').then(m => ({ default: m.ReadyToClaimQueue })));
-const TransactionHistory = lazy(() => import('../pages/custodian/TransactionHistory').then(m => ({ default: m.TransactionHistory })));
-const CustodianAnalytics = lazy(() => import('../pages/custodian/CustodianAnalytics').then(m => ({ default: m.CustodianAnalytics })));
-const SystemActivity = lazy(() => import('../pages/admin/SystemActivity').then(m => ({ default: m.SystemActivity })));
-const UserAccounts = lazy(() => import('../pages/admin/UserAccounts').then(m => ({ default: m.UserAccounts })));
-const MOMs = lazy(() => import('../pages/shared/MOMs').then(m => ({ default: m.MOMs })));
-const MomDetail = lazy(() => import('../pages/shared/MomDetail').then(m => ({ default: m.MomDetail })));
-const CreateMom = lazy(() => import('../pages/shared/CreateMom').then(m => ({ default: m.CreateMom })));
-const Calendar = lazy(() => import('../pages/shared/Calendar').then(m => ({ default: m.Calendar })));
-const Settings = lazy(() => import('../pages/shared/Settings').then(m => ({ default: m.Settings })));
-const Support = lazy(() => import('../pages/shared/Support').then(m => ({ default: m.Support })));
-const Notifications = lazy(() => import('../pages/shared/Notifications').then(m => ({ default: m.Notifications })));
-const CompanyDirectory = lazy(() => import('../pages/admin/CompanyDirectory').then(m => ({ default: m.CompanyDirectory })));
-const Receipts = lazy(() => import('../pages/shared/Receipts').then(m => ({ default: m.Receipts })));
-const AdminReporting = lazy(() => import('../pages/admin/AdminReporting').then(m => ({ default: m.AdminReporting })));
-const FinanceAnalytics = lazy(() => import('../pages/admin/AdminReporting').then(m => ({ default: m.FinanceAnalytics })));
-const HistoricalImport = lazy(() => import('../pages/admin/HistoricalImport').then(m => ({ default: m.HistoricalImport })));
+const ClaimsList = lazy(() => import('../screens/shared/ClaimsList').then(m => ({ default: m.ClaimsList })));
+const Payouts = lazy(() => import('../screens/shared/Payouts').then(m => ({ default: m.Payouts })));
+const SubmitClaim = lazy(() => import('../screens/shared/SubmitClaim').then(m => ({ default: m.SubmitClaim })));
+const ClaimDetail = lazy(() => import('../screens/shared/ClaimDetail').then(m => ({ default: m.ClaimDetail })));
+const ApprovalQueue = lazy(() => import('../screens/approver/ApprovalQueue').then(m => ({ default: m.ApprovalQueue })));
+const ProcessingQueue = lazy(() => import('../screens/custodian/ProcessingQueue').then(m => ({ default: m.ProcessingQueue })));
+const ReadyToClaimQueue = lazy(() => import('../screens/custodian/ReadyToClaimQueue').then(m => ({ default: m.ReadyToClaimQueue })));
+const TransactionHistory = lazy(() => import('../screens/custodian/TransactionHistory').then(m => ({ default: m.TransactionHistory })));
+const CustodianAnalytics = lazy(() => import('../screens/custodian/CustodianAnalytics').then(m => ({ default: m.CustodianAnalytics })));
+const SystemActivity = lazy(() => import('../screens/admin/SystemActivity').then(m => ({ default: m.SystemActivity })));
+const UserAccounts = lazy(() => import('../screens/admin/UserAccounts').then(m => ({ default: m.UserAccounts })));
+const MOMs = lazy(() => import('../screens/shared/MOMs').then(m => ({ default: m.MOMs })));
+const MomDetail = lazy(() => import('../screens/shared/MomDetail').then(m => ({ default: m.MomDetail })));
+const CreateMom = lazy(() => import('../screens/shared/CreateMom').then(m => ({ default: m.CreateMom })));
+const Calendar = lazy(() => import('../screens/shared/Calendar').then(m => ({ default: m.Calendar })));
+const Settings = lazy(() => import('../screens/shared/Settings').then(m => ({ default: m.Settings })));
+const Support = lazy(() => import('../screens/shared/Support').then(m => ({ default: m.Support })));
+const Notifications = lazy(() => import('../screens/shared/Notifications').then(m => ({ default: m.Notifications })));
+const CompanyDirectory = lazy(() => import('../screens/admin/CompanyDirectory').then(m => ({ default: m.CompanyDirectory })));
+const Receipts = lazy(() => import('../screens/shared/Receipts').then(m => ({ default: m.Receipts })));
+const AdminReporting = lazy(() => import('../screens/admin/AdminReporting').then(m => ({ default: m.AdminReporting })));
+const FinanceAnalytics = lazy(() => import('../screens/admin/AdminReporting').then(m => ({ default: m.FinanceAnalytics })));
+const HistoricalImport = lazy(() => import('../screens/admin/HistoricalImport').then(m => ({ default: m.HistoricalImport })));
 
 function RouteFallback() {
   return (

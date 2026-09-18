@@ -1,0 +1,547 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model approvals {
+  id          String            @id
+  claim_id    String
+  approver_id String
+  decision    approval_decision
+  comment     String            @default("")
+  timestamp   DateTime          @default(now()) @db.Timestamptz(6)
+  users       users             @relation(fields: [approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approvals_approver_id_users_id_fk")
+  claims      claims            @relation(fields: [claim_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approvals_claim_id_claims_id_fk")
+}
+
+model approver_delegations {
+  id                                            String             @id
+  approver_id                                   String
+  delegate_id                                   String
+  start_date                                    String
+  end_date                                      String
+  status                                        delegation_status
+  decline_reason                                String?
+  created_by                                    String
+  created_at                                    DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at                                    DateTime           @default(now()) @db.Timestamptz(6)
+  users_approver_delegations_approver_idTousers users              @relation("approver_delegations_approver_idTousers", fields: [approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approver_delegations_approver_id_users_id_fk")
+  users_approver_delegations_created_byTousers  users              @relation("approver_delegations_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approver_delegations_created_by_users_id_fk")
+  users_approver_delegations_delegate_idTousers users              @relation("approver_delegations_delegate_idTousers", fields: [delegate_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approver_delegations_delegate_id_users_id_fk")
+  status_histories                              status_histories[]
+}
+
+model branches {
+  id         String   @id
+  name       String
+  code       String?
+  active     Boolean  @default(true)
+  notes      String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model business_units {
+  id         String      @id
+  name       String
+  code       String?
+  active     Boolean     @default(true)
+  notes      String?
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at DateTime    @default(now()) @db.Timestamptz(6)
+  companies  companies[]
+}
+
+model cash_advances {
+  id                                      String              @id
+  requestor_id                            String
+  amount                                  Decimal             @db.Decimal(12, 2)
+  purpose                                 String
+  mom_id                                  String?
+  approver_id                             String
+  released_by                             String?
+  release_date                            DateTime?           @db.Timestamptz(6)
+  release_reference                       String?
+  release_method                          String?
+  status                                  cash_advance_status
+  reminder_sent                           Boolean?            @default(false)
+  created_at                              DateTime            @default(now()) @db.Timestamptz(6)
+  approved_at                             DateTime?           @db.Timestamptz(6)
+  paid_amount                             Decimal?            @db.Decimal(12, 2)
+  users_cash_advances_approver_idTousers  users               @relation("cash_advances_approver_idTousers", fields: [approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cash_advances_approver_id_users_id_fk")
+  moms                                    moms?               @relation(fields: [mom_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cash_advances_mom_id_moms_id_fk")
+  users_cash_advances_released_byTousers  users?              @relation("cash_advances_released_byTousers", fields: [released_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cash_advances_released_by_users_id_fk")
+  users_cash_advances_requestor_idTousers users               @relation("cash_advances_requestor_idTousers", fields: [requestor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "cash_advances_requestor_id_users_id_fk")
+  liquidations                            liquidations[]
+  status_histories                        status_histories[]
+}
+
+model claims {
+  id                                       String               @id
+  claim_number                             String?              @unique(map: "claims_claim_number_unique")
+  requestor_id                             String
+  current_approver_id                      String
+  original_approver_id                     String?
+  mom_id                                   String?
+  status                                   claim_status
+  total_amount                             Decimal              @db.Decimal(12, 2)
+  expense_category                         String?
+  receipt_url                              String?
+  remarks                                  String?
+  supporting_documents                     String?
+  payment_reference                        String?
+  payment_method                           String?
+  release_code                             String?
+  flagged_high_value                       Boolean?             @default(false)
+  approved_at                              DateTime?            @db.Timestamptz(6)
+  processed_by                             String?
+  processing_date                          DateTime?            @db.Timestamptz(6)
+  source_liquidation_id                    String?
+  import_batch_id                          String?
+  created_at                               DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at                               DateTime             @default(now()) @db.Timestamptz(6)
+  approver_stale_since                     DateTime?            @db.Timestamptz(6)
+  pending_transfer_to                      String?
+  approver_stale_reason                    String?
+  escalated_to_admin                       Boolean?             @default(false)
+  approved_amount                          Decimal?             @db.Decimal(12, 2)
+  paid_amount                              Decimal?             @db.Decimal(12, 2)
+  paid_at                                  DateTime?            @db.Timestamptz(6)
+  claim_type                               String               @default("Reimbursement")
+  release_code_expires_at                  DateTime?            @db.Timestamptz(6)
+  release_code_attempts                    Int?                 @default(0)
+  release_code_locked_until                DateTime?            @db.Timestamptz(6)
+  approvals                                approvals[]
+  users_claims_current_approver_idTousers  users                @relation("claims_current_approver_idTousers", fields: [current_approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_current_approver_id_users_id_fk")
+  import_batches                           import_batches?      @relation(fields: [import_batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_import_batch_id_import_batches_id_fk")
+  moms_claims_mom_idTomoms                 moms?                @relation("claims_mom_idTomoms", fields: [mom_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_mom_id_moms_id_fk")
+  users_claims_original_approver_idTousers users?               @relation("claims_original_approver_idTousers", fields: [original_approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_original_approver_id_users_id_fk")
+  users_claims_pending_transfer_toTousers  users?               @relation("claims_pending_transfer_toTousers", fields: [pending_transfer_to], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_pending_transfer_to_users_id_fk")
+  users_claims_processed_byTousers         users?               @relation("claims_processed_byTousers", fields: [processed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_processed_by_users_id_fk")
+  users_claims_requestor_idTousers         users                @relation("claims_requestor_idTousers", fields: [requestor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_requestor_id_users_id_fk")
+  liquidations                             liquidations?        @relation(fields: [source_liquidation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "claims_source_liquidation_id_liquidations_id_fk")
+  expense_line_items                       expense_line_items[]
+  moms_moms_claim_idToclaims               moms[]               @relation("moms_claim_idToclaims")
+  status_histories                         status_histories[]
+}
+
+model companies {
+  id                                         String          @id
+  name                                       String          @unique(map: "companies_name_unique")
+  industry                                   String?
+  notes                                      String?
+  address                                    String?
+  business_unit_id                           String?
+  cost_center_id                             String?
+  default_department_id                      String?
+  currency                                   String?
+  tax_id                                     String?
+  contact_person                             String?
+  contact_email                              String?
+  default_approver_id                        String?
+  pending_review                             Boolean         @default(false)
+  created_by                                 String?
+  business_units                             business_units? @relation(fields: [business_unit_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "companies_business_unit_id_business_units_id_fk")
+  cost_centers                               cost_centers?   @relation(fields: [cost_center_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "companies_cost_center_id_cost_centers_id_fk")
+  users_companies_created_byTousers          users?          @relation("companies_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "companies_created_by_users_id_fk")
+  users_companies_default_approver_idTousers users?          @relation("companies_default_approver_idTousers", fields: [default_approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "companies_default_approver_id_users_id_fk")
+  departments                                departments?    @relation(fields: [default_department_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "companies_default_department_id_departments_id_fk")
+}
+
+model cost_centers {
+  id         String      @id
+  name       String
+  code       String?
+  active     Boolean     @default(true)
+  notes      String?
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at DateTime    @default(now()) @db.Timestamptz(6)
+  companies  companies[]
+}
+
+model departments {
+  id         String      @id
+  name       String
+  code       String?
+  active     Boolean     @default(true)
+  notes      String?
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at DateTime    @default(now()) @db.Timestamptz(6)
+  companies  companies[]
+}
+
+model emails {
+  id           String   @id
+  recipient_id String
+  from         String
+  to           String
+  subject      String
+  body         String
+  read         Boolean  @default(false)
+  timestamp    DateTime @default(now()) @db.Timestamptz(6)
+  users        users    @relation(fields: [recipient_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "emails_recipient_id_users_id_fk")
+}
+
+model expense_line_items {
+  id               String  @id
+  claim_id         String
+  expense_date     String
+  vendor           String
+  category         String
+  amount           Decimal @db.Decimal(12, 2)
+  payment_method   String
+  business_purpose String
+  receipt_url      String?
+  or_number        String?
+  claims           claims  @relation(fields: [claim_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "expense_line_items_claim_id_claims_id_fk")
+}
+
+model field_definitions {
+  id                     String           @id
+  entity                 field_entity
+  applicable_claim_types String[]
+  key                    String
+  label                  String
+  input_type             field_input_type
+  required               Boolean          @default(false)
+  active                 Boolean          @default(true)
+  default_value          String?
+  display_order          Int              @default(0)
+  options                String[]
+  master_data_entity     String?
+  allow_other            Boolean?         @default(false)
+  validation             String?
+  created_at             DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime         @default(now()) @db.Timestamptz(6)
+}
+
+model import_batches {
+  id            String   @id
+  admin_id      String
+  filename      String
+  total_records Int
+  imported_at   DateTime @default(now()) @db.Timestamptz(6)
+  claims        claims[]
+  users         users    @relation(fields: [admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "import_batches_admin_id_users_id_fk")
+}
+
+model last_seen {
+  user_id String
+  section String
+  seen_at DateTime @default(now()) @db.Timestamptz(6)
+  users   users    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "last_seen_user_id_users_id_fk")
+
+  @@id([user_id, section], map: "last_seen_user_id_section_pk")
+}
+
+model liquidation_line_items {
+  id               String       @id
+  liquidation_id   String
+  expense_date     String
+  vendor           String
+  category         String
+  amount           Decimal      @db.Decimal(12, 2)
+  payment_method   String
+  business_purpose String
+  receipt_url      String?
+  attachment_type  String?
+  or_number        String?
+  liquidations     liquidations @relation(fields: [liquidation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "liquidation_line_items_liquidation_id_liquidations_id_fk")
+}
+
+model liquidations {
+  id                     String                    @id
+  cash_advance_id        String
+  requestor_id           String
+  total_spent            Decimal                   @default(0) @db.Decimal(12, 2)
+  variance_amount        Decimal                   @default(0) @db.Decimal(12, 2)
+  variance_type          liquidation_variance_type
+  status                 liquidation_status
+  created_at             DateTime                  @default(now()) @db.Timestamptz(6)
+  refund_method          String?
+  claims                 claims[]
+  liquidation_line_items liquidation_line_items[]
+  cash_advances          cash_advances             @relation(fields: [cash_advance_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "liquidations_cash_advance_id_cash_advances_id_fk")
+  users                  users                     @relation(fields: [requestor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "liquidations_requestor_id_users_id_fk")
+  status_histories       status_histories[]
+}
+
+model moms {
+  id                           String            @id
+  claim_id                     String?
+  requestor_id                 String?
+  client                       String?
+  contact_person               String?
+  contact_person_email         String?
+  meeting_date                 String
+  meeting_time                 String?
+  location                     String?
+  purpose                      String?
+  discussion                   String?
+  agreements                   String?
+  action_items                 String?
+  prepared_by                  String?
+  prepared_by_department       String?
+  prepared_by_job_title        String?
+  summary                      String?
+  file_url                     String?
+  file_name                    String?
+  status                       mom_status        @default(Draft)
+  created_at                   DateTime          @default(now()) @db.Timestamptz(6)
+  minutes_source               minutes_source    @default(Template)
+  meeting_type                 String?
+  participants_internal        String?
+  participants_external        String?
+  custom_fields                String?
+  cc_client                    Boolean           @default(false)
+  document_type                mom_document_type @default(MoM)
+  cash_advances                cash_advances[]
+  claims_claims_mom_idTomoms   claims[]          @relation("claims_mom_idTomoms")
+  claims_moms_claim_idToclaims claims?           @relation("moms_claim_idToclaims", fields: [claim_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "moms_claim_id_claims_id_fk")
+  users                        users?            @relation(fields: [requestor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "moms_requestor_id_users_id_fk")
+}
+
+model project_codes {
+  id         String   @id
+  name       String
+  code       String?
+  active     Boolean  @default(true)
+  notes      String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model review_meetings {
+  id                                        String                @id
+  claim_id                                  String
+  requestor_id                              String
+  approver_id                               String
+  meeting_date                              String
+  meeting_time                              String
+  status                                    review_meeting_status
+  decline_reason                            String?
+  created_at                                DateTime              @default(now()) @db.Timestamptz(6)
+  users_review_meetings_approver_idTousers  users                 @relation("review_meetings_approver_idTousers", fields: [approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "review_meetings_approver_id_users_id_fk")
+  users_review_meetings_requestor_idTousers users                 @relation("review_meetings_requestor_idTousers", fields: [requestor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "review_meetings_requestor_id_users_id_fk")
+}
+
+model status_histories {
+  id                   String                @id
+  claim_id             String?
+  cash_advance_id      String?
+  liquidation_id       String?
+  delegation_id        String?
+  user_id              String?
+  master_data_key      String?
+  master_data_id       String?
+  old_status           String
+  new_status           String
+  changed_by           String
+  reason               String?
+  timestamp            DateTime              @default(now()) @db.Timestamptz(6)
+  cash_advances        cash_advances?        @relation(fields: [cash_advance_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_cash_advance_id_cash_advances_id_fk")
+  claims               claims?               @relation(fields: [claim_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_claim_id_claims_id_fk")
+  approver_delegations approver_delegations? @relation(fields: [delegation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_delegation_id_approver_delegations_id_fk")
+  liquidations         liquidations?         @relation(fields: [liquidation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_liquidation_id_liquidations_id_fk")
+  users                users?                @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_user_id_users_id_fk")
+}
+
+model support_request_messages {
+  id               String           @id
+  request_id       String
+  sender_id        String
+  message          String
+  timestamp        DateTime         @default(now()) @db.Timestamptz(6)
+  support_requests support_requests @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "support_request_messages_request_id_support_requests_id_fk")
+  users            users            @relation(fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "support_request_messages_sender_id_users_id_fk")
+}
+
+model support_requests {
+  id                                              String                     @id
+  requestor_id                                    String
+  subject                                         String
+  description                                     String
+  related_entity_type                             String?
+  related_entity_id                               String?
+  priority                                        support_priority
+  status                                          support_status
+  assigned_admin_id                               String?
+  created_at                                      DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at                                      DateTime                   @default(now()) @db.Timestamptz(6)
+  support_request_messages                        support_request_messages[]
+  users_support_requests_assigned_admin_idTousers users?                     @relation("support_requests_assigned_admin_idTousers", fields: [assigned_admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "support_requests_assigned_admin_id_users_id_fk")
+  users_support_requests_requestor_idTousers      users                      @relation("support_requests_requestor_idTousers", fields: [requestor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "support_requests_requestor_id_users_id_fk")
+}
+
+model system_settings {
+  id                   String   @id @default("default")
+  expense_categories   String[]
+  high_value_threshold Decimal  @db.Decimal(12, 2)
+  payment_methods      String[]
+  category_limits      String?
+}
+
+model users {
+  id                                                           String                     @id
+  name                                                         String
+  email                                                        String                     @unique(map: "users_email_unique")
+  role                                                         user_role
+  department                                                   String
+  job_title                                                    String?
+  reports_to                                                   String?
+  employment_status                                            employment_status?         @default(Active)
+  can_approve_reimbursements                                   Boolean?                   @default(false)
+  notification_prefs                                           String?
+  avatar_url                                                   String?
+  entra_object_id                                              String?                    @unique(map: "users_entra_object_id_unique")
+  user_principal_name                                          String?                    @unique(map: "users_user_principal_name_unique")
+  approvals                                                    approvals[]
+  approver_delegations_approver_delegations_approver_idTousers approver_delegations[]     @relation("approver_delegations_approver_idTousers")
+  approver_delegations_approver_delegations_created_byTousers  approver_delegations[]     @relation("approver_delegations_created_byTousers")
+  approver_delegations_approver_delegations_delegate_idTousers approver_delegations[]     @relation("approver_delegations_delegate_idTousers")
+  cash_advances_cash_advances_approver_idTousers               cash_advances[]            @relation("cash_advances_approver_idTousers")
+  cash_advances_cash_advances_released_byTousers               cash_advances[]            @relation("cash_advances_released_byTousers")
+  cash_advances_cash_advances_requestor_idTousers              cash_advances[]            @relation("cash_advances_requestor_idTousers")
+  claims_claims_current_approver_idTousers                     claims[]                   @relation("claims_current_approver_idTousers")
+  claims_claims_original_approver_idTousers                    claims[]                   @relation("claims_original_approver_idTousers")
+  claims_claims_pending_transfer_toTousers                     claims[]                   @relation("claims_pending_transfer_toTousers")
+  claims_claims_processed_byTousers                            claims[]                   @relation("claims_processed_byTousers")
+  claims_claims_requestor_idTousers                            claims[]                   @relation("claims_requestor_idTousers")
+  companies_companies_created_byTousers                        companies[]                @relation("companies_created_byTousers")
+  companies_companies_default_approver_idTousers               companies[]                @relation("companies_default_approver_idTousers")
+  emails                                                       emails[]
+  import_batches                                               import_batches[]
+  last_seen                                                    last_seen[]
+  liquidations                                                 liquidations[]
+  moms                                                         moms[]
+  review_meetings_review_meetings_approver_idTousers           review_meetings[]          @relation("review_meetings_approver_idTousers")
+  review_meetings_review_meetings_requestor_idTousers          review_meetings[]          @relation("review_meetings_requestor_idTousers")
+  status_histories                                             status_histories[]
+  support_request_messages                                     support_request_messages[]
+  support_requests_support_requests_assigned_admin_idTousers   support_requests[]         @relation("support_requests_assigned_admin_idTousers")
+  support_requests_support_requests_requestor_idTousers        support_requests[]         @relation("support_requests_requestor_idTousers")
+  users                                                        users?                     @relation("usersTousers", fields: [reports_to], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_reports_to_users_id_fk")
+  other_users                                                  users[]                    @relation("usersTousers")
+}
+
+model vendors {
+  id         String   @id
+  name       String
+  code       String?
+  active     Boolean  @default(true)
+  notes      String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+enum approval_decision {
+  Approved
+  Rejected
+  Returned
+}
+
+enum cash_advance_status {
+  Draft
+  Submitted
+  Approved
+  Rejected
+  Released
+  Liquidated
+}
+
+enum claim_status {
+  Draft
+  Pending_Approval @map("Pending Approval")
+  Approved
+  Processing
+  Ready_for_Claim  @map("Ready for Claim")
+  Completed
+  Rejected
+  Returned
+}
+
+enum delegation_status {
+  Pending
+  Active
+  Declined
+  Expired
+  Cancelled
+}
+
+enum employment_status {
+  Active
+  Inactive
+}
+
+enum field_entity {
+  mom
+  claim
+}
+
+enum field_input_type {
+  text
+  number
+  dropdown
+  date
+  textarea
+}
+
+enum liquidation_status {
+  Draft
+  Submitted
+  ReturnedForRevision
+  Reviewed
+  Closed
+}
+
+enum liquidation_variance_type {
+  Settled
+  RefundDue
+  ReimbursementDue
+}
+
+enum minutes_source {
+  Template
+  Uploaded
+}
+
+enum mom_document_type {
+  MoM
+  LOA
+}
+
+enum mom_status {
+  Draft
+  Completed
+}
+
+enum review_meeting_status {
+  PendingConfirmation
+  Confirmed
+  DeclineRequested
+  Completed
+}
+
+enum support_priority {
+  Low
+  Medium
+  High
+}
+
+enum support_status {
+  Open
+  In_Progress @map("In Progress")
+  Resolved
+}
+
+enum user_role {
+  Requestor
+  Approver
+  Custodian
+  Finance
+  Admin
+}

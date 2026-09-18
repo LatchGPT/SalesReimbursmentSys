@@ -30,13 +30,11 @@
   "include": [
     "frontend/src/**/*.ts",
     "frontend/src/**/*.tsx",
+    "frontend/next.config.ts",
     "backend/src/**/*.ts",
     "backend/server.ts",
-    "backend/api/**/*.ts",
     "test/**/*.ts",
-    "frontend/vite.config.ts",
-    "vitest.config.ts",
-    "backend/drizzle.config.ts"
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules",

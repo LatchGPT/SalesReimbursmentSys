@@ -2,6 +2,7 @@ node_modules/
 build/
 dist/
 frontend/dist/
+frontend/.next/
 backend/dist/
 coverage/
 tmp/
@@ -9,5 +10,7 @@ tmp/
 *.log
 .env*
 !.env.example
+.local-backups/
+backend/src/generated/prisma/
 backend/uploads/*
 !backend/uploads/.gitkeep

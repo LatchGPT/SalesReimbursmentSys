@@ -4,21 +4,17 @@
  * audit flags as the one thing that must never silently break: submit ->
  * approve -> process -> ready-for-claim -> complete.
  *
- * VERCEL=1 skips the module's own app.listen() (we drive listen() ourselves
- * on an ephemeral port); AUTO_SEED=false skips the year-long demo seed so
- * the test starts from a clean, fast, deterministic slate; NODE_ENV=production
- * skips mounting the Vite dev-middleware, which this API-only test doesn't need.
+ * AUTO_SEED=false skips the year-long demo seed so the test starts from a
+ * clean, fast, deterministic slate.
  */
-process.env.VERCEL = '1';
-process.env.AUTO_SEED = 'false';
-process.env.NODE_ENV = 'production';
+Object.assign(process.env, { AUTO_SEED: 'false', NODE_ENV: 'production' });
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
 import type { AddressInfo } from 'net';
 import { getTodayIsoDate, shiftIsoDate } from '../frontend/src/lib/reimbursementPolicy';
 
-const { createApp } = await import('../backend/server');
+const { createApp } = await import('../backend/src/server/app');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.

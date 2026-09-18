@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -8,7 +10,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AppProvider } from './components/AppContext';
 import { ToastProvider } from './components/shared/ToastContext';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
-import { Login } from './pages/Login';
+import { Login } from './screens/Login';
 import { isLoggedIn, applyDeepLinkLogin } from './lib/api';
 import { AppRoutes } from './routes';
 

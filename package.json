@@ -15,13 +15,13 @@
     "build": "npm run build --workspace frontend && npm run build --workspace backend",
     "vercel-build": "npm run build --workspace frontend",
     "start": "npm run start --workspace backend",
-    "preview": "npm run preview --workspace frontend",
+    "start:frontend": "npm run start --workspace frontend",
     "clean": "npm run clean --workspace frontend && npm run clean --workspace backend",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "npm run db:generate --workspace backend",
     "db:migrate": "npm run db:migrate --workspace backend",
-    "db:push": "npm run db:push --workspace backend",
+    "db:status": "npm run db:status --workspace backend",
     "db:studio": "npm run db:studio --workspace backend"
   },
   "devDependencies": {

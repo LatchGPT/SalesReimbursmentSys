@@ -8,16 +8,14 @@
  * Runs against the real Express app and its in-memory routes — no mocking. See
  * core-loop.smoke.test.ts for the happy-path counterpart and the env rationale.
  */
-process.env.VERCEL = '1';
-process.env.AUTO_SEED = 'false';
-process.env.NODE_ENV = 'production';
+Object.assign(process.env, { AUTO_SEED: 'false', NODE_ENV: 'production' });
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { Server } from 'http';
 import type { AddressInfo } from 'net';
 import { getTodayIsoDate } from '../frontend/src/lib/reimbursementPolicy';
 
-const { createApp } = await import('../backend/server');
+const { createApp } = await import('../backend/src/server/app');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.

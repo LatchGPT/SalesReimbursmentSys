@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 
 // npm workspace commands run from backend/, while integration tests run from
 // the repository root. This avoids import.meta.url so the production CommonJS
@@ -16,7 +15,6 @@ export const config = {
   port: process.env.PORT ? Number(process.env.PORT) : 3000,
   nodeEnv: process.env.NODE_ENV || 'development',
   isProduction: process.env.NODE_ENV === 'production',
-  isVercel: Boolean(process.env.VERCEL),
   demoMode: process.env.DEMO_MODE !== 'false',
   authMode: process.env.AUTH_MODE || 'demo',
   enableDemoLogin: process.env.ENABLE_DEMO_LOGIN !== 'false',
@@ -24,10 +22,5 @@ export const config = {
   logLevel: process.env.LOG_LEVEL || 'info',
   projectRoot,
   databaseUrl: process.env.DATABASE_URL || '',
-  uploadDir: process.env.UPLOAD_DIR || (
-    process.env.VERCEL
-      ? path.join(os.tmpdir(), 'uploads')
-      : path.join(projectRoot, 'backend', 'uploads')
-  ),
-  distDir: path.join(projectRoot, 'frontend', 'dist'),
+  uploadDir: process.env.UPLOAD_DIR || path.join(projectRoot, 'backend', 'uploads'),
 };

@@ -1,52 +1,54 @@
-/**
- * Drizzle client factory. Not imported by server.ts yet — see
- * docs/DATABASE-MIGRATION.md for what's left before the in-memory arrays
- * are actually replaced. This exists now so the schema (./schema.ts) has
- * something real to run migrations against once DATABASE_URL is set.
- */
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-import * as schema from './schema';
+import { PrismaClient } from '../generated/prisma/client';
 
-let pool: Pool | undefined;
+type PrismaClientInstance = InstanceType<typeof PrismaClient>;
 
-/**
- * Test-only override: when set, getDb() returns this instance instead of
- * building a real pg.Pool from DATABASE_URL. Lets a test point every repo
- * function (which all call getDb() internally) at an in-process fake — e.g.
- * pg-mem — without touching any call site. Never set outside tests; nothing
- * in server.ts or src/db/*Repo.ts calls this.
- */
-let testDbOverride: ReturnType<typeof drizzle> | undefined;
-export function __setTestDb(db: ReturnType<typeof drizzle> | undefined) {
+const globalForPrisma = globalThis as typeof globalThis & {
+  salesReimbursementPrisma?: PrismaClientInstance;
+};
+
+let testDbOverride: PrismaClientInstance | undefined;
+
+/** Test-only seam for injecting a Prisma client backed by pg-mem. */
+export function __setTestDb(db: PrismaClientInstance | undefined) {
   testDbOverride = db;
 }
 
-/** Lazily creates the pool so importing this module is safe even when
- *  DATABASE_URL isn't set yet (e.g. during the current in-memory-only
- *  server, or in any test that never calls getDb()). */
-export function getDb() {
-  if (testDbOverride) return testDbOverride;
-  if (!process.env.DATABASE_URL) {
-    console.warn('[AI Studio] DATABASE_URL is not set — using mock db instance');
-    const noOp = {
-      findMany: async () => [],
-      findFirst: async () => null,
-      findUnique: async () => null,
-      create: async (d: any) => d?.data ?? {},
-      update: async (d: any) => d?.data ?? {},
-      delete: async () => ({}),
-    };
-    return new Proxy({}, {
-      get: (_, prop) => prop === 'query'
-        ? new Proxy({}, { get: () => noOp })
-        : async () => [],
-    }) as any;
+function createPrismaClient(): PrismaClientInstance {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL is required before accessing Prisma');
   }
-  if (!pool) {
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  }
-  return drizzle(pool, { schema });
+
+  const pool = new Pool({
+    connectionString,
+    max: 10,
+    connectionTimeoutMillis: 10_000,
+  });
+  const adapter = new PrismaPg(pool, { disposeExternalPool: true });
+  return new PrismaClient({ adapter });
 }
 
-export type Db = ReturnType<typeof getDb>;
+/**
+ * The only Prisma client factory in the application. The global cache avoids
+ * opening a new pool during local hot reloads while Render keeps one client
+ * for the lifetime of its persistent process.
+ */
+export function getDb(): PrismaClientInstance {
+  if (testDbOverride) return testDbOverride;
+
+  if (!globalForPrisma.salesReimbursementPrisma) {
+    globalForPrisma.salesReimbursementPrisma = createPrismaClient();
+  }
+  return globalForPrisma.salesReimbursementPrisma;
+}
+
+export async function disconnectDb(): Promise<void> {
+  if (globalForPrisma.salesReimbursementPrisma) {
+    await globalForPrisma.salesReimbursementPrisma.$disconnect();
+    globalForPrisma.salesReimbursementPrisma = undefined;
+  }
+}
+
+export type Db = PrismaClientInstance;

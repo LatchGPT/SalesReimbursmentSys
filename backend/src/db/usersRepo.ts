@@ -1,136 +1,107 @@
-/**
- * Persistence for the `users` table — the first domain migrated off the
- * in-memory arrays (docs/DATABASE-MIGRATION.md's recommended order: users
- * first, since almost everything else joins against it).
- *
- * Pattern: server.ts keeps its module-level `users: User[]` array as a live
- * in-process read cache (every existing synchronous `users.find(...)` call
- * site is untouched — zero read-path risk). Writes go through `syncUsersToDb`
- * so Postgres stays the durable source of truth; `loadUsersFromDb` populates
- * the cache at boot. This app runs as a single long-lived Node process (not
- * serverless), so a same-process cache kept in sync on every write is safe —
- * there's no second instance to diverge from.
- *
- * All functions are no-ops (loadUsersFromDb returns []; syncUsersToDb does
- * nothing) when DATABASE_URL isn't set, so the existing test suite — which
- * never sets it — keeps running purely in-memory with unchanged behavior.
- */
-import { eq, isNotNull } from 'drizzle-orm';
+import type {
+  status_histories as StatusHistoryRow,
+  users as UserRow,
+} from '../generated/prisma/client';
+import type { StatusHistory, User } from '../serverTypes';
 import { getDb } from './index';
-import { users as usersTable, statusHistories as statusHistoriesTable } from './schema';
-import type { User, StatusHistory } from '../serverTypes';
 
 export const isDbConfigured = () => !!process.env.DATABASE_URL;
 
-function toRow(u: User) {
+function toRow(user: User) {
   return {
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    department: u.department,
-    jobTitle: u.job_title ?? null,
-    reportsTo: u.reports_to ?? null,
-    employmentStatus: u.employment_status ?? 'Active',
-    canApproveReimbursements: u.can_approve_reimbursements ?? false,
-    notificationPrefs: u.notification_prefs ? JSON.stringify(u.notification_prefs) : null,
-    avatarUrl: u.avatar_url ?? null,
-    entraObjectId: u.entra_object_id ?? null,
-    userPrincipalName: u.user_principal_name ?? null,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    department: user.department,
+    job_title: user.job_title ?? null,
+    reports_to: user.reports_to ?? null,
+    employment_status: user.employment_status ?? 'Active',
+    can_approve_reimbursements: user.can_approve_reimbursements ?? false,
+    notification_prefs: user.notification_prefs
+      ? JSON.stringify(user.notification_prefs)
+      : null,
+    avatar_url: user.avatar_url ?? null,
+    entra_object_id: user.entra_object_id ?? null,
+    user_principal_name: user.user_principal_name ?? null,
   };
 }
 
-function fromRow(r: typeof usersTable.$inferSelect): User {
+function fromRow(row: UserRow): User {
   return {
-    id: r.id,
-    name: r.name,
-    email: r.email,
-    role: r.role as User['role'],
-    department: r.department,
-    job_title: r.jobTitle ?? undefined,
-    reports_to: r.reportsTo,
-    employment_status: (r.employmentStatus ?? undefined) as User['employment_status'],
-    can_approve_reimbursements: r.canApproveReimbursements ?? undefined,
-    notification_prefs: r.notificationPrefs ? JSON.parse(r.notificationPrefs) : undefined,
-    avatar_url: r.avatarUrl ?? undefined,
-    entra_object_id: r.entraObjectId ?? undefined,
-    user_principal_name: r.userPrincipalName ?? undefined,
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role as User['role'],
+    department: row.department,
+    job_title: row.job_title ?? undefined,
+    reports_to: row.reports_to,
+    employment_status: (row.employment_status ?? undefined) as User['employment_status'],
+    can_approve_reimbursements: row.can_approve_reimbursements ?? undefined,
+    notification_prefs: row.notification_prefs
+      ? JSON.parse(row.notification_prefs)
+      : undefined,
+    avatar_url: row.avatar_url ?? undefined,
+    entra_object_id: row.entra_object_id ?? undefined,
+    user_principal_name: row.user_principal_name ?? undefined,
   };
 }
 
-/** Loads every user row from Postgres. Returns [] if no DATABASE_URL is set. */
 export async function loadUsersFromDb(): Promise<User[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(usersTable);
-  return rows.map(fromRow);
+  return (await getDb().users.findMany()).map(fromRow);
 }
 
 /**
- * Upserts every given user into Postgres. Called after any mutation to the
- * in-memory `users` array (role/department/reporting-line changes, seed,
- * reset) so the array and the database never drift. A per-row loop rather
- * than a single batch statement — users.length is small (dozens, not
- * thousands) and writes are infrequent (admin actions), so this trades a
- * little throughput for a simpler, easier-to-verify upsert.
- *
- * Two passes, one transaction: `reports_to` self-references another row in
- * this same table, and the org chart isn't topologically sorted (a manager
- * can come after their report in the array). Pass 1 upserts every row with
- * reports_to nulled out so no row can ever violate the FK by referencing a
- * manager that hasn't been inserted yet; pass 2 backfills the real
- * reports_to now that every id exists.
+ * Two passes keep the self-referencing reports_to foreign key valid even when
+ * a manager appears after their report in the input array.
  */
 export async function syncUsersToDb(users: User[]): Promise<void> {
   if (!isDbConfigured() || users.length === 0) return;
-  const db = getDb();
-  // getDb()'s return type is loosely `any` (see its own no-DATABASE_URL
-  // fallback branch in ./index.ts), so the transaction callback's `tx`
-  // isn't contextually typed — annotate it explicitly to satisfy noImplicitAny.
-  await db.transaction(async (tx: typeof db) => {
+
+  await getDb().$transaction(async (tx) => {
     for (const user of users) {
-      const row = { ...toRow(user), reportsTo: null };
-      await tx.insert(usersTable).values(row).onConflictDoUpdate({ target: usersTable.id, set: row });
+      const row = { ...toRow(user), reports_to: null };
+      await tx.users.upsert({
+        where: { id: row.id },
+        create: row,
+        update: row,
+      });
     }
+
     for (const user of users) {
       if (user.reports_to) {
-        await tx.update(usersTable).set({ reportsTo: user.reports_to }).where(eq(usersTable.id, user.id));
+        await tx.users.update({
+          where: { id: user.id },
+          data: { reports_to: user.reports_to },
+        });
       }
     }
   });
 }
 
-/** Deletes every row from the users table. Used by the demo reset/reseed routes. */
 export async function clearUsersInDb(): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
-  await db.delete(usersTable);
+  await getDb().users.deleteMany();
 }
 
-function userHistoryFromRow(r: typeof statusHistoriesTable.$inferSelect): StatusHistory {
+function userHistoryFromRow(row: StatusHistoryRow): StatusHistory {
   return {
-    id: r.id,
+    id: row.id,
     claim_id: '',
-    user_id: r.userId ?? undefined,
-    old_status: r.oldStatus,
-    new_status: r.newStatus,
-    changed_by: r.changedBy,
-    reason: r.reason ?? undefined,
-    timestamp: r.timestamp.toISOString(),
+    user_id: row.user_id ?? undefined,
+    old_status: row.old_status,
+    new_status: row.new_status,
+    changed_by: row.changed_by,
+    reason: row.reason ?? undefined,
+    timestamp: row.timestamp.toISOString(),
   };
 }
 
-/**
- * Loads user-scoped audit history (role/department/manager/employment-status/
- * approval-authority changes made from Admin > User Accounts) — the same
- * shared status_histories table core loop/cash-advance/delegation history
- * reads from, filtered to rows this domain owns. Was previously write-only:
- * addUserHistory() pushed into the in-memory array but nothing persisted or
- * reloaded it, so these entries vanished on every restart.
- */
 export async function loadUserHistoryFromDb(): Promise<StatusHistory[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(statusHistoriesTable).where(isNotNull(statusHistoriesTable.userId));
+  const rows = await getDb().status_histories.findMany({
+    where: { user_id: { not: null } },
+  });
   return rows.map(userHistoryFromRow);
 }
