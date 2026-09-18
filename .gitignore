@@ -12,5 +12,6 @@ tmp/
 !.env.example
 .local-backups/
 backend/src/generated/prisma/
+src/generated/prisma/
 backend/uploads/*
 !backend/uploads/.gitkeep

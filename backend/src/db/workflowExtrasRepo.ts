@@ -6,7 +6,7 @@ import type {
   support_request_messages as SupportMessageRow,
   support_requests as SupportRequestRow,
   support_status,
-} from '../generated/prisma/client';
+} from '../../../src/generated/prisma/client';
 import {
   DelegationStatus,
   ReviewMeetingStatus,

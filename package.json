@@ -8,6 +8,7 @@
     "backend"
   ],
   "scripts": {
+    "postinstall": "prisma generate --config prisma.config.ts",
     "install:all": "npm install --workspaces",
     "dev": "concurrently --kill-others-on-fail --names frontend,backend --prefix-colors cyan,green \"npm run dev --workspace frontend\" \"npm run dev --workspace backend\"",
     "dev:frontend": "npm run dev --workspace frontend",

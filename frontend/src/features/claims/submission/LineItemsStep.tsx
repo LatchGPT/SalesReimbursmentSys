@@ -1,7 +1,7 @@
 import { Button, cn } from '../../../components/ui/Button';
 import { Input, Select, Label } from '../../../components/ui/Input';
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card';
-import { DynamicFieldRenderer } from '../../../components/shared/DynamicFieldRenderer';
+import { DynamicFieldRenderer } from '@/features/admin';
 import { EXPENSE_CATEGORIES } from '../../../lib/expenseCategories';
 import { formatMoney } from '../../../lib/money';
 import {

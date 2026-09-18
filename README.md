@@ -24,9 +24,9 @@ Supabase PostgreSQL
 - `frontend/src/screens/` contains route-level screens; shared UI is under `frontend/src/components/`.
 - `frontend/src/lib/api/` is the browser-to-API adapter.
 - `backend/src/server/routes/` contains API handlers and `backend/src/server/services/` contains backend business logic.
-- `backend/src/db/` contains Prisma repositories. `backend/src/db/index.ts` owns the only Prisma client and PostgreSQL pool.
-- `backend/prisma/schema.prisma` is the checked-in representation of the live Supabase schema.
-- `backend/prisma/migrations/` contains Prisma migration history. The production database was baselined without recreating its existing tables.
+- `backend/src/db/` contains the repositories being migrated into feature services. `src/lib/prisma.ts` owns the only Prisma client and PostgreSQL pool.
+- `prisma/schema.prisma` is the checked-in representation of the live Supabase schema.
+- `prisma/migrations/` contains Prisma migration history. The production database was baselined without recreating its existing tables.
 - `test/` contains integration and regression tests. Frontend unit tests are colocated with their modules.
 - `docs/` contains business and handoff documentation.
 

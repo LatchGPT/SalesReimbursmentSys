@@ -1,6 +1,6 @@
 import { Button, cn } from '../../../components/ui/Button';
 import { ConfirmModal } from '../../../components/shared/ConfirmModal';
-import { MomClientPreviewModal } from '../../../components/shared/MomClientPreviewModal';
+import { MomClientPreviewModal } from '@/features/moms';
 import { exportMomPdf, exportMomWord } from '../../../lib/momExport';
 import { REIMBURSEMENT_FILING_WINDOW_DAYS } from '../../../lib/reimbursementPolicy';
 import { useClaimWizard } from './useClaimWizard';

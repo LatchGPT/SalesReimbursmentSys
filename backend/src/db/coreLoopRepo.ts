@@ -9,7 +9,7 @@ import type {
   mom_document_type,
   mom_status,
   status_histories as StatusHistoryRow,
-} from '../generated/prisma/client';
+} from '../../../src/generated/prisma/client';
 import type {
   Approval,
   Claim,
@@ -23,6 +23,7 @@ import type {
 } from '../serverTypes';
 import { getDb } from './index';
 import { recordDbFailure, recordDbSuccess } from './persistenceHealth';
+import { trackPersistence } from './persistenceScope';
 
 export const isDbConfigured = () => !!process.env.DATABASE_URL;
 
@@ -395,7 +396,7 @@ export function persistStatusHistoryFireAndForget(
     || (entry.master_data_key && entry.master_data_id);
   if (!isDbConfigured() || !hasScope) return;
 
-  getDb().status_histories.createMany({
+  const write = getDb().status_histories.createMany({
     data: [historyToRow(entry)],
     skipDuplicates: true,
   })
@@ -404,6 +405,7 @@ export function persistStatusHistoryFireAndForget(
       recordDbFailure('persistStatusHistory', error);
       console.error('[db] Could not persist status history entry:', error);
     });
+  trackPersistence(write);
 }
 
 export async function clearCoreLoopInDb(): Promise<void> {

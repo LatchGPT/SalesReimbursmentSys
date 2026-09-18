@@ -9,13 +9,12 @@ import path from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool, type PoolConfig } from 'pg';
 import { newDb } from 'pg-mem';
-import { PrismaClient } from '../../backend/src/generated/prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 
 const MIGRATIONS_DIR = path.resolve(
   __dirname,
   '..',
   '..',
-  'backend',
   'prisma',
   'migrations',
 );

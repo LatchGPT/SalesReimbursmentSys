@@ -9,12 +9,10 @@
  */
 Object.assign(process.env, { AUTO_SEED: 'false', NODE_ENV: 'production' });
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { Server } from 'http';
-import type { AddressInfo } from 'net';
+import { describe, it, expect } from 'vitest';
 import { getTodayIsoDate, shiftIsoDate } from '../frontend/src/lib/reimbursementPolicy';
 
-const { createApp } = await import('../backend/src/server/app');
+const routeHandlers = await import('../frontend/src/app/api/[[...path]]/route');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.
@@ -24,11 +22,16 @@ const CUSTODIAN_ID = 'u3';
 const FINANCE_ID = 'u22';
 const PURCHASE_DATE = getTodayIsoDate();
 
-let baseUrl: string;
-let server: Server;
+async function requestRoute(path: string, init: RequestInit = {}): Promise<Response> {
+  const url = new URL(path, 'http://route-handler.test');
+  const method = (init.method || 'GET').toUpperCase() as keyof typeof routeHandlers;
+  const handler = routeHandlers[method] as typeof routeHandlers.GET;
+  const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
+  return handler(new Request(url, init), { params: Promise.resolve({ path: segments }) });
+}
 
 async function api(path: string, userId: string, init: RequestInit = {}) {
-  const res = await fetch(`${baseUrl}${path}`, {
+  const res = await requestRoute(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -39,17 +42,6 @@ async function api(path: string, userId: string, init: RequestInit = {}) {
   const body = await res.json().catch(() => undefined);
   return { status: res.status, body };
 }
-
-beforeAll(async () => {
-  const app = await createApp();
-  server = app.listen(0);
-  const { port } = server.address() as AddressInfo;
-  baseUrl = `http://localhost:${port}`;
-});
-
-afterAll(() => {
-  server?.close();
-});
 
 describe('core reimbursement loop (submit -> approve -> process -> ready -> complete)', () => {
   it('drives a claim through every status transition against the real routes', async () => {
@@ -225,10 +217,10 @@ describe('core reimbursement loop (submit -> approve -> process -> ready -> comp
     expect(requestorOutbox.body.length).toBeGreaterThan(0);
     expect(requestorOutbox.body.every((item: any) => item.channel === 'Teams')).toBe(true);
 
-    const publicDirectory = await fetch(`${baseUrl}/api/users`);
+    const publicDirectory = await requestRoute('/api/users');
     expect(publicDirectory.status).toBe(401);
 
-    const demoAccounts = await fetch(`${baseUrl}/api/demo-users`);
+    const demoAccounts = await requestRoute('/api/demo-users');
     expect(demoAccounts.status).toBe(200);
     const accounts = await demoAccounts.json();
     expect(accounts.length).toBeGreaterThan(0);
@@ -236,7 +228,7 @@ describe('core reimbursement loop (submit -> approve -> process -> ready -> comp
   });
 
   it('publishes a secret-free Microsoft-ready auth contract without pretending SSO is active', async () => {
-    const configResponse = await fetch(`${baseUrl}/api/auth/config`);
+    const configResponse = await requestRoute('/api/auth/config');
     expect(configResponse.status).toBe(200);
     const config = await configResponse.json();
     expect(config).toEqual({
@@ -251,7 +243,7 @@ describe('core reimbursement loop (submit -> approve -> process -> ready -> comp
     });
     expect(JSON.stringify(config)).not.toMatch(/secret|tenantId|clientId/i);
 
-    const microsoftStart = await fetch(`${baseUrl}/api/auth/microsoft/start`);
+    const microsoftStart = await requestRoute('/api/auth/microsoft/start');
     expect(microsoftStart.status).toBe(503);
     const body = await microsoftStart.json();
     expect(body.code).toBe('MICROSOFT_AUTH_NOT_CONFIGURED');

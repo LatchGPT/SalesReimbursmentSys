@@ -6,7 +6,7 @@ This is the current handoff index. Read root `README.md` and `AGENTS.md` first; 
 
 1. `frontend/` is a Next.js 16 application deployed to Vercel.
 2. `backend/` is an Express service deployed to Render. It owns API routes, scheduled jobs, uploads, and database access.
-3. Supabase PostgreSQL is accessed through Prisma. The schema is in `backend/prisma/schema.prisma`; one client singleton lives in `backend/src/db/index.ts`.
+3. Supabase PostgreSQL is accessed through Prisma. The schema is in `prisma/schema.prisma`; one client singleton lives in `src/lib/prisma.ts`.
 4. The Vercel browser app calls the public Render origin configured by `NEXT_PUBLIC_API_BASE_URL`.
 5. Demo identity still trusts `X-User-Id`; Microsoft Entra authentication is not complete.
 6. `DEMO_MODE=true` preserves presentation data behavior. `DEMO_MODE=false` loads persisted database state and disables seeding.

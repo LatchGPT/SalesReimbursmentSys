@@ -13,13 +13,13 @@ Every task should state which deployable it affects:
 - `docs/` or root infrastructure: shared documentation and deployment configuration.
 - Database: Supabase PostgreSQL accessed through Prisma.
 
-For database work, name the affected model in `backend/prisma/schema.prisma`, the repository in `backend/src/db/`, and the API route or service that consumes it. State whether the work changes schema, data, or application queries. Do not infer permission to change the production schema from permission to edit application code.
+For database work, name the affected model in `prisma/schema.prisma`, the repository in `backend/src/db/`, and the API route or service that consumes it. State whether the work changes schema, data, or application queries. Do not infer permission to change the production schema from permission to edit application code.
 
 For deployment work, state whether the change affects Vercel, Render, Supabase, or more than one target. Never copy backend secrets into a `NEXT_PUBLIC_*` variable.
 
 ## 2. Context
 
-Supabase is the live schema and data source of truth. `backend/prisma/schema.prisma` is its checked-in Prisma representation. The previous ORM schema and migration files are gone; never reconstruct schema from archived documentation. Prisma migrations live in `backend/prisma/migrations/`. The existing database was baselined as `20260918000000_baseline`; do not edit that applied migration.
+Supabase is the live schema and data source of truth. `prisma/schema.prisma` is its checked-in Prisma representation. The previous ORM schema and migration files are gone; never reconstruct schema from archived documentation. Prisma migrations live in `prisma/migrations/`. The existing database was baselined as `20260918000000_baseline`; do not edit that applied migration.
 
 Directory responsibilities:
 
@@ -40,11 +40,11 @@ render.yaml                Render service definition
 vercel.json                Vercel Next.js build definition
 ```
 
-Data flow is `screen/component -> frontend/src/lib/api -> Render route -> backend service/repository -> Prisma -> Supabase`. UI code must never import Prisma. `backend/src/db/index.ts` is the only place allowed to construct a Prisma client or PostgreSQL pool.
+Data flow is `screen/component -> frontend/src/lib/api -> Render route -> backend service/repository -> Prisma -> Supabase`. UI code must never import Prisma. `src/lib/prisma.ts` is the only place allowed to construct a Prisma client or PostgreSQL pool.
 
 Read these before changing related areas:
 
-- DB query/schema: `backend/prisma/schema.prisma`, `backend/src/db/index.ts`, and the affected `*Repo.ts`.
+- DB query/schema: `prisma/schema.prisma`, `src/lib/prisma.ts`, and the affected `*Repo.ts`.
 - API behavior: the affected file in `backend/src/server/routes/`, its service, and `frontend/src/lib/api/`.
 - Persistence semantics: the “Database and demo-mode behavior” section in `README.md`.
 - Deployment: `render.yaml`, `vercel.json`, `.env.example`, and the “Deployment” section in `README.md`.
@@ -83,7 +83,7 @@ Guardrails:
 - The Supabase project has real data. Never run `prisma migrate reset`, a force reset/push, table/column drops, truncation, destructive SQL, or migration-history rewrites without explicit human confirmation in the current session.
 - Before an approved schema change, confirm a current backup or PITR, review generated SQL, and report destructive statements before execution.
 - Never edit an already-applied migration. Add a new reviewed migration.
-- Never instantiate a second `PrismaClient` or `pg.Pool`; use `backend/src/db/index.ts`.
+- Never instantiate a second `PrismaClient` or `pg.Pool`; use `src/lib/prisma.ts`.
 - Do not run migrations from Vercel functions or normal application startup. Use a deliberate deploy/CI step after approval.
 - Preserve function signatures during repository changes when practical. Type-check and test after each small batch.
 - Render is the API and scheduled-job host. Vercel is the frontend only.

@@ -1,9 +1,8 @@
 import { Button } from '../../../components/ui/Button';
 import { Input, Select, Label } from '../../../components/ui/Input';
 import { Card, CardContent } from '../../../components/ui/Card';
-import { CompanyPicker } from '../../../components/shared/CompanyPicker';
-import { ContactPersonsField } from '../../../components/shared/ContactPersonsField';
-import { DynamicFieldRenderer } from '../../../components/shared/DynamicFieldRenderer';
+import { CompanyPicker, DynamicFieldRenderer } from '@/features/admin';
+import { ContactPersonsField } from '@/features/moms';
 import { DOCUMENT_TYPE_LABEL, MomDocumentType } from '../../../types';
 import { useClaimWizard } from './useClaimWizard';
 

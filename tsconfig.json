@@ -28,6 +28,8 @@
     "strict": true
   },
   "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
     "frontend/src/**/*.ts",
     "frontend/src/**/*.tsx",
     "frontend/next.config.ts",

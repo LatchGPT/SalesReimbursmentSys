@@ -10,7 +10,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { AppProvider } from './components/AppContext';
 import { ToastProvider } from './components/shared/ToastContext';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
-import { Login } from './screens/Login';
+import { Login } from './features/auth/screens';
 import { isLoggedIn, applyDeepLinkLogin } from './lib/api';
 import { AppRoutes } from './routes';
 

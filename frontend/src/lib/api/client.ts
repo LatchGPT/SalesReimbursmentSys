@@ -111,13 +111,28 @@ export const uploadUrl = (url?: string) => {
 };
 
 export async function uploadFile(file: File): Promise<{ url: string; filename: string }> {
-  const form = new FormData();
-  form.append('file', file);
-  const res = await fetch(apiUrl('/api/upload'), {
+  const authorization = await fetch(apiUrl('/api/upload/sign'), {
     method: 'POST',
-    headers: { 'X-User-Id': getCurrentUserId() },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': getCurrentUserId(),
+    },
+    body: JSON.stringify({ name: file.name, size: file.size, type: file.type }),
+  });
+  if (!authorization.ok) throw new Error('Upload failed');
+  const signed = await authorization.json() as {
+    url: string;
+    filename: string;
+    uploadUrl: string;
+  };
+
+  const form = new FormData();
+  form.append('cacheControl', '3600');
+  form.append('', file);
+  const res = await fetch(signed.uploadUrl, {
+    method: 'PUT',
     body: form,
   });
   if (!res.ok) throw new Error('Upload failed');
-  return res.json();
+  return { url: signed.url, filename: signed.filename };
 }

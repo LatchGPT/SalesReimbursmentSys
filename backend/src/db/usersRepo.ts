@@ -1,7 +1,7 @@
 import type {
   status_histories as StatusHistoryRow,
   users as UserRow,
-} from '../generated/prisma/client';
+} from '../../../src/generated/prisma/client';
 import type { StatusHistory, User } from '../serverTypes';
 import { getDb } from './index';
 

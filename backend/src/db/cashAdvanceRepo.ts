@@ -6,7 +6,7 @@ import type {
   liquidation_status,
   liquidation_variance_type,
   status_histories as StatusHistoryRow,
-} from '../generated/prisma/client';
+} from '../../../src/generated/prisma/client';
 import {
   CashAdvanceStatus,
   LiquidationStatus,

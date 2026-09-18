@@ -2,7 +2,7 @@ import type {
   companies as CompanyRow,
   field_definitions as FieldDefinitionRow,
   status_histories as StatusHistoryRow,
-} from '../generated/prisma/client';
+} from '../../../src/generated/prisma/client';
 import type {
   Company,
   FieldDefinition,
