@@ -1,10 +1,7 @@
 import express from 'express';
-import * as path from 'path';
-import * as fs from 'fs';
 import { config } from './config';
 import { state } from './state';
 import { Request, Response } from 'express';
-// import { httpLogger } from './middleware/logging';
 import { configureSecurityMiddleware } from './middleware/security';
 import { financeReadOnlyMiddleware } from './middleware/auth';
 import { healthRouter } from './routes/health.routes';
@@ -63,7 +60,7 @@ app.get('/api/health', (req: Request, res: Response) => {
         state.users.length = 0;
         state.users.push(...dbUsers);
         usersLoadedFromDb = true;
-      } else if (demoModeEnabled && process.env.AUTO_SEED !== 'false') {
+      } else if (demoModeEnabled && config.autoSeed) {
         await syncUsersToDb(state.users);
       } else {
         state.users.length = 0;
@@ -136,9 +133,6 @@ app.get('/api/health', (req: Request, res: Response) => {
     state.fieldDefinitions = [];
   }
 
-  // HTTP logger
-  // app.use(httpLogger);
-
   // Security middleware (Helmet, CORS, Rate Limiters)
   configureSecurityMiddleware(app);
 
@@ -170,27 +164,8 @@ app.get('/api/health', (req: Request, res: Response) => {
   app.use('/api', analyticsRouter);
   app.use('/api', adminRouter);
 
-  // Frontend: Vite dev middleware locally; static build in production.
-  if (!config.isProduction && process.env.SERVE_FRONTEND !== 'false') {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      configFile: path.join(config.projectRoot, 'frontend', 'vite.config.ts'),
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = config.distDir;
-    if (fs.existsSync(distPath)) {
-      app.use(express.static(distPath));
-      app.get('*', (_req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
-      });
-    }
-  }
-
   // Auto-seed on startup unless explicitly disabled.
-  if (demoModeEnabled && process.env.AUTO_SEED !== 'false') {
+  if (demoModeEnabled && config.autoSeed) {
     try {
       state.suppressHistoryPersistence = true;
       try {
@@ -205,14 +180,12 @@ app.get('/api/health', (req: Request, res: Response) => {
   }
 
   // Scheduled background jobs
-  if (process.env.VERCEL !== '1') {
-    const SCHEDULED_JOB_INTERVAL_MS = 60 * 60 * 1000; // hourly
-    setInterval(() => {
-      syncDelegationStatuses();
-      runStaleApproverFallbackCheck(false, 'system').catch((err: unknown) =>
-        console.error('[scheduler] Stale-approver fallback check failed:', err));
-    }, SCHEDULED_JOB_INTERVAL_MS);
-  }
+  const SCHEDULED_JOB_INTERVAL_MS = 60 * 60 * 1000; // hourly
+  setInterval(() => {
+    syncDelegationStatuses();
+    runStaleApproverFallbackCheck(false, 'system').catch((err: unknown) =>
+      console.error('[scheduler] Stale-approver fallback check failed:', err));
+  }, SCHEDULED_JOB_INTERVAL_MS);
 
   return app;
 }

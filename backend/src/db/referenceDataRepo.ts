@@ -1,197 +1,209 @@
-/**
- * Persistence for admin-configured reference data: companies, the six
- * master-data catalogs, field definitions, and system settings. Fourth
- * domain migrated per docs/DATABASE-MIGRATION.md's order.
- *
- * Same pattern as the earlier repos: targeted upserts per mutation,
- * boot-time load only replaces the in-memory arrays when DEMO_MODE=false,
- * every real route writes through regardless of DEMO_MODE. See
- * coreLoopRepo.ts's file header for the full rationale.
- *
- * The six master-data catalogs (departments, cost centers, business units,
- * branches, project codes, vendors) are structurally identical — matching
- * server.ts's own registerMasterDataRoutes() factory — so one generic
- * pair of functions covers all six instead of six near-duplicate modules.
- */
-import { and, eq, isNotNull } from 'drizzle-orm';
-import { getDb } from './index';
-import {
-  companies as companiesTable, fieldDefinitions as fieldDefinitionsTable, systemSettings as systemSettingsTable,
-  departments as departmentsTable, costCenters as costCentersTable, businessUnits as businessUnitsTable,
-  branches as branchesTable, projectCodes as projectCodesTable, vendors as vendorsTable,
-  statusHistories as statusHistoriesTable,
-} from './schema';
-import type { Company, FieldDefinition, MasterDataRecord, StatusHistory } from '../serverTypes';
+import type {
+  companies as CompanyRow,
+  field_definitions as FieldDefinitionRow,
+  status_histories as StatusHistoryRow,
+} from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
+import type {
+  Company,
+  FieldDefinition,
+  MasterDataRecord,
+  StatusHistory,
+} from '../serverTypes';
+import { getDb, type Db } from './index';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
-// --- companies ------------------------------------------------------------
-
-function companyToRow(c: Company) {
+function companyToRow(company: Company) {
   return {
-    id: c.id,
-    name: c.name,
-    industry: c.industry ?? null,
-    notes: c.notes ?? null,
-    address: c.address ?? null,
-    businessUnitId: c.business_unit_id || null,
-    costCenterId: c.cost_center_id || null,
-    defaultDepartmentId: c.default_department_id || null,
-    currency: c.currency ?? null,
-    taxId: c.tax_id ?? null,
-    contactPerson: c.contact_person ?? null,
-    contactEmail: c.contact_email ?? null,
-    defaultApproverId: c.default_approver_id || null,
-    pendingReview: c.pending_review ?? false,
-    createdBy: c.created_by || null,
+    id: company.id,
+    name: company.name,
+    industry: company.industry ?? null,
+    notes: company.notes ?? null,
+    address: company.address ?? null,
+    business_unit_id: company.business_unit_id || null,
+    cost_center_id: company.cost_center_id || null,
+    default_department_id: company.default_department_id || null,
+    currency: company.currency ?? null,
+    tax_id: company.tax_id ?? null,
+    contact_person: company.contact_person ?? null,
+    contact_email: company.contact_email ?? null,
+    default_approver_id: company.default_approver_id || null,
+    pending_review: company.pending_review ?? false,
+    created_by: company.created_by || null,
   };
 }
 
-function companyFromRow(r: typeof companiesTable.$inferSelect): Company {
+function companyFromRow(row: CompanyRow): Company {
   return {
-    id: r.id,
-    name: r.name,
-    industry: r.industry ?? undefined,
-    notes: r.notes ?? undefined,
-    address: r.address ?? undefined,
-    business_unit_id: r.businessUnitId ?? undefined,
-    cost_center_id: r.costCenterId ?? undefined,
-    default_department_id: r.defaultDepartmentId ?? undefined,
-    currency: r.currency ?? undefined,
-    tax_id: r.taxId ?? undefined,
-    contact_person: r.contactPerson ?? undefined,
-    contact_email: r.contactEmail ?? undefined,
-    default_approver_id: r.defaultApproverId ?? undefined,
-    pending_review: r.pendingReview ?? false,
-    created_by: r.createdBy ?? undefined,
+    id: row.id,
+    name: row.name,
+    industry: row.industry ?? undefined,
+    notes: row.notes ?? undefined,
+    address: row.address ?? undefined,
+    business_unit_id: row.business_unit_id ?? undefined,
+    cost_center_id: row.cost_center_id ?? undefined,
+    default_department_id: row.default_department_id ?? undefined,
+    currency: row.currency ?? undefined,
+    tax_id: row.tax_id ?? undefined,
+    contact_person: row.contact_person ?? undefined,
+    contact_email: row.contact_email ?? undefined,
+    default_approver_id: row.default_approver_id ?? undefined,
+    pending_review: row.pending_review,
+    created_by: row.created_by ?? undefined,
   };
 }
 
 export async function persistCompany(company: Company): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = companyToRow(company);
-  await db.insert(companiesTable).values(row).onConflictDoUpdate({ target: companiesTable.id, set: row });
+  await getDb().companies.upsert({
+    where: { id: row.id },
+    create: row,
+    update: row,
+  });
 }
 
 export async function loadCompaniesFromDb(): Promise<Company[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(companiesTable);
-  return rows.map(companyFromRow);
+  return (await getDb().companies.findMany()).map(companyFromRow);
 }
 
-// --- master data catalogs (generic across all six) -------------------------
+export type MasterDataKey =
+  | 'departments'
+  | 'cost-centers'
+  | 'business-units'
+  | 'branches'
+  | 'project-codes'
+  | 'vendors';
 
-const MASTER_DATA_TABLES = {
-  departments: departmentsTable,
-  'cost-centers': costCentersTable,
-  'business-units': businessUnitsTable,
-  branches: branchesTable,
-  'project-codes': projectCodesTable,
-  vendors: vendorsTable,
-} as const;
-
-export type MasterDataKey = keyof typeof MASTER_DATA_TABLES;
-
-function masterDataToRow(r: MasterDataRecord) {
+function masterDataToRow(record: MasterDataRecord) {
   return {
-    id: r.id,
-    name: r.name,
-    code: r.code ?? null,
-    active: r.active,
-    notes: r.notes ?? null,
+    id: record.id,
+    name: record.name,
+    code: record.code ?? null,
+    active: record.active,
+    notes: record.notes ?? null,
   };
 }
 
-function masterDataFromRow<T extends MasterDataRecord>(row: {
-  id: string; name: string; code: string | null; active: boolean; notes: string | null;
-  createdAt: Date; updatedAt: Date;
-}): T {
+type MasterDataRow = ReturnType<typeof masterDataToRow> & {
+  created_at: Date;
+  updated_at: Date;
+};
+
+function masterDataFromRow<T extends MasterDataRecord>(row: MasterDataRow): T {
   return {
     id: row.id,
     name: row.name,
     code: row.code ?? undefined,
     active: row.active,
     notes: row.notes ?? undefined,
-    created_at: row.createdAt.toISOString(),
-    updated_at: row.updatedAt.toISOString(),
+    created_at: row.created_at.toISOString(),
+    updated_at: row.updated_at.toISOString(),
   } as T;
 }
 
-export async function persistMasterDataRecord(key: MasterDataKey, record: MasterDataRecord): Promise<void> {
+async function upsertMasterData(
+  db: Db,
+  key: MasterDataKey,
+  row: ReturnType<typeof masterDataToRow>,
+) {
+  const operation = { where: { id: row.id }, create: row, update: row };
+  switch (key) {
+    case 'departments': return db.departments.upsert(operation);
+    case 'cost-centers': return db.cost_centers.upsert(operation);
+    case 'business-units': return db.business_units.upsert(operation);
+    case 'branches': return db.branches.upsert(operation);
+    case 'project-codes': return db.project_codes.upsert(operation);
+    case 'vendors': return db.vendors.upsert(operation);
+  }
+}
+
+async function findMasterData(db: Db, key: MasterDataKey): Promise<MasterDataRow[]> {
+  switch (key) {
+    case 'departments': return db.departments.findMany();
+    case 'cost-centers': return db.cost_centers.findMany();
+    case 'business-units': return db.business_units.findMany();
+    case 'branches': return db.branches.findMany();
+    case 'project-codes': return db.project_codes.findMany();
+    case 'vendors': return db.vendors.findMany();
+  }
+}
+
+export async function persistMasterDataRecord(
+  key: MasterDataKey,
+  record: MasterDataRecord,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
-  const table = MASTER_DATA_TABLES[key];
-  const row = masterDataToRow(record);
-  await db.insert(table).values(row).onConflictDoUpdate({ target: table.id, set: row });
+  await upsertMasterData(getDb(), key, masterDataToRow(record));
 }
 
-export async function loadMasterDataTable<T extends MasterDataRecord>(key: MasterDataKey): Promise<T[]> {
+export async function loadMasterDataTable<T extends MasterDataRecord>(
+  key: MasterDataKey,
+): Promise<T[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const table = MASTER_DATA_TABLES[key];
-  const rows = await db.select().from(table);
-  return rows.map((r: any) => masterDataFromRow<T>(r));
+  return (await findMasterData(getDb(), key)).map(masterDataFromRow<T>);
 }
 
-// --- field definitions ------------------------------------------------
-
-function fieldDefinitionToRow(f: FieldDefinition) {
+function fieldDefinitionToRow(field: FieldDefinition) {
   return {
-    id: f.id,
-    entity: f.entity,
-    applicableClaimTypes: f.applicableClaimTypes ?? null,
-    key: f.key,
-    label: f.label,
-    inputType: f.input_type,
-    required: f.required,
-    active: f.active,
-    defaultValue: f.default_value ?? null,
-    displayOrder: f.display_order,
-    options: f.options ?? null,
-    masterDataEntity: f.master_data_entity ?? null,
-    allowOther: f.allow_other ?? false,
-    validation: f.validation ? JSON.stringify(f.validation) : null,
+    id: field.id,
+    entity: field.entity,
+    // Prisma scalar lists cannot represent SQL NULL. Normalize future writes
+    // to empty arrays while retaining equivalent application semantics.
+    applicable_claim_types: field.applicableClaimTypes ?? [],
+    key: field.key,
+    label: field.label,
+    input_type: field.input_type,
+    required: field.required,
+    active: field.active,
+    default_value: field.default_value ?? null,
+    display_order: field.display_order,
+    options: field.options ?? [],
+    master_data_entity: field.master_data_entity ?? null,
+    allow_other: field.allow_other ?? false,
+    validation: field.validation ? JSON.stringify(field.validation) : null,
   };
 }
 
-function fieldDefinitionFromRow(r: typeof fieldDefinitionsTable.$inferSelect): FieldDefinition {
+function fieldDefinitionFromRow(row: FieldDefinitionRow): FieldDefinition {
   return {
-    id: r.id,
-    entity: r.entity,
-    applicableClaimTypes: (r.applicableClaimTypes ?? undefined) as FieldDefinition['applicableClaimTypes'],
-    key: r.key,
-    label: r.label,
-    input_type: r.inputType,
-    required: r.required,
-    active: r.active,
-    default_value: r.defaultValue ?? undefined,
-    display_order: r.displayOrder,
-    options: r.options ?? undefined,
-    master_data_entity: (r.masterDataEntity ?? undefined) as FieldDefinition['master_data_entity'],
-    allow_other: r.allowOther ?? undefined,
-    validation: r.validation ? JSON.parse(r.validation) : undefined,
-    created_at: r.createdAt.toISOString(),
-    updated_at: r.updatedAt.toISOString(),
+    id: row.id,
+    entity: row.entity,
+    applicableClaimTypes: (row.applicable_claim_types ?? undefined) as
+      FieldDefinition['applicableClaimTypes'],
+    key: row.key,
+    label: row.label,
+    input_type: row.input_type,
+    required: row.required,
+    active: row.active,
+    default_value: row.default_value ?? undefined,
+    display_order: row.display_order,
+    options: row.options ?? undefined,
+    master_data_entity: (row.master_data_entity ?? undefined) as
+      FieldDefinition['master_data_entity'],
+    allow_other: row.allow_other ?? undefined,
+    validation: row.validation ? JSON.parse(row.validation) : undefined,
+    created_at: row.created_at.toISOString(),
+    updated_at: row.updated_at.toISOString(),
   };
 }
 
 export async function persistFieldDefinition(field: FieldDefinition): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = fieldDefinitionToRow(field);
-  await db.insert(fieldDefinitionsTable).values(row).onConflictDoUpdate({ target: fieldDefinitionsTable.id, set: row });
+  await getDb().field_definitions.upsert({
+    where: { id: row.id },
+    create: row,
+    update: row,
+  });
 }
 
 export async function loadFieldDefinitionsFromDb(): Promise<FieldDefinition[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(fieldDefinitionsTable);
-  return rows.map(fieldDefinitionFromRow);
+  return (await getDb().field_definitions.findMany()).map(fieldDefinitionFromRow);
 }
-
-// --- system settings (singleton row) ---------------------------------------
 
 export interface SystemSettingsShape {
   expenseCategories: string[];
@@ -200,78 +212,72 @@ export interface SystemSettingsShape {
   categoryLimits: Record<string, number>;
 }
 
-export async function persistSystemSettings(settings: SystemSettingsShape): Promise<void> {
+export async function persistSystemSettings(
+  settings: SystemSettingsShape,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = {
     id: 'default',
-    expenseCategories: settings.expenseCategories,
-    highValueThreshold: String(settings.highValueThreshold),
-    paymentMethods: settings.paymentMethods,
-    categoryLimits: JSON.stringify(settings.categoryLimits || {}),
+    expense_categories: settings.expenseCategories,
+    high_value_threshold: settings.highValueThreshold,
+    payment_methods: settings.paymentMethods,
+    category_limits: JSON.stringify(settings.categoryLimits || {}),
   };
-  await db.insert(systemSettingsTable).values(row).onConflictDoUpdate({ target: systemSettingsTable.id, set: row });
-}
-
-/**
- * Deletes every company, master-data, and field-definition row. Used only by
- * POST /api/admin/reset, which immediately reseeds fresh defaults afterward
- * (via persistCompany/persistMasterDataRecord/persistFieldDefinition, called
- * per reseeded record from server.ts). Companies reference master-data ids
- * (business_unit_id, cost_center_id, default_department_id), so they're
- * cleared first.
- */
-export async function clearReferenceDataInDb(): Promise<void> {
-  if (!isDbConfigured()) return;
-  const db = getDb();
-  await db.transaction(async (tx: typeof db) => {
-    await tx.delete(companiesTable);
-    for (const table of Object.values(MASTER_DATA_TABLES)) {
-      await tx.delete(table);
-    }
-    await tx.delete(fieldDefinitionsTable);
+  await getDb().system_settings.upsert({
+    where: { id: row.id },
+    create: row,
+    update: row,
   });
 }
 
-export async function loadSystemSettingsFromDb(): Promise<SystemSettingsShape | undefined> {
+export async function clearReferenceDataInDb(): Promise<void> {
+  if (!isDbConfigured()) return;
+  await getDb().$transaction(async (tx) => {
+    await tx.companies.deleteMany();
+    await tx.departments.deleteMany();
+    await tx.cost_centers.deleteMany();
+    await tx.business_units.deleteMany();
+    await tx.branches.deleteMany();
+    await tx.project_codes.deleteMany();
+    await tx.vendors.deleteMany();
+    await tx.field_definitions.deleteMany();
+  });
+}
+
+export async function loadSystemSettingsFromDb():
+Promise<SystemSettingsShape | undefined> {
   if (!isDbConfigured()) return undefined;
-  const db = getDb();
-  const rows = await db.select().from(systemSettingsTable).where(eq(systemSettingsTable.id, 'default'));
-  const row = rows[0];
+  const row = await getDb().system_settings.findUnique({ where: { id: 'default' } });
   if (!row) return undefined;
   return {
-    expenseCategories: row.expenseCategories,
-    highValueThreshold: Number(row.highValueThreshold),
-    paymentMethods: row.paymentMethods,
-    categoryLimits: row.categoryLimits ? JSON.parse(row.categoryLimits) : {},
+    expenseCategories: row.expense_categories,
+    highValueThreshold: Number(row.high_value_threshold),
+    paymentMethods: row.payment_methods,
+    categoryLimits: row.category_limits ? JSON.parse(row.category_limits) : {},
   };
 }
 
-function masterDataHistoryFromRow(r: typeof statusHistoriesTable.$inferSelect): StatusHistory {
+function masterDataHistoryFromRow(row: StatusHistoryRow): StatusHistory {
   return {
-    id: r.id,
+    id: row.id,
     claim_id: '',
-    master_data_key: r.masterDataKey ?? undefined,
-    master_data_id: r.masterDataId ?? undefined,
-    old_status: r.oldStatus,
-    new_status: r.newStatus,
-    changed_by: r.changedBy,
-    reason: r.reason ?? undefined,
-    timestamp: r.timestamp.toISOString(),
+    master_data_key: row.master_data_key ?? undefined,
+    master_data_id: row.master_data_id ?? undefined,
+    old_status: row.old_status,
+    new_status: row.new_status,
+    changed_by: row.changed_by,
+    reason: row.reason ?? undefined,
+    timestamp: row.timestamp.toISOString(),
   };
 }
 
-/**
- * Loads master-data audit history (departments/cost-centers/business-units/
- * branches/project-codes/vendors edits made via the generic master-data
- * routes) from the shared status_histories table. Was previously write-only:
- * addMasterDataHistory() pushed into the in-memory array but nothing
- * persisted or reloaded it, so these entries vanished on every restart.
- */
 export async function loadMasterDataHistoryFromDb(): Promise<StatusHistory[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(statusHistoriesTable)
-    .where(and(isNotNull(statusHistoriesTable.masterDataKey), isNotNull(statusHistoriesTable.masterDataId)));
+  const rows = await getDb().status_histories.findMany({
+    where: {
+      master_data_key: { not: null },
+      master_data_id: { not: null },
+    },
+  });
   return rows.map(masterDataHistoryFromRow);
 }

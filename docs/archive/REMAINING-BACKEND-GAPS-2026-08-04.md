@@ -241,7 +241,7 @@ the backend work above:
 - Wrap multi-record claim/MOM/expense writes in database transactions.
 - Add expiry, hashing, regeneration invalidation, and attempt throttling for
   release codes.
-- Replace `drizzle-kit push` with reviewed, ordered migrations in the release
+- Replace the legacy schema-push command with reviewed, ordered migrations in the release
   pipeline.
 - Add structured logging, health/readiness endpoints, rate limiting, monitoring,
   alerting, backup/restore tests, and retention policies.

@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: salesreimbursmentsystem
+    runtime: node
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build --workspace backend
+    startCommand: npm run start --workspace backend
+    healthCheckPath: /readyz
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://sales-reimbursment-system.vercel.app
+      - key: DEMO_MODE
+        value: "true"
+      - key: AUTH_MODE
+        value: demo
+      - key: ENABLE_DEMO_LOGIN
+        value: "true"
+      - key: AUTO_SEED
+        value: "true"
+      - key: SESSION_SECRET
+        generateValue: true

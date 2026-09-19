@@ -8,16 +8,12 @@
  * Runs against the real Express app and its in-memory routes — no mocking. See
  * core-loop.smoke.test.ts for the happy-path counterpart and the env rationale.
  */
-process.env.VERCEL = '1';
-process.env.AUTO_SEED = 'false';
-process.env.NODE_ENV = 'production';
+Object.assign(process.env, { AUTO_SEED: 'false', NODE_ENV: 'production' });
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { Server } from 'http';
-import type { AddressInfo } from 'net';
-import { getTodayIsoDate } from '../frontend/src/lib/reimbursementPolicy';
+import { describe, it, expect } from 'vitest';
+import { getTodayIsoDate } from '../src/features/claims';
 
-const { createApp } = await import('../backend/server');
+const routeHandlers = await import('../src/app/api/[[...path]]/route');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.
@@ -26,18 +22,19 @@ const APPROVER_ID = 'u2';
 const CUSTODIAN_ID = 'u3';
 const PURCHASE_DATE = getTodayIsoDate();
 
-let baseUrl: string;
-let server: Server;
-
 async function api(path: string, userId: string, init: RequestInit = {}) {
-  const res = await fetch(`${baseUrl}${path}`, {
+  const url = new URL(path, 'http://route-handler.test');
+  const method = (init.method || 'GET').toUpperCase() as keyof typeof routeHandlers;
+  const handler = routeHandlers[method] as typeof routeHandlers.GET;
+  const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
+  const res = await handler(new Request(url, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId,
       ...init.headers,
     },
-  });
+  }), { params: Promise.resolve({ path: segments }) });
   const body = await res.json().catch(() => undefined);
   return { status: res.status, body };
 }
@@ -71,17 +68,6 @@ const genCode = (claimId: string) =>
   api(`/api/claims/${claimId}/claim-code`, CUSTODIAN_ID, { method: 'PUT', body: JSON.stringify({}) });
 const markReady = (claimId: string) =>
   api(`/api/claims/${claimId}/ready-for-claim`, CUSTODIAN_ID, { method: 'POST', body: JSON.stringify({ payment_method: 'Cash' }) });
-
-beforeAll(async () => {
-  const app = await createApp();
-  server = app.listen(0);
-  const { port } = server.address() as AddressInfo;
-  baseUrl = `http://localhost:${port}`;
-});
-
-afterAll(() => {
-  server?.close();
-});
 
 describe('approval transition guard', () => {
   it('rejects re-approving a claim that already left Pending Approval', async () => {

@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { sql } from 'drizzle-orm';
 import { getPersistenceHealth } from '../../db/persistenceHealth';
 import { isDbConfigured } from '../../db/usersRepo';
 import { getDb } from '../../db/index';
@@ -16,7 +15,7 @@ healthRouter.get('/readyz', async (_req, res) => {
     return res.status(200).json({ status: 'ok', database: 'not_configured', persistence });
   }
   try {
-    await getDb().execute(sql`select 1`);
+    await getDb().$queryRaw`SELECT 1`;
     res.status(200).json({ status: 'ok', database: 'reachable', persistence });
   } catch (err: any) {
     res.status(503).json({ status: 'unavailable', database: 'unreachable', error: err?.message, persistence });

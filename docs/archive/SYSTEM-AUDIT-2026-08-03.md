@@ -93,7 +93,7 @@ What does exist:
 - A Drizzle ORM PostgreSQL schema in `src/db/schema.ts` with **25 prepared tables**.
 - A Drizzle configuration in `drizzle.config.ts` that expects a standard `DATABASE_URL`.
 - Generated migration files in `drizzle/`.
-- A PostgreSQL client factory in `src/db/index.ts` using `pg` and `drizzle-orm`.
+- A PostgreSQL client factory in `src/db/index.ts` using `pg` and the legacy ORM.
 - Database commands: `npm run db:generate`, `npm run db:push`, and `npm run db:studio`.
 
 What is not connected yet:

@@ -3,14 +3,15 @@ import { config } from '../config';
 import { state } from '../state';
 import { getUser } from '../middleware/auth';
 import { syncUsersToDb } from '../../db/usersRepo';
+import { serverEnv } from '../../../../src/config/env';
 
 export const authRouter = Router();
 
 const microsoftAuth = {
-  tenantId: process.env.MICROSOFT_TENANT_ID || process.env.TENANT_ID || '',
-  clientId: process.env.MICROSOFT_CLIENT_ID || process.env.CLIENT_ID || '',
-  clientSecret: process.env.MICROSOFT_CLIENT_SECRET || process.env.CLIENT_SECRET || '',
-  redirectUri: process.env.MICROSOFT_REDIRECT_URI || process.env.OAUTH_REDIRECT_URI || '',
+  tenantId: serverEnv.microsoftTenantId,
+  clientId: serverEnv.microsoftClientId,
+  clientSecret: serverEnv.microsoftClientSecret,
+  redirectUri: serverEnv.microsoftRedirectUri,
 };
 const microsoftAuthConfigured = Object.values(microsoftAuth).every(Boolean);
 
