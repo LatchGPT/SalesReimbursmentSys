@@ -6,7 +6,7 @@ import { ClaimStatus, ClaimType, MOM, MomDocumentType, DOCUMENT_TYPE_LABEL, Fiel
 import { MomContact, serializeContacts, joinDesignations } from '../../../lib/momContacts';
 import { submitClaimFlow, submitCashAdvanceFlow, submitLiquidationFlow, DraftLineItem } from '../../../lib/api';
 import { isClaimTypeEnabled } from '../../../lib/featureFlags';
-import { validateDynamicFields } from '../../../lib/dynamicFieldValidation';
+import { validateDynamicFields } from '../../../shared/validation/dynamicFieldValidation';
 import {
   getReimbursementDateError,
   getTodayIsoDate,

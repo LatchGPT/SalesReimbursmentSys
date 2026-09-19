@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { validateDynamicFields } from './dynamicFieldValidation';
-import { FieldDefinition } from '../types';
+import { FieldDefinition } from '../../types';
 
 function field(partial: Partial<FieldDefinition> & Pick<FieldDefinition, 'key' | 'input_type'>): FieldDefinition {
   return {
