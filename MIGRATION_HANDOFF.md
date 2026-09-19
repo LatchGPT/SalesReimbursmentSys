@@ -3,7 +3,7 @@
 Last updated: 2026-09-19  
 Current checkpoint: Phase 6 local deployment-readiness review complete; safe deployed-environment verification is pending.
 
-This document is the continuation point for moving the work to another computer or coding-agent session. Read `AGENTS.md`, `README.md`, and `MIGRATION_PLAN.md` before making changes.
+This document is the continuation point for moving the work to another computer or coding-agent session. Read `AGENTS.md` and `README.md` before making changes.
 
 ## Transfer this work safely
 
@@ -41,7 +41,7 @@ Do not run a Prisma migration, `prisma db push`, reset, destructive SQL, or any 
 ### Phase 0 — Discovery and plan
 
 - Inventoried the frontend, backend, Prisma layout, environment files, build tooling, tests, and deployment configuration.
-- Recorded the approved target and decisions in `MIGRATION_PLAN.md`.
+- Recorded the approved target and decisions in this handoff's “Fixed migration decisions” section.
 
 ### Phase 1 — Prisma migration
 
@@ -148,4 +148,4 @@ Local readiness review on 2026-09-19:
 
 Use this after opening the repository on the new computer:
 
-> Read `AGENTS.md`, `README.md`, `MIGRATION_PLAN.md`, `MIGRATION_HANDOFF.md`, and the dated dependency audit. Phase 6 local readiness is complete. Configure an approved non-production Vercel environment, correct its Supabase pooler credential, and finish the deployed checks in `DEPLOY.md` without touching production data. Keep Render available until the unified Vercel deployment and rollback plan are verified.
+> Read `AGENTS.md`, `README.md`, `MIGRATION_HANDOFF.md`, and the dated dependency audit. Phase 6 local readiness is complete. Configure an approved non-production Vercel environment, correct its Supabase pooler credential, and finish the deployed checks in `DEPLOY.md` without touching production data. Keep Render available until the unified Vercel deployment and rollback plan are verified.
