@@ -82,10 +82,10 @@ Use `.env.example` as the inventory. Secrets belong in the ignored root `.env` l
 
 Browser-visible build variables:
 
-| Variable | Purpose |
-|---|---|
-| `NEXT_PUBLIC_ENABLE_DEMO_LOGIN` | Exposes demo login and role deep links when `true` |
-| `NEXT_PUBLIC_ENABLE_ALL_CLAIM_TYPES` | Exposes soft-launched claim types when `true` |
+| Variable                             | Purpose                                            |
+| ------------------------------------ | -------------------------------------------------- |
+| `NEXT_PUBLIC_ENABLE_DEMO_LOGIN`      | Exposes demo login and role deep links when `true` |
+| `NEXT_PUBLIC_ENABLE_ALL_CLAIM_TYPES` | Exposes soft-launched claim types when `true`      |
 
 Unified Vercel server variables include `DATABASE_URL`, runtime/demo flags, `SUPABASE_*`, `UPSTASH_*`, `CRON_SECRET`, and future Microsoft identity settings. Never put database URLs, service-role keys, cron secrets, session secrets, Redis tokens, or Microsoft client secrets in `NEXT_PUBLIC_*` variables.
 
@@ -114,7 +114,7 @@ npm run lint
 npm test
 npm run build
 npm run build:legacy-backend
-npx prisma validate --config prisma.config.ts
+npx prisma validate --config config/prisma.config.ts
 ```
 
 Persistence changes additionally require backup/PITR confirmation, generated-SQL review, migration status, `/readyz`, and an end-to-end stored-row check.

@@ -47,7 +47,7 @@ Do not run a Prisma migration, `prisma db push`, reset, destructive SQL, or any 
 
 - Moved `backend/prisma/schema.prisma` to `prisma/schema.prisma`.
 - Moved the applied baseline migration to `prisma/migrations/20260918000000_baseline/migration.sql` without changing its content.
-- Added root `prisma.config.ts`.
+- Added `config/prisma.config.ts`.
 - Added the sole Prisma client factory at `src/lib/prisma.ts`, using a development `globalThis` cache and a production module singleton.
 - Configured Prisma for `native` and `rhel-openssl-3.0.x` binary targets.
 - Added root `postinstall` Prisma generation.
@@ -109,7 +109,7 @@ npm.cmd run lint
 npm.cmd test
 npm.cmd run build
 npm.cmd run build:legacy-backend
-npx.cmd prisma validate --config prisma.config.ts
+npx.cmd prisma validate --config config/prisma.config.ts
 git diff --check
 ```
 
