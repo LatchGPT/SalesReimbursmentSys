@@ -1,4 +1,4 @@
-import { MomContact } from '../../../lib/momContacts';
+import { MomContact } from '../index';
 import { Input, Label } from '../../../components/ui/Input';
 
 export interface ContactPersonsFieldProps {

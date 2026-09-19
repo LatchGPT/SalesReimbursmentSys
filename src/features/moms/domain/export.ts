@@ -1,6 +1,6 @@
-import { MOM } from '../../types';
-import { ExportSection, buildStructuredPdfBlob, exportStructuredPdf, exportStructuredWord } from './documentExport';
-import { formatContactsDisplay } from '../momContacts';
+import { MOM } from '../../../types';
+import { ExportSection, buildStructuredPdfBlob, exportStructuredPdf, exportStructuredWord } from '../../../lib/export/documentExport';
+import { formatContactsDisplay } from './contacts';
 
 function filename(mom: MOM, extension: string) {
   const safe = (mom.companyName || 'meeting').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');

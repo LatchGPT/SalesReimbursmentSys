@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card';
 import { Claim, MOM } from '../../../types';
 import { formatDateTime } from '../../../lib/date';
-import { formatContactsDisplay } from '../../../lib/momContacts';
+import { formatContactsDisplay } from '@/features/moms';
 import { uploadUrl } from '../../../lib/api';
 
 export function ClaimMomSection({

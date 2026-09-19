@@ -10,8 +10,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
 import { createMom, updateMom } from '../../../lib/api';
 import { validateDynamicFields } from '../../../shared/validation/dynamicFieldValidation';
-import { exportMomPdf, exportMomWord } from '../../../lib/momExport';
-import { MomContact, contactsFromMom, serializeContacts, joinDesignations } from '../../../lib/momContacts';
+import { MomContact, contactsFromMom, exportMomPdf, exportMomWord, joinDesignations, serializeContacts } from '../index';
 import { MOM, MomDocumentType, DOCUMENT_TYPE_LABEL, MinutesSource } from '../../../types';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

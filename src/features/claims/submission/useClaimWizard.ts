@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
 import { ClaimStatus, ClaimType, MOM, MomDocumentType, DOCUMENT_TYPE_LABEL, FieldDefinition, FieldDefinitionEntity } from '../../../types';
-import { MomContact, serializeContacts, joinDesignations } from '../../../lib/momContacts';
+import { MomContact, serializeContacts, joinDesignations } from '@/features/moms';
 import { submitClaimFlow, submitCashAdvanceFlow, submitLiquidationFlow, DraftLineItem } from '../../../lib/api';
 import { isClaimTypeEnabled } from '../../../lib/featureFlags';
 import { validateDynamicFields } from '../../../shared/validation/dynamicFieldValidation';

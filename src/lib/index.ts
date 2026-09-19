@@ -7,7 +7,6 @@ export * from './companyMatch';
 export * from './expenseCategories';
 export * from './featureFlags';
 export * from './globalSearch';
-export * from './momContacts';
 export * from './reimbursement';
 export * from './teamAnalytics';
 export * from './analytics';
