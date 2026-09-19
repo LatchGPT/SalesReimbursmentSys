@@ -18,7 +18,7 @@ npm run lint
 npm test
 npm run build
 npm run build:legacy-backend
-npx prisma validate --config prisma.config.ts
+npx prisma validate --config config/prisma.config.ts
 ```
 
 ## 2. Vercel project settings

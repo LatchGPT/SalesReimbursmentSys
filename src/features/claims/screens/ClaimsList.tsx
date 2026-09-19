@@ -13,7 +13,7 @@ import { FilterBar } from '../../../components/shared/FilterBar';
 import { Claim, ClaimStatus, UserRole } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { formatDate } from '../../../lib/date';
-import { claimTypeIcon, FINANCE_VISIBLE_STATUSES, getRequestAmountPresentation, isFinanceVisibleClaim } from '../../../lib/claimWorkflow';
+import { claimTypeIcon, FINANCE_VISIBLE_STATUSES, getRequestAmountPresentation, isFinanceVisibleClaim } from '../domain/claimWorkflow';
 import { buildFinancialRecordsCsv } from '../../../lib/financialRecordsCsv';
 
 const ACTIVE_STATUSES = [ClaimStatus.DRAFT, ClaimStatus.PENDING_APPROVAL, ClaimStatus.PROCESSING, ClaimStatus.READY_FOR_CLAIM];
@@ -224,11 +224,12 @@ export function ClaimsList() {
         </>
       )}
 
-      <FilterBar
-        searchValue={searchQuery}
-        onSearchChange={setSearchQuery}
-        searchPlaceholder="Search claims..."
-        quickFilters={[
+      <div className="mb-5">
+        <FilterBar
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search claims..."
+          quickFilters={[
           {
             type: 'select', key: 'status', label: 'Status', placeholder: 'All Statuses',
             value: statusFilter, onChange: setStatusFilter,
@@ -239,8 +240,8 @@ export function ClaimsList() {
             value: typeFilter, onChange: setTypeFilter,
             options: ['Reimbursement', 'Transport Reimbursement', 'Cash Advance', 'Liquidation'].map(t => ({ value: t, label: t })),
           },
-        ]}
-        advancedFilters={[
+          ]}
+          advancedFilters={[
           {
             type: 'select', key: 'client', label: 'Client', placeholder: 'All Clients',
             value: clientFilter, onChange: setClientFilter,
@@ -260,9 +261,10 @@ export function ClaimsList() {
             type: 'dateRange', key: 'submitted', label: 'Submitted',
             fromValue: dateFrom, toValue: dateTo, onFromChange: setDateFrom, onToChange: setDateTo,
           },
-        ]}
-        popoverDescription="Narrow claims by client, location, or submitted date."
-      />
+          ]}
+          popoverDescription="Narrow claims by client, location, or submitted date."
+        />
+      </div>
 
       <Card>
         {groupBy === 'none' ? (

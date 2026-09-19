@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '../ui/Button';
 import { useAppContext } from '../AppContext';
 import { ClaimStatus, DelegationStatus, UserRole } from '../../types';
-import { isCustodianProcessingClaim } from '../../lib/claimWorkflow';
+import { isCustodianProcessingClaim } from '@/features/claims';
 
 /** badgeKey ties a nav item to one of the live counts computed in Sidebar()
  *  below — new items on a queue, or unread mail, previously had no on-screen

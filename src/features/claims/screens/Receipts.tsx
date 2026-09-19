@@ -13,7 +13,7 @@ import { GroupByControl, TeamAnalytics } from '@/features/analytics';
 import { FilterBar } from '../../../components/shared/FilterBar';
 import { uploadUrl } from '../../../lib/api';
 import { ClaimStatus, UserRole } from '../../../types';
-import { FINANCE_VISIBLE_STATUSES, isFinanceVisibleClaim } from '../../../lib/claimWorkflow';
+import { FINANCE_VISIBLE_STATUSES, isFinanceVisibleClaim } from '../domain/claimWorkflow';
 
 interface ReceiptRecord {
   id: string;

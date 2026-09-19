@@ -7,7 +7,7 @@ import { formatMoney } from '../../../lib/money';
 import { CustodianActionButtons } from '../components/CustodianActionButtons';
 import { useAppContext } from '../../../components/AppContext';
 import { Pagination } from '../../../components/ui/Pagination';
-import { claimTypeIcon, getClaimAgingInfo, isCustodianProcessingClaim } from '../../../lib/claimWorkflow';
+import { claimTypeIcon, getClaimAgingInfo, isCustodianProcessingClaim } from '@/features/claims';
 import { Button } from '../../../components/ui/Button';
 import { Input, Label, Select } from '../../../components/ui/Input';
 

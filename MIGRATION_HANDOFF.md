@@ -3,7 +3,7 @@
 Last updated: 2026-09-19  
 Current checkpoint: Phase 6 local deployment-readiness review complete; safe deployed-environment verification is pending.
 
-This document is the continuation point for moving the work to another computer or coding-agent session. Read `AGENTS.md`, `README.md`, and `MIGRATION_PLAN.md` before making changes.
+This document is the continuation point for moving the work to another computer or coding-agent session. Read `AGENTS.md` and `README.md` before making changes.
 
 ## Transfer this work safely
 
@@ -41,13 +41,13 @@ Do not run a Prisma migration, `prisma db push`, reset, destructive SQL, or any 
 ### Phase 0 — Discovery and plan
 
 - Inventoried the frontend, backend, Prisma layout, environment files, build tooling, tests, and deployment configuration.
-- Recorded the approved target and decisions in `MIGRATION_PLAN.md`.
+- Recorded the approved target and decisions in this handoff's “Fixed migration decisions” section.
 
 ### Phase 1 — Prisma migration
 
 - Moved `backend/prisma/schema.prisma` to `prisma/schema.prisma`.
 - Moved the applied baseline migration to `prisma/migrations/20260918000000_baseline/migration.sql` without changing its content.
-- Added root `prisma.config.ts`.
+- Added `config/prisma.config.ts`.
 - Added the sole Prisma client factory at `src/lib/prisma.ts`, using a development `globalThis` cache and a production module singleton.
 - Configured Prisma for `native` and `rhel-openssl-3.0.x` binary targets.
 - Added root `postinstall` Prisma generation.
@@ -109,7 +109,7 @@ npm.cmd run lint
 npm.cmd test
 npm.cmd run build
 npm.cmd run build:legacy-backend
-npx.cmd prisma validate --config prisma.config.ts
+npx.cmd prisma validate --config config/prisma.config.ts
 git diff --check
 ```
 
@@ -148,4 +148,4 @@ Local readiness review on 2026-09-19:
 
 Use this after opening the repository on the new computer:
 
-> Read `AGENTS.md`, `README.md`, `MIGRATION_PLAN.md`, `MIGRATION_HANDOFF.md`, and the dated dependency audit. Phase 6 local readiness is complete. Configure an approved non-production Vercel environment, correct its Supabase pooler credential, and finish the deployed checks in `DEPLOY.md` without touching production data. Keep Render available until the unified Vercel deployment and rollback plan are verified.
+> Read `AGENTS.md`, `README.md`, `MIGRATION_HANDOFF.md`, and the dated dependency audit. Phase 6 local readiness is complete. Configure an approved non-production Vercel environment, correct its Supabase pooler credential, and finish the deployed checks in `DEPLOY.md` without touching production data. Keep Render available until the unified Vercel deployment and rollback plan are verified.

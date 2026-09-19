@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Modal } from '../../../components/shared/Modal';
 import { MOM } from '../../../types';
-import { buildMomPdfBlob } from '../../../lib/momExport';
+import { buildMomPdfBlob } from '../index';
 
 export interface MomClientPreviewModalProps {
   mom: MOM;

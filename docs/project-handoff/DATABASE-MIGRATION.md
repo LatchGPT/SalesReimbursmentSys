@@ -18,7 +18,7 @@ Last verified: 2026-09-18.
 
 `DATABASE_URL` is the unified Vercel runtime connection and remains the legacy Render runtime connection during cutover. Use Supabase's transaction pooler with TLS. The API uses a bounded `pg.Pool` through Prisma's PostgreSQL adapter.
 
-`DIRECT_URL` is the administrative connection used by `prisma.config.ts` for introspection and Prisma Migrate. Do not use it in browser code or routine application traffic.
+`DIRECT_URL` is the administrative connection used by `config/prisma.config.ts` for introspection and Prisma Migrate. Do not use it in browser code or routine application traffic.
 
 The current direct credential was sufficient for backup, introspection, and baseline verification. The separately supplied pooler credential was rejected during this migration and must be corrected before Render can persist data.
 

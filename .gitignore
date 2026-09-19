@@ -15,5 +15,10 @@ backend/src/generated/prisma/
 src/generated/prisma/
 backend/uploads/*
 !backend/uploads/.gitkeep
+<<<<<<< HEAD
 .vercel
 .env*
+=======
+SalesReimbursmentSystem/
+
+>>>>>>> 6f33f80bc69737c1ac37a4291c1933bcb85419fc

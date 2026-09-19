@@ -10,7 +10,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { ClaimStatus } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { formatLongDate } from '../../../lib/date';
-import { getRequestAmountPresentation } from '../../../lib/claimWorkflow';
+import { getRequestAmountPresentation } from '../domain/claimWorkflow';
 
 const ACTIVE_STATUSES = [ClaimStatus.DRAFT, ClaimStatus.PENDING_APPROVAL, ClaimStatus.PROCESSING, ClaimStatus.READY_FOR_CLAIM];
 const LIQUIDATION_DEADLINE_DAYS = 7; // mirrors server.ts's LIQUIDATION_DEADLINE_DAYS

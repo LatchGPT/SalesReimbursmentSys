@@ -1,6 +1,6 @@
 import { Claim, ExpenseLineItem, MOM } from '../../types';
 import { ExportSection, exportStructuredPdf, exportStructuredWord } from './documentExport';
-import { formatContactsDisplay } from '../momContacts';
+import { formatContactsDisplay } from '../../features/moms';
 
 const money = (value?: number) =>
   `PHP ${(Number(value) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

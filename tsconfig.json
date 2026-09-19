@@ -44,7 +44,7 @@
     "backend/src/**/*.ts",
     "backend/server.ts",
     "test/**/*.ts",
-    "vitest.config.ts",
+    "config/vitest.config.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [

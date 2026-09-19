@@ -7,8 +7,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { uploadUrl, sendMomToClient } from '../../../lib/api';
 import { formatDateTime } from '../../../lib/date';
 import { DOCUMENT_TYPE_LABEL, MomDocumentType } from '../../../types';
-import { exportMomPdf, exportMomWord } from '../../../lib/momExport';
-import { contactsFromMom } from '../../../lib/momContacts';
+import { contactsFromMom, exportMomPdf, exportMomWord } from '../index';
 import { useToast } from '../../../components/shared/ToastContext';
 
 export function MomDetail() {

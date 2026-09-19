@@ -10,7 +10,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
 import { transferApprover } from '../../../lib/api';
 import { Pagination } from '../../../components/ui/Pagination';
-import { claimTypeIcon, getClaimAgingInfo } from '../../../lib/claimWorkflow';
+import { claimTypeIcon, getClaimAgingInfo } from '@/features/claims';
 import { formatDate } from '../../../lib/date';
 import { Input, Label, Select } from '../../../components/ui/Input';
 
