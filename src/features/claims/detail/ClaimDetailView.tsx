@@ -9,7 +9,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
 import { confirmReceipt, resubmitClaimFlow, DraftLineItem } from '../../../lib/api';
 import { UserRole, ClaimStatus, ExpenseLineItem } from '../../../types';
-import { isCustodianProcessingClaim } from '../../../lib/claimWorkflow';
+import { isCustodianProcessingClaim } from '../domain/claimWorkflow';
 import { exportClaimPdf, exportClaimWord } from '../../../lib/claimExport';
 import { ReceiptPreviewModal } from './ReceiptPreviewModal';
 import { ConfirmReceiptModal } from './ConfirmReceiptModal';

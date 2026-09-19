@@ -1,4 +1,4 @@
-import { Claim, ClaimStatus, ClaimType } from '../../types';
+import { Claim, ClaimStatus, ClaimType } from '../../../types';
 
 export function claimTypeIcon(type: ClaimType): string {
   if (type === 'Transport Reimbursement') return 'local_taxi';

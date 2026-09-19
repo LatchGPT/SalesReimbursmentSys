@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { Claim, ClaimStatus, DelegationStatus, UserRole } from '../../types';
-import { isCustodianProcessingClaim, isFinanceVisibleClaim } from '../../lib/claimWorkflow';
+import { isCustodianProcessingClaim, isFinanceVisibleClaim } from '@/features/claims';
 import { formatMoney } from '../../lib/money';
 import { rankSearchMatch } from '../../lib/globalSearch';
 

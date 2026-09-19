@@ -7,7 +7,7 @@ import { KPICard } from '../../../components/ui/KPICard';
 import { useAppContext } from '../../../components/AppContext';
 import { ClaimStatus } from '../../../types';
 import { formatMoney } from '../../../lib/money';
-import { claimTypeIcon, getClaimAgingInfo, isCustodianProcessingClaim } from '../../../lib/claimWorkflow';
+import { claimTypeIcon, getClaimAgingInfo, isCustodianProcessingClaim } from '@/features/claims';
 
 export function CustodianDashboard() {
   const navigate = useNavigate();

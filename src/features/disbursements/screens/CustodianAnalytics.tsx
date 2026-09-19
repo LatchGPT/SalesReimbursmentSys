@@ -5,7 +5,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, ReferenceLine } from 'recharts';
 import { formatMoney, formatAxisMoney } from '../../../lib/money';
 import { Claim, ClaimStatus, ClaimType, StatusHistory } from '../../../types';
-import { isCustodianProcessingClaim } from '../../../lib/claimWorkflow';
+import { isCustodianProcessingClaim } from '@/features/claims';
 import { CHART_ANIMATION_PROPS, CHART_AXIS_PROPS, CHART_COLORS, CHART_GRID_PROPS, calculatePercentChange } from '../../../lib/chartTheme';
 import { ChartEmptyState, ChartTooltip, TrendBadge, formatCompactChartValue } from '@/features/analytics';
 

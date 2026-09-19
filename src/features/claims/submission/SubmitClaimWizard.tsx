@@ -2,7 +2,7 @@ import { Button, cn } from '../../../components/ui/Button';
 import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 import { MomClientPreviewModal } from '@/features/moms';
 import { exportMomPdf, exportMomWord } from '../../../lib/momExport';
-import { REIMBURSEMENT_FILING_WINDOW_DAYS } from '../../../lib/reimbursementPolicy';
+import { REIMBURSEMENT_FILING_WINDOW_DAYS } from '../domain/reimbursementPolicy';
 import { useClaimWizard } from './useClaimWizard';
 import { ClaimTypeStep } from './ClaimTypeStep';
 import { LineItemsStep } from './LineItemsStep';

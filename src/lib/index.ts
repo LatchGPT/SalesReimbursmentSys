@@ -1,6 +1,5 @@
 export * from './api';
 export * from './export';
-export * from './policy';
 export * from './money';
 export * from './date';
 export * from './chartTheme';

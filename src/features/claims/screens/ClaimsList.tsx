@@ -13,7 +13,7 @@ import { FilterBar } from '../../../components/shared/FilterBar';
 import { Claim, ClaimStatus, UserRole } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { formatDate } from '../../../lib/date';
-import { claimTypeIcon, FINANCE_VISIBLE_STATUSES, getRequestAmountPresentation, isFinanceVisibleClaim } from '../../../lib/claimWorkflow';
+import { claimTypeIcon, FINANCE_VISIBLE_STATUSES, getRequestAmountPresentation, isFinanceVisibleClaim } from '../domain/claimWorkflow';
 import { buildFinancialRecordsCsv } from '../../../lib/financialRecordsCsv';
 
 const ACTIVE_STATUSES = [ClaimStatus.DRAFT, ClaimStatus.PENDING_APPROVAL, ClaimStatus.PROCESSING, ClaimStatus.READY_FOR_CLAIM];

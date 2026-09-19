@@ -1,2 +1,2 @@
-export { getReimbursementDateError, getTodayIsoDate } from '../../lib/reimbursementPolicy';
+export { getReimbursementDateError, getTodayIsoDate } from './domain/reimbursementPolicy';
 export { validateDynamicFields } from '../../lib/dynamicFieldValidation';

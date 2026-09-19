@@ -8,7 +8,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { ClaimStatus } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { formatDate } from '../../../lib/date';
-import { claimTypeIcon, isFinanceVisibleClaim } from '../../../lib/claimWorkflow';
+import { claimTypeIcon, isFinanceVisibleClaim } from '@/features/claims';
 
 export function FinanceDashboard() {
   const navigate = useNavigate();

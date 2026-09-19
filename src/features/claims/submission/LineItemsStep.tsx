@@ -7,7 +7,7 @@ import { formatMoney } from '../../../lib/money';
 import {
   getReimbursementDateError,
   validateReimbursementPurchaseDate,
-} from '../../../lib/reimbursementPolicy';
+} from '../domain/reimbursementPolicy';
 import { useClaimWizard } from './useClaimWizard';
 
 export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWizard> }) {

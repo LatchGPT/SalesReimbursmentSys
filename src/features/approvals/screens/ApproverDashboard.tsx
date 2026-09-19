@@ -7,7 +7,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { ClaimStatus, DelegationStatus } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { formatDate, formatDateTime, formatLongDate } from '../../../lib/date';
-import { claimTypeIcon, getClaimAgingInfo } from '../../../lib/claimWorkflow';
+import { claimTypeIcon, getClaimAgingInfo } from '@/features/claims';
 import { TeamMemberSpending } from '@/features/analytics';
 
 const DECISION_STATUSES: string[] = [ClaimStatus.APPROVED, ClaimStatus.REJECTED, ClaimStatus.RETURNED];

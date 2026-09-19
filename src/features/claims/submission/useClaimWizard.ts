@@ -13,7 +13,7 @@ import {
   REIMBURSEMENT_FILING_WINDOW_DAYS,
   shiftIsoDate,
   validateReimbursementPurchaseDate,
-} from '../../../lib/reimbursementPolicy';
+} from '../domain/reimbursementPolicy';
 
 export const TYPE_PARAM_MAP: Record<string, ClaimType> = {
   reimbursement: 'Reimbursement',

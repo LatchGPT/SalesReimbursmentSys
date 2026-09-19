@@ -10,7 +10,7 @@
 Object.assign(process.env, { AUTO_SEED: 'false', NODE_ENV: 'production' });
 
 import { describe, it, expect } from 'vitest';
-import { getTodayIsoDate, shiftIsoDate } from '../src/lib/reimbursementPolicy';
+import { getTodayIsoDate, shiftIsoDate } from '../src/features/claims';
 
 const routeHandlers = await import('../src/app/api/[[...path]]/route');
 
