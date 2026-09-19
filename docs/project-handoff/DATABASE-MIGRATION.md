@@ -16,7 +16,7 @@ Last verified: 2026-09-18.
 
 ## Connection strategy
 
-`DATABASE_URL` is the Render runtime connection. Use Supabase's IPv4 session pooler with TLS. The API uses a bounded `pg.Pool` through Prisma's PostgreSQL adapter.
+`DATABASE_URL` is the unified Vercel runtime connection and remains the legacy Render runtime connection during cutover. Use Supabase's transaction pooler with TLS. The API uses a bounded `pg.Pool` through Prisma's PostgreSQL adapter.
 
 `DIRECT_URL` is the administrative connection used by `prisma.config.ts` for introspection and Prisma Migrate. Do not use it in browser code or routine application traffic.
 
@@ -29,7 +29,7 @@ The current direct credential was sufficient for backup, introspection, and base
 3. Update `prisma/schema.prisma`.
 4. Generate migration SQL in a safe development workflow; never use reset or forced push against production.
 5. Review SQL for drops, truncation, narrowing conversions, rewritten columns, or locking risk and report them before execution.
-6. Apply with `npm run db:migrate` as a deliberate CI/Render pre-deploy/manual step—not from Vercel, application startup, or a request handler.
+6. Apply with `npm run db:migrate` as a deliberate administrative CI/manual step—not from a Vercel build, application startup, or request handler.
 7. Run `npm run db:status`, `/readyz`, automated tests, and an end-to-end persistence check.
 
 Never edit the applied baseline or mark a future migration applied unless its SQL is already reflected in the database.

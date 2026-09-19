@@ -11,9 +11,9 @@
 Object.assign(process.env, { AUTO_SEED: 'false', NODE_ENV: 'production' });
 
 import { describe, it, expect } from 'vitest';
-import { getTodayIsoDate } from '../frontend/src/lib/reimbursementPolicy';
+import { getTodayIsoDate } from '../src/lib/reimbursementPolicy';
 
-const routeHandlers = await import('../frontend/src/app/api/[[...path]]/route');
+const routeHandlers = await import('../src/app/api/[[...path]]/route');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.

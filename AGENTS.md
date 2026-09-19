@@ -2,14 +2,20 @@
 
 Project-specific operating guide for humans and coding agents. Read this file and `README.md` before non-trivial changes. The database contains live production data.
 
-Last verified: 2026-09-18.
+Last verified: 2026-09-19.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+This project uses Next.js 16, whose APIs and conventions may differ from older versions. Read the relevant installed guide under `node_modules/next/dist/docs/` before changing Next.js code, and heed deprecation notices.
+
+<!-- END:nextjs-agent-rules -->
 
 ## 1. Prompt
 
 Every task should state which deployable it affects:
 
-- `frontend/`: Next.js 16 application deployed to Vercel.
-- `backend/`: Express API deployed as a persistent Render web service.
+- `src/`: unified Next.js 16 application deployed to Vercel, including UI and Route Handlers.
+- `backend/`: retained Express implementation and persistent Render rollback service during cutover.
 - `docs/` or root infrastructure: shared documentation and deployment configuration.
 - Database: Supabase PostgreSQL accessed through Prisma.
 
@@ -24,28 +30,30 @@ Supabase is the live schema and data source of truth. `prisma/schema.prisma` is 
 Directory responsibilities:
 
 ```text
-frontend/
-  src/app/                 Next.js App Router shell
-  src/screens/             route-level UI screens
-  src/components/          shared and presentational UI
-  src/lib/                 browser-safe API adapter and UI utilities
+src/
+  app/                      Next.js App Router pages and Route Handlers
+  features/                 feature UI, services, types, and server registrations
+  components/               shared and presentational UI
+  config/                   validated public and server environment access
+  lib/                      browser utilities and sole Prisma client singleton
 backend/
-  src/server/routes/       HTTP handlers
-  src/server/services/     backend business logic
-  src/db/                  Prisma repositories and the sole client singleton
-  prisma/                  schema and migrations
+  src/server/routes/        retained HTTP controllers used by the Route Handler adapter
+  src/server/services/      backend business logic
+  src/db/                   Prisma repositories
+prisma/                     schema and migrations
+public/                     Next.js static assets
 docs/                      product, handoff, and operational documentation
 test/                      cross-service and backend integration tests
 render.yaml                Render service definition
 vercel.json                Vercel Next.js build definition
 ```
 
-Data flow is `screen/component -> frontend/src/lib/api -> Render route -> backend service/repository -> Prisma -> Supabase`. UI code must never import Prisma. `src/lib/prisma.ts` is the only place allowed to construct a Prisma client or PostgreSQL pool.
+Primary data flow is `screen/component -> src/lib/api -> same-origin Next.js Route Handler -> backend service/repository -> Prisma -> Supabase`. The retained Render service uses the same backend service/repository layer during cutover. UI code must never import Prisma. `src/lib/prisma.ts` is the only place allowed to construct a Prisma client or PostgreSQL pool.
 
 Read these before changing related areas:
 
 - DB query/schema: `prisma/schema.prisma`, `src/lib/prisma.ts`, and the affected `*Repo.ts`.
-- API behavior: the affected file in `backend/src/server/routes/`, its service, and `frontend/src/lib/api/`.
+- API behavior: the affected Route Handler in `src/app/`, controller/service under `backend/src/server/`, and `src/lib/api/`.
 - Persistence semantics: the “Database and demo-mode behavior” section in `README.md`.
 - Deployment: `render.yaml`, `vercel.json`, `.env.example`, and the “Deployment” section in `README.md`.
 - Production readiness: `docs/project-handoff/PRODUCTION-PUNCHLIST.md`.
@@ -57,13 +65,13 @@ The app still has demo-only identity and an in-memory presentation mode. `DEMO_M
 Run commands from the repository root unless noted:
 
 ```bash
-npm ci                         # install both npm workspaces
-npm run dev                    # Next.js :3001 + Express :3000
-npm run dev:frontend           # Next.js only
-npm run dev:backend            # Express only
+npm ci                         # install the root app and retained backend workspace
+npm run dev                    # unified Next.js application on :3000
+npm run dev:legacy-backend     # retained Express service only
 npm run lint                   # strict TypeScript check
 npm test                       # Vitest suite
-npm run build                  # production builds for both deployables
+npm run build                  # unified Vercel/Next.js production build
+npm run build:legacy-backend   # retained Render production build
 npm run db:generate            # generate Prisma Client
 npm run db:status              # inspect migration state via DIRECT_URL
 npm run db:migrate             # deploy pending migrations; confirmation required
@@ -72,9 +80,9 @@ npm run db:studio              # Prisma Studio; treat production data as live
 
 Environment boundaries:
 
-- Vercel receives only `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_ENABLE_DEMO_LOGIN` from this project.
-- Render receives `DATABASE_URL`, `ALLOWED_ORIGINS`, runtime flags, identity secrets, and optionally `UPLOAD_DIR`.
-- `DIRECT_URL` is an administrative migration/introspection credential. Keep it out of browser code. On Render it is only for an explicit migration step, never the running app.
+- Vercel receives the unified server runtime variables (`DATABASE_URL`, runtime flags, Supabase Storage, Upstash, cron, and identity settings) plus explicitly public `NEXT_PUBLIC_*` flags.
+- Render temporarily retains `DATABASE_URL`, `ALLOWED_ORIGINS`, runtime flags, identity secrets, and optionally `UPLOAD_DIR` until cutover is verified.
+- `DIRECT_URL` is an administrative migration/introspection credential. Keep it out of browser code and normal Vercel runtime; it is only for an explicit migration step.
 - Runtime `DATABASE_URL` should use Supabase’s IPv4 session pooler. `DIRECT_URL` should use the direct database host with TLS.
 - Local secrets belong in ignored `.env`; `.env.example` contains placeholders only.
 
@@ -86,7 +94,7 @@ Guardrails:
 - Never instantiate a second `PrismaClient` or `pg.Pool`; use `src/lib/prisma.ts`.
 - Do not run migrations from Vercel functions or normal application startup. Use a deliberate deploy/CI step after approval.
 - Preserve function signatures during repository changes when practical. Type-check and test after each small batch.
-- Render is the API and scheduled-job host. Vercel is the frontend only.
+- Vercel is the target unified application/API and scheduled-job host. Render remains a temporary rollback service until deployment verification explicitly authorizes retirement.
 
 ## 4. Loop
 

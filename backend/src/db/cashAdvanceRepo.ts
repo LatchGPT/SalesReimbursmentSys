@@ -7,6 +7,7 @@ import type {
   liquidation_variance_type,
   status_histories as StatusHistoryRow,
 } from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
 import {
   CashAdvanceStatus,
   LiquidationStatus,
@@ -20,7 +21,7 @@ import type {
 } from '../serverTypes';
 import { getDb } from './index';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
 function cashAdvanceToRow(cashAdvance: CashAdvance) {
   return {

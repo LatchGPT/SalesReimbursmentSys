@@ -7,6 +7,7 @@ import type {
   support_requests as SupportRequestRow,
   support_status,
 } from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
 import {
   DelegationStatus,
   ReviewMeetingStatus,
@@ -22,7 +23,7 @@ import type {
 } from '../serverTypes';
 import { getDb } from './index';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
 function supportStatusToPrisma(status: SupportRequestStatus): support_status {
   return status === 'In Progress' ? 'In_Progress' : status as support_status;

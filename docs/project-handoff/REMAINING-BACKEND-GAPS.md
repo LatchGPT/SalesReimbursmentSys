@@ -12,19 +12,19 @@ Last reviewed: 2026-09-18.
 ## Durability and operations
 
 - Demo mode intentionally keeps generated in-process read state; real operation requires `DEMO_MODE=false`.
-- Render filesystem uploads are ephemeral unless a disk is mounted. Object storage is preferred before real use.
+- Supabase Storage is implemented; deployed bucket privacy, signed-upload CORS, authorization, retention, and recovery still require verification.
 - Email/Teams delivery remains simulated; durable provider delivery and retry ownership are required.
 - External error tracking, alerting, retention, backup automation, and restore drills remain open.
 
 ## Scale and architecture
 
-- Process-local caches and scheduled jobs assume a single Render instance. Horizontal scaling requires shared state, idempotent job ownership, and cache removal/invalidation.
+- Process-local compatibility state is rehydrated per serverless request; completing repository-native handlers remains preferable to relying on full-state hydration.
 - Search and large reporting workloads are browser/process oriented and need server-side pagination/query plans at production volume.
 - Cross-domain write sequences should be audited for transactions and idempotency.
 
 ## Already completed
 
-- Next.js frontend separated for Vercel; Express API separated for Render.
+- Root Next.js pages and Route Handlers are unified for Vercel; the Express/Render service is retained temporarily for rollback.
 - Prisma is the sole ORM and production has a non-destructive baseline.
 - One Prisma client/pool singleton is used by all repository modules.
 - Core reimbursement, cash advance/liquidation, users, reference data, delegation, meetings, and support repositories persist through Prisma.

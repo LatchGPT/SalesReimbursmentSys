@@ -25,9 +25,3 @@ process.env.DATABASE_URL = '';
 // so that coverage is preserved while production stays gated.
 process.env.ENABLE_ALL_CLAIM_TYPES = '1';
 
-// The smoke/workflow suites drive dozens of real HTTP requests through the
-// server per run; pino-http's per-request access log would otherwise flood
-// the test output with a JSON line per call and bury real assertion
-// failures in noise. Silent here, unaffected everywhere else (dev/prod set
-// their own LOG_LEVEL or fall back to pino's "info" default).
-process.env.LOG_LEVEL = 'silent';

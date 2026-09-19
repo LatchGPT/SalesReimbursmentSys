@@ -10,6 +10,7 @@ import type {
   mom_status,
   status_histories as StatusHistoryRow,
 } from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
 import type {
   Approval,
   Claim,
@@ -25,7 +26,7 @@ import { getDb } from './index';
 import { recordDbFailure, recordDbSuccess } from './persistenceHealth';
 import { trackPersistence } from './persistenceScope';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
 function claimStatusToPrisma(status: ClaimStatus): claim_status {
   if (status === 'Pending Approval') return 'Pending_Approval';

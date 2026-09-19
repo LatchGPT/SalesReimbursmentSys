@@ -2,10 +2,11 @@ import type {
   status_histories as StatusHistoryRow,
   users as UserRow,
 } from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
 import type { StatusHistory, User } from '../serverTypes';
 import { getDb } from './index';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
 function toRow(user: User) {
   return {

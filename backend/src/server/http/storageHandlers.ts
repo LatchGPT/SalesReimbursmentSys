@@ -3,6 +3,7 @@ import { UserRole } from '../../serverTypes';
 import { state } from '../state';
 import { hydrateServerlessState } from '../stateLoader';
 import { findUploadAccessCheck } from '../services/authorization';
+import { serverEnv } from '../../../../src/config/env';
 
 const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_UPLOAD_MIME_TYPES = new Set([
@@ -26,13 +27,13 @@ function json(body: unknown, status = 200): Response {
 }
 
 function storageConfig(): { baseUrl: string; serviceKey: string; bucket: string } | null {
-  const baseUrl = process.env.SUPABASE_URL?.replace(/\/$/, '');
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const baseUrl = serverEnv.supabaseUrl;
+  const serviceKey = serverEnv.supabaseServiceRoleKey;
   if (!baseUrl || !serviceKey) return null;
   return {
     baseUrl,
     serviceKey,
-    bucket: process.env.SUPABASE_STORAGE_BUCKET || 'uploads',
+    bucket: serverEnv.supabaseStorageBucket,
   };
 }
 

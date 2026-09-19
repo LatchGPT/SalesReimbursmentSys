@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { PrismaClient } from '../generated/prisma/client';
+import { requireServerValue, serverEnv } from '../config/env';
 
 type PrismaClientInstance = InstanceType<typeof PrismaClient>;
 
@@ -17,20 +18,12 @@ export function __setTestDb(db: PrismaClientInstance | undefined): void {
 }
 
 function createPrismaClient(): PrismaClientInstance {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is required before accessing Prisma');
-  }
-
-  const configuredPoolMax = Number(process.env.DATABASE_POOL_MAX || '1');
-  const poolMax = Number.isSafeInteger(configuredPoolMax) && configuredPoolMax > 0
-    ? configuredPoolMax
-    : 1;
+  const connectionString = requireServerValue('DATABASE_URL', serverEnv.databaseUrl);
   const pool = new Pool({
     connectionString,
     // A Vercel deployment can create many function instances. Keep each
     // instance's pool small and let Supabase's transaction pooler multiplex it.
-    max: poolMax,
+    max: serverEnv.databasePoolMax,
     connectionTimeoutMillis: 10_000,
   });
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
@@ -46,7 +39,7 @@ function createPrismaClient(): PrismaClientInstance {
 export function getDb(): PrismaClientInstance {
   if (testDbOverride) return testDbOverride;
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (!serverEnv.isProduction) {
     globalForPrisma.salesReimbursementPrisma ??= createPrismaClient();
     return globalForPrisma.salesReimbursementPrisma;
   }
@@ -56,7 +49,7 @@ export function getDb(): PrismaClientInstance {
 }
 
 export async function disconnectDb(): Promise<void> {
-  const client = process.env.NODE_ENV === 'production'
+  const client = serverEnv.isProduction
     ? productionPrisma
     : globalForPrisma.salesReimbursementPrisma;
 

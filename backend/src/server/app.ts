@@ -2,7 +2,6 @@ import express from 'express';
 import { config } from './config';
 import { state } from './state';
 import { Request, Response } from 'express';
-// import { httpLogger } from './middleware/logging';
 import { configureSecurityMiddleware } from './middleware/security';
 import { financeReadOnlyMiddleware } from './middleware/auth';
 import { healthRouter } from './routes/health.routes';
@@ -61,7 +60,7 @@ app.get('/api/health', (req: Request, res: Response) => {
         state.users.length = 0;
         state.users.push(...dbUsers);
         usersLoadedFromDb = true;
-      } else if (demoModeEnabled && process.env.AUTO_SEED !== 'false') {
+      } else if (demoModeEnabled && config.autoSeed) {
         await syncUsersToDb(state.users);
       } else {
         state.users.length = 0;
@@ -134,9 +133,6 @@ app.get('/api/health', (req: Request, res: Response) => {
     state.fieldDefinitions = [];
   }
 
-  // HTTP logger
-  // app.use(httpLogger);
-
   // Security middleware (Helmet, CORS, Rate Limiters)
   configureSecurityMiddleware(app);
 
@@ -169,7 +165,7 @@ app.get('/api/health', (req: Request, res: Response) => {
   app.use('/api', adminRouter);
 
   // Auto-seed on startup unless explicitly disabled.
-  if (demoModeEnabled && process.env.AUTO_SEED !== 'false') {
+  if (demoModeEnabled && config.autoSeed) {
     try {
       state.suppressHistoryPersistence = true;
       try {

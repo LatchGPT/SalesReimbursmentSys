@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import * as apiRoute from '../frontend/src/app/api/[[...path]]/route';
-import { GET as apiHealth } from '../frontend/src/app/api/health/route';
-import { GET as cron } from '../frontend/src/app/api/cron/hourly/route';
-import { POST as upload } from '../frontend/src/app/api/upload/route';
-import { POST as signUpload } from '../frontend/src/app/api/upload/sign/route';
-import { GET as healthz } from '../frontend/src/app/healthz/route';
-import { GET as readyz } from '../frontend/src/app/readyz/route';
-import { GET as download } from '../frontend/src/app/uploads/[filename]/route';
+import * as apiRoute from '../src/app/api/[[...path]]/route';
+import { GET as apiHealth } from '../src/app/api/health/route';
+import { GET as cron } from '../src/app/api/cron/hourly/route';
+import { POST as upload } from '../src/app/api/upload/route';
+import { POST as signUpload } from '../src/app/api/upload/sign/route';
+import { GET as healthz } from '../src/app/healthz/route';
+import { GET as readyz } from '../src/app/readyz/route';
+import { GET as download } from '../src/app/uploads/[filename]/route';
 
 const originalCronSecret = process.env.CRON_SECRET;
 

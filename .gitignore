@@ -1,13 +1,13 @@
 node_modules/
 build/
 dist/
-frontend/dist/
-frontend/.next/
+.next/
 backend/dist/
 coverage/
 tmp/
 .DS_Store
 *.log
+*.tsbuildinfo
 .env*
 !.env.example
 .local-backups/
@@ -15,3 +15,5 @@ backend/src/generated/prisma/
 src/generated/prisma/
 backend/uploads/*
 !backend/uploads/.gitkeep
+.vercel
+.env*

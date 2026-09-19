@@ -3,6 +3,7 @@ import type {
   field_definitions as FieldDefinitionRow,
   status_histories as StatusHistoryRow,
 } from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
 import type {
   Company,
   FieldDefinition,
@@ -11,7 +12,7 @@ import type {
 } from '../serverTypes';
 import { getDb, type Db } from './index';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
 function companyToRow(company: Company) {
   return {

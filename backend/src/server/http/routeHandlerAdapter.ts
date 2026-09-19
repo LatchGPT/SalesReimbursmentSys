@@ -13,6 +13,7 @@ import { momsRouter } from '../../../../src/features/moms/server';
 import { reviewMeetingsRouter } from '../../../../src/features/review-meetings/server';
 import { supportRouter } from '../../../../src/features/support/server';
 import { delegationsRouter, usersRouter } from '../../../../src/features/users/server';
+import { serverEnv } from '../../../../src/config/env';
 
 type RouteLayer = {
   route?: {
@@ -99,8 +100,8 @@ async function requestBody(request: Request): Promise<unknown> {
 }
 
 export async function enforceApiRateLimit(request: Request, pathname: string): Promise<Response | null> {
-  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const redisUrl = serverEnv.upstashRedisUrl;
+  const redisToken = serverEnv.upstashRedisToken;
   if (!redisUrl || !redisToken) return null;
 
   const isAuth = pathname.startsWith('/auth/') && pathname !== '/auth/config';

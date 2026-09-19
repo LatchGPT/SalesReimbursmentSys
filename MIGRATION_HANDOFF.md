@@ -1,7 +1,7 @@
 # Unified Next.js migration handoff
 
-Last updated: 2026-09-18  
-Current checkpoint: Phase 3 complete; Phase 4 has not started.
+Last updated: 2026-09-19  
+Current checkpoint: Phase 6 local deployment-readiness review complete; safe deployed-environment verification is pending.
 
 This document is the continuation point for moving the work to another computer or coding-agent session. Read `AGENTS.md`, `README.md`, and `MIGRATION_PLAN.md` before making changes.
 
@@ -78,7 +78,27 @@ Never edit the applied `20260918000000_baseline` migration.
 - Added server feature registration boundaries under root `src/features/*/server/`.
 - Kept the existing React Router behavior behind the thin App Router catch-all page. Removing that compatibility layer requires a separate reviewed change.
 
-The only file left under the old `frontend/src/screens/` tree is the apparently unused `shared/PlaceholderPage.tsx`. Do not delete it until it appears in the Phase 4 approval list and deletion is explicitly approved.
+At the Phase 3 checkpoint, the only file left under the old `frontend/src/screens/` tree was `shared/PlaceholderPage.tsx`; it was subsequently approved and removed in Phase 4.
+
+### Phase 4 — Approved cleanup
+
+- Inventoried the legacy Express/Render path, React Router shell, compatibility API and component surfaces, environment variables, documentation, and generated output before deleting anything.
+- Removed the approved unused `frontend/src/screens/shared/PlaceholderPage.tsx` file.
+- Removed twelve approved zero-consumer component forwarding files under `frontend/src/components/shared/`; their feature-owned implementations remain in place.
+- Removed the unused Pino logging middleware, its three package dependencies, and the associated `LOG_LEVEL` configuration and test setup.
+- Retained the persistent Express startup, backend workspace, Express domain routers, `render.yaml`, React Router compatibility shell, API facades, and active library forwarding files because they remain live or have verified consumers.
+- No production schema, data, migration, repository query, or deployment action was performed.
+
+### Phase 5 — Root package and environment consolidation
+
+- Promoted the Next.js source tree, public assets, Next/PostCSS configuration, and generated type entry point from `frontend/` to the repository root.
+- Merged feature server registrations and the Prisma singleton into the unified root `src/` tree without changing backend contracts.
+- Made the root package the Next.js/Vercel application, retained only `backend` as a temporary workspace, and added explicit legacy Render commands.
+- Changed browser API calls to same-origin URLs and removed the obsolete public Render API base variable.
+- Added validated public and server environment access under `src/config/` and routed application environment reads through it.
+- Made Prisma generation independent of `DIRECT_URL`; migration and introspection commands still require the administrative URL.
+- Updated Vercel output ownership to root `.next`, refreshed current architecture and cutover documentation, and preserved the Render rollback path.
+- No production schema, data, migration, or deployment action was performed.
 
 ## Last successful verification
 
@@ -88,11 +108,12 @@ Run from the repository root:
 npm.cmd run lint
 npm.cmd test
 npm.cmd run build
+npm.cmd run build:legacy-backend
 npx.cmd prisma validate --config prisma.config.ts
 git diff --check
 ```
 
-Results at the Phase 3 checkpoint:
+Results at the Phase 6 local-readiness checkpoint:
 
 - TypeScript: passed.
 - Vitest: 17 files, 113 tests passed.
@@ -102,68 +123,29 @@ Results at the Phase 3 checkpoint:
 
 On restricted Windows environments, `next build` may fail during worker startup with `spawn EPERM`. This is an execution-sandbox restriction when the TypeScript/page-data worker cannot spawn; rerun the same build with the required process permission. Do not treat it as a source failure if compilation succeeds and the only error is `spawn EPERM`.
 
-Next.js may rewrite `frontend/next-env.d.ts` during a production build. Review that generated-only diff and avoid committing incidental path churn unless required by the checked-in project convention.
+Next.js owns root `next-env.d.ts` and may update root `tsconfig.json` with mandatory or suggested compiler settings during a production build. Review generated-only churn before committing.
 
-## Next checkpoint — Phase 4 cleanup inventory
+## Phase 6 — Deployment readiness
 
-Phase 4 is an **inventory and approval checkpoint first**. Do not delete or move anything during its discovery step.
+Phase 6 completes deployment documentation and verifies the unified Vercel application in a safe deployed environment. Keep these boundaries explicit:
 
-### Required procedure
+- Create and review `DEPLOY.md` with Vercel settings, environment ownership, Supabase pooler guidance, health checks, cron/upload requirements, rollback, and manual workflows.
+- Verify `/healthz`, `/readyz`, browser API behavior, signed uploads, cron authorization, and a stored-row workflow against a safe environment. Do not use production data without explicit approval.
+- Keep `render.yaml`, `backend/server.ts`, and the persistent Express startup until the unified Vercel deployment is verified. Render retirement is a later deployment action, not an automatic source cleanup.
+- Preserve `DEMO_MODE=false` production behavior and the existing demo-only mode. Do not seed during production startup or requests.
+- Do not modify production schema or data. Do not edit the applied baseline migration.
+- Run targeted verification after each package/configuration batch and the complete suite before handoff.
 
-1. Read `AGENTS.md`, `README.md`, `MIGRATION_PLAN.md`, and this handoff.
-2. Run `git status --short`; preserve all existing user and migration changes.
-3. Use `rg --files` and targeted reads to locate obsolete or duplicated files.
-4. Trace every candidate with `rg` before classifying it as redundant.
-5. Produce a concise table containing:
-   - exact path;
-   - why it appears redundant;
-   - replacement path or mechanism;
-   - references that still block removal;
-   - proposed action: delete, retain temporarily, or merge later;
-   - risk and rollback note.
-6. Stop and ask for explicit approval. Do not delete files in the same turn that creates the inventory.
-7. After approval, remove only the approved paths, repair references, and run the complete verification suite.
+Local readiness review on 2026-09-19:
 
-### Items to investigate, not pre-approved deletions
-
-- `backend/server.ts` and the persistent Express startup path.
-- Express-only middleware and packages after confirming the Route Handler adapter no longer depends on them.
-- `backend/package.json` and the backend workspace.
-- `render.yaml` and Render-specific documentation or scripts.
-- Duplicate root/frontend/backend package scripts and build configuration.
-- The React Router compatibility shell: `frontend/src/App.tsx`, `frontend/src/routes/`, and `react-router-dom`.
-- Compatibility re-exports in `frontend/src/lib/api/` and shared component wrappers.
-- The remaining `frontend/src/screens/shared/PlaceholderPage.tsx`.
-- Old environment files or variables that target Render or a separate frontend API origin.
-- CI or documentation references to `backend/`, Render, port 3000/3001, or `NEXT_PUBLIC_API_BASE_URL`.
-- Generated output such as `backend/dist/` or `frontend/.next/`; distinguish ignored generated files from tracked source.
-
-Do not classify the following as cleanup candidates:
-
-- `prisma/schema.prisma`;
-- anything under `prisma/migrations/`;
-- seed or baseline data assets;
-- `src/lib/prisma.ts`;
-- Route Handlers, storage compatibility, cron, health, or Upstash logic;
-- tests that verify retained API contracts;
-- any file still required by the current passing build.
-
-### Important Phase 4 boundary
-
-The current Route Handler compatibility dispatcher still imports feature server registrations that re-export existing backend routers. Therefore, the old backend route implementations and their Express types are **not automatically removable**. Trace and decouple these dependencies before proposing their deletion.
-
-Phase 4 should end with either:
-
-- an approval request listing exact deletion/merge targets, or
-- after a later explicit approval, a verified cleanup diff and a request to begin Phase 5.
-
-## Later phases
-
-- Phase 5 consolidates package/configuration/environment ownership into the single Vercel application. It must add validated environment access and must never expose database, Supabase service-role, cron, Upstash, or identity secrets through `NEXT_PUBLIC_*` variables.
-- Phase 6 performs final deployment-readiness verification and creates `DEPLOY.md`, including Vercel settings, required environment variables, the build command, Supabase transaction-pooler guidance, health checks, and manual browser workflows.
+- `DEPLOY.md` documents Vercel configuration, environment ownership, Supabase pooler and Storage requirements, verification, rollback, and deferred Render retirement.
+- A production-mode local server returned HTTP 200 from `/healthz` and `/api/health`.
+- `/readyz` reached the configured Supabase pooler but returned HTTP 503 because PostgreSQL rejected the configured credentials with `28P01`. No query succeeded and no data changed. Correct the safe-environment `DATABASE_URL` before repeating readiness or stored-row checks.
+- Browser/API, signed-upload, cron, stored-row persistence, and full workflow checks still require an approved non-production Vercel environment. Production data was not used.
+- The dependency review and remediation are recorded in `docs/project-handoff/DEPENDENCY-AUDIT-2026-09-19.md`. Multer, Express/qs, Vitest, and DOMPurify advisories were cleared; the residual audit findings belong to Prisma's CLI/configuration dependency chain.
 
 ## Suggested continuation prompt
 
 Use this after opening the repository on the new computer:
 
-> Read `AGENTS.md`, `README.md`, `MIGRATION_PLAN.md`, and `MIGRATION_HANDOFF.md`. Phases 0–3 are complete. Verify the current checkpoint, then perform Phase 4 discovery only: identify redundant files and produce an exact approval list with references, replacements, risks, and rollback notes. Do not delete, move, migrate, deploy, or modify production data. Stop after showing the cleanup proposal.
+> Read `AGENTS.md`, `README.md`, `MIGRATION_PLAN.md`, `MIGRATION_HANDOFF.md`, and the dated dependency audit. Phase 6 local readiness is complete. Configure an approved non-production Vercel environment, correct its Supabase pooler credential, and finish the deployed checks in `DEPLOY.md` without touching production data. Keep Render available until the unified Vercel deployment and rollback plan are verified.

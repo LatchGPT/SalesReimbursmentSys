@@ -2,6 +2,7 @@ import { hydrateServerlessState } from '../stateLoader';
 import { syncDelegationStatuses } from '../services/delegations';
 import { runStaleApproverFallbackCheck } from '../services/hierarchy';
 import { withPersistenceScope } from '../../db/persistenceScope';
+import { serverEnv } from '../../../../src/config/env';
 
 const headers = {
   'Cache-Control': 'no-store',
@@ -13,7 +14,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers });
 
 export async function runHourlyMaintenance(request: Request): Promise<Response> {
-  const secret = process.env.CRON_SECRET;
+  const secret = serverEnv.cronSecret;
   if (!secret) return json({ error: 'Cron is not configured.' }, 503);
   if (request.headers.get('authorization') !== `Bearer ${secret}`) {
     return json({ error: 'Unauthorized' }, 401);
