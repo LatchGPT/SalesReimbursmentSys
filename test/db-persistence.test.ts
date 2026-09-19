@@ -1,6 +1,6 @@
 /**
  * Persist -> load round-trip tests against a REAL Postgres schema — built by
- * replaying this repo's actual drizzle/*.sql migration files through pg-mem
+ * replaying this repo's actual Prisma baseline SQL through pg-mem
  * (test/helpers/pgMemDb.ts), not against the in-memory arrays every other
  * test in this suite exercises (test/setup.ts forces DATABASE_URL='').
  *
@@ -52,6 +52,8 @@ const APPROVER: User = {
 };
 
 describe('persist -> load round trip against the full (pg-mem) schema', () => {
+  let testDb: ReturnType<typeof buildPgMemDb> | undefined;
+
   beforeAll(async () => {
     // isDbConfigured() in every repo file is `!!process.env.DATABASE_URL` —
     // needs to be truthy so the write-through code paths actually run
@@ -62,12 +64,14 @@ describe('persist -> load round trip against the full (pg-mem) schema', () => {
     // reset in afterAll as a second layer of defense against leaking into
     // whichever file runs next in the same worker.
     process.env.DATABASE_URL = 'postgres://pg-mem-test-placeholder/db';
-    __setTestDb(buildPgMemDb());
+    testDb = buildPgMemDb();
+    __setTestDb(testDb);
     await syncUsersToDb([REQUESTOR, APPROVER]);
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     __setTestDb(undefined);
+    await testDb?.$disconnect();
     process.env.DATABASE_URL = '';
   });
 
@@ -167,8 +171,11 @@ describe('persist -> load round trip against the full (pg-mem) schema', () => {
 });
 
 describe('a database missing a migration reproduces the exact production failure', () => {
-  afterAll(() => {
+  let testDb: ReturnType<typeof buildPgMemDb> | undefined;
+
+  afterAll(async () => {
     __setTestDb(undefined);
+    await testDb?.$disconnect();
     process.env.DATABASE_URL = '';
   });
 
@@ -177,7 +184,8 @@ describe('a database missing a migration reproduces the exact production failure
     // Stop replay at 0005 — the exact state the live Supabase DB was actually
     // in on 2026-08-06 (see PRODUCTION-PUNCHLIST.md #5): every migration
     // through the previous release applied, this one not yet run.
-    __setTestDb(buildPgMemDb('0005_bored_colonel_america.sql'));
+    testDb = buildPgMemDb({ omitReleaseCodeHardening: true });
+    __setTestDb(testDb);
     await syncUsersToDb([REQUESTOR, APPROVER]);
 
     const claim: Claim = {

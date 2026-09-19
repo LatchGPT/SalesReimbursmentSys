@@ -1,0 +1,113 @@
+import { loadCashAdvanceLoopFromDb } from '../db/cashAdvanceRepo';
+import { loadCoreLoopFromDb } from '../db/coreLoopRepo';
+import {
+  loadCompaniesFromDb,
+  loadFieldDefinitionsFromDb,
+  loadMasterDataHistoryFromDb,
+  loadMasterDataTable,
+  loadSystemSettingsFromDb,
+} from '../db/referenceDataRepo';
+import { isDbConfigured, loadUserHistoryFromDb, loadUsersFromDb } from '../db/usersRepo';
+import {
+  loadDelegationHistoryFromDb,
+  loadDelegationsFromDb,
+  loadReviewMeetingsFromDb,
+  loadSupportRequestsFromDb,
+} from '../db/workflowExtrasRepo';
+import { config } from './config';
+import { state } from './state';
+
+let activeHydration: Promise<void> | undefined;
+
+/**
+ * Refreshes production state from PostgreSQL for a serverless request.
+ *
+ * The legacy controllers still operate on their existing state object during
+ * Phase 2. Reloading it for every cold/warm request prevents a Vercel instance
+ * from treating its process memory as the source of truth. Phase 3 will move
+ * these reads into feature repositories so each handler requests only the rows
+ * it needs.
+ */
+export async function hydrateServerlessState(): Promise<void> {
+  if (config.demoMode) return;
+  if (!isDbConfigured()) {
+    throw new Error('DATABASE_URL is required when DEMO_MODE=false');
+  }
+
+  if (activeHydration) return activeHydration;
+
+  activeHydration = (async () => {
+    const [
+      users,
+      userHistory,
+      core,
+      advances,
+      companies,
+      departments,
+      costCenters,
+      businessUnits,
+      branches,
+      projectCodes,
+      vendors,
+      fieldDefinitions,
+      systemSettings,
+      masterDataHistory,
+      delegations,
+      delegationHistory,
+      reviewMeetings,
+      support,
+    ] = await Promise.all([
+      loadUsersFromDb(),
+      loadUserHistoryFromDb(),
+      loadCoreLoopFromDb(),
+      loadCashAdvanceLoopFromDb(),
+      loadCompaniesFromDb(),
+      loadMasterDataTable('departments'),
+      loadMasterDataTable('cost-centers'),
+      loadMasterDataTable('business-units'),
+      loadMasterDataTable('branches'),
+      loadMasterDataTable('project-codes'),
+      loadMasterDataTable('vendors'),
+      loadFieldDefinitionsFromDb(),
+      loadSystemSettingsFromDb(),
+      loadMasterDataHistoryFromDb(),
+      loadDelegationsFromDb(),
+      loadDelegationHistoryFromDb(),
+      loadReviewMeetingsFromDb(),
+      loadSupportRequestsFromDb(),
+    ]);
+
+    state.users = users;
+    state.moms = core.moms;
+    state.claims = core.claims;
+    state.expenses = core.expenses;
+    state.approvals = core.approvals;
+    state.cashAdvances = advances.cashAdvances;
+    state.liquidations = advances.liquidations;
+    state.liquidationLineItems = advances.liquidationLineItems;
+    state.companies = companies;
+    state.departments = departments;
+    state.costCenters = costCenters;
+    state.businessUnits = businessUnits;
+    state.branches = branches;
+    state.projectCodes = projectCodes;
+    state.vendors = vendors;
+    state.fieldDefinitions = fieldDefinitions;
+    if (systemSettings) state.systemSettings = systemSettings;
+    state.delegations = delegations;
+    state.reviewMeetings = reviewMeetings;
+    state.supportRequests = support.requests;
+    state.supportMessages = support.messages;
+    state.statusHistories = [
+      ...userHistory,
+      ...core.statusHistories,
+      ...advances.statusHistories,
+      ...masterDataHistory,
+      ...delegationHistory,
+    ];
+  })().finally(() => {
+    activeHydration = undefined;
+  });
+
+  return activeHydration;
+}

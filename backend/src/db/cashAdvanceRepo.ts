@@ -1,221 +1,242 @@
-/**
- * Persistence for cash advances, liquidations, and liquidation line items —
- * third domain migrated per docs/DATABASE-MIGRATION.md's order (users, then
- * the core reimbursement loop, then this).
- *
- * Same pattern as coreLoopRepo.ts: targeted upserts per mutation (this
- * domain can also grow to hundreds of rows, so no whole-array sync like
- * users.ts), boot-time load only replaces the in-memory arrays when
- * DEMO_MODE=false, and every real route writes through to Postgres
- * regardless of DEMO_MODE. See coreLoopRepo.ts's file header for the full
- * rationale — it applies identically here.
- */
-import { eq, or, isNotNull } from 'drizzle-orm';
+import type {
+  cash_advances as CashAdvanceRow,
+  cash_advance_status,
+  liquidation_line_items as LiquidationLineItemRow,
+  liquidations as LiquidationRow,
+  liquidation_status,
+  liquidation_variance_type,
+  status_histories as StatusHistoryRow,
+} from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
+import {
+  CashAdvanceStatus,
+  LiquidationStatus,
+  LiquidationVarianceType,
+} from '../serverTypes';
+import type {
+  CashAdvance,
+  Liquidation,
+  LiquidationLineItem,
+  StatusHistory,
+} from '../serverTypes';
 import { getDb } from './index';
-import { cashAdvances as cashAdvancesTable, liquidations as liquidationsTable, liquidationLineItems as liquidationLineItemsTable, statusHistories as statusHistoriesTable } from './schema';
-import type { CashAdvance, Liquidation, LiquidationLineItem, StatusHistory } from '../serverTypes';
-import { CashAdvanceStatus, LiquidationStatus, LiquidationVarianceType } from '../serverTypes';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
-// --- cash advances ----------------------------------------------------
-
-function cashAdvanceToRow(c: CashAdvance) {
+function cashAdvanceToRow(cashAdvance: CashAdvance) {
   return {
-    id: c.id,
-    requestorId: c.requestorId,
-    amount: String(c.amount),
-    purpose: c.purpose,
-    momId: c.momId ?? null,
-    approverId: c.approverId,
-    approvedAt: c.approvedAt ? new Date(c.approvedAt) : null,
-    paidAmount: c.paidAmount !== undefined ? String(c.paidAmount) : null,
-    releasedBy: c.releasedBy ?? null,
-    releaseDate: c.releaseDate ? new Date(c.releaseDate) : null,
-    releaseReference: c.releaseReference ?? null,
-    releaseMethod: c.releaseMethod ?? null,
-    status: c.status,
-    reminderSent: c.reminderSent ?? false,
+    id: cashAdvance.id,
+    requestor_id: cashAdvance.requestorId,
+    amount: cashAdvance.amount,
+    purpose: cashAdvance.purpose,
+    mom_id: cashAdvance.momId ?? null,
+    approver_id: cashAdvance.approverId,
+    approved_at: cashAdvance.approvedAt
+      ? new Date(cashAdvance.approvedAt)
+      : null,
+    paid_amount: cashAdvance.paidAmount ?? null,
+    released_by: cashAdvance.releasedBy ?? null,
+    release_date: cashAdvance.releaseDate
+      ? new Date(cashAdvance.releaseDate)
+      : null,
+    release_reference: cashAdvance.releaseReference ?? null,
+    release_method: cashAdvance.releaseMethod ?? null,
+    status: cashAdvance.status as cash_advance_status,
+    reminder_sent: cashAdvance.reminderSent ?? false,
   };
 }
 
-function cashAdvanceFromRow(r: typeof cashAdvancesTable.$inferSelect): CashAdvance {
+function cashAdvanceFromRow(row: CashAdvanceRow): CashAdvance {
   return {
-    id: r.id,
-    requestorId: r.requestorId,
-    amount: Number(r.amount),
-    purpose: r.purpose,
-    momId: r.momId ?? undefined,
-    approverId: r.approverId,
-    approvedAt: r.approvedAt ? r.approvedAt.toISOString() : undefined,
-    paidAmount: r.paidAmount !== null ? Number(r.paidAmount) : undefined,
-    releasedBy: r.releasedBy ?? undefined,
-    releaseDate: r.releaseDate ? r.releaseDate.toISOString() : undefined,
-    releaseReference: r.releaseReference ?? undefined,
-    releaseMethod: r.releaseMethod ?? undefined,
-    status: r.status as CashAdvanceStatus,
-    reminderSent: r.reminderSent ?? undefined,
-    createdAt: r.createdAt.toISOString(),
+    id: row.id,
+    requestorId: row.requestor_id,
+    amount: Number(row.amount),
+    purpose: row.purpose,
+    momId: row.mom_id ?? undefined,
+    approverId: row.approver_id,
+    approvedAt: row.approved_at?.toISOString(),
+    paidAmount: row.paid_amount !== null ? Number(row.paid_amount) : undefined,
+    releasedBy: row.released_by ?? undefined,
+    releaseDate: row.release_date?.toISOString(),
+    releaseReference: row.release_reference ?? undefined,
+    releaseMethod: row.release_method ?? undefined,
+    status: row.status as CashAdvanceStatus,
+    reminderSent: row.reminder_sent ?? undefined,
+    createdAt: row.created_at.toISOString(),
   };
 }
 
-/** Upserts one cash advance row. Call before persisting a liquidation that references it. */
-export async function persistCashAdvance(cashAdvance: CashAdvance): Promise<void> {
+export async function persistCashAdvance(
+  cashAdvance: CashAdvance,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = cashAdvanceToRow(cashAdvance);
-  await db.insert(cashAdvancesTable).values({ ...row, createdAt: new Date(cashAdvance.createdAt) })
-    .onConflictDoUpdate({ target: cashAdvancesTable.id, set: row });
+  await getDb().cash_advances.upsert({
+    where: { id: row.id },
+    create: { ...row, created_at: new Date(cashAdvance.createdAt) },
+    update: row,
+  });
 }
 
-// --- liquidations -------------------------------------------------------
-
-function liquidationToRow(l: Liquidation) {
+function liquidationToRow(liquidation: Liquidation) {
   return {
-    id: l.id,
-    cashAdvanceId: l.cashAdvanceId,
-    requestorId: l.requestorId,
-    totalSpent: String(l.totalSpent),
-    varianceAmount: String(l.varianceAmount),
-    varianceType: l.varianceType,
-    status: l.status,
-    refundMethod: l.refundMethod ?? null,
+    id: liquidation.id,
+    cash_advance_id: liquidation.cashAdvanceId,
+    requestor_id: liquidation.requestorId,
+    total_spent: liquidation.totalSpent,
+    variance_amount: liquidation.varianceAmount,
+    variance_type: liquidation.varianceType as liquidation_variance_type,
+    status: liquidation.status as liquidation_status,
+    refund_method: liquidation.refundMethod ?? null,
   };
 }
 
-function liquidationFromRow(r: typeof liquidationsTable.$inferSelect): Liquidation {
+function liquidationFromRow(row: LiquidationRow): Liquidation {
   return {
-    id: r.id,
-    cashAdvanceId: r.cashAdvanceId,
-    requestorId: r.requestorId,
-    totalSpent: Number(r.totalSpent),
-    varianceAmount: Number(r.varianceAmount),
-    varianceType: r.varianceType as LiquidationVarianceType,
-    status: r.status as LiquidationStatus,
-    createdAt: r.createdAt.toISOString(),
-    refundMethod: r.refundMethod ?? undefined,
+    id: row.id,
+    cashAdvanceId: row.cash_advance_id,
+    requestorId: row.requestor_id,
+    totalSpent: Number(row.total_spent),
+    varianceAmount: Number(row.variance_amount),
+    varianceType: row.variance_type as LiquidationVarianceType,
+    status: row.status as LiquidationStatus,
+    createdAt: row.created_at.toISOString(),
+    refundMethod: row.refund_method ?? undefined,
   };
 }
 
-/** Upserts one liquidation row. Call after its cash advance already exists. */
-export async function persistLiquidation(liquidation: Liquidation): Promise<void> {
+export async function persistLiquidation(
+  liquidation: Liquidation,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = liquidationToRow(liquidation);
-  await db.insert(liquidationsTable).values({ ...row, createdAt: new Date(liquidation.createdAt) })
-    .onConflictDoUpdate({ target: liquidationsTable.id, set: row });
+  await getDb().liquidations.upsert({
+    where: { id: row.id },
+    create: { ...row, created_at: new Date(liquidation.createdAt) },
+    update: row,
+  });
 }
-
-// --- liquidation line items ------------------------------------------------
 
 function lineItemToRow(item: LiquidationLineItem) {
   return {
     id: item.id,
-    liquidationId: item.liquidationId,
-    expenseDate: item.expense_date,
+    liquidation_id: item.liquidationId,
+    expense_date: item.expense_date,
     vendor: item.vendor,
     category: item.category,
-    amount: String(item.amount),
-    paymentMethod: item.payment_method,
-    businessPurpose: item.business_purpose,
-    receiptUrl: item.receipt_url ?? null,
-    attachmentType: item.attachment_type ?? null,
-    orNumber: item.or_number ?? null,
+    amount: item.amount,
+    payment_method: item.payment_method,
+    business_purpose: item.business_purpose,
+    receipt_url: item.receipt_url ?? null,
+    attachment_type: item.attachment_type ?? null,
+    or_number: item.or_number ?? null,
   };
 }
 
-function lineItemFromRow(r: typeof liquidationLineItemsTable.$inferSelect): LiquidationLineItem {
+function lineItemFromRow(row: LiquidationLineItemRow): LiquidationLineItem {
   return {
-    id: r.id,
-    liquidationId: r.liquidationId,
-    expense_date: r.expenseDate,
-    vendor: r.vendor,
-    category: r.category,
-    amount: Number(r.amount),
-    payment_method: r.paymentMethod,
-    business_purpose: r.businessPurpose,
-    receipt_url: r.receiptUrl ?? undefined,
-    attachment_type: r.attachmentType ?? undefined,
-    or_number: r.orNumber ?? undefined,
+    id: row.id,
+    liquidationId: row.liquidation_id,
+    expense_date: row.expense_date,
+    vendor: row.vendor,
+    category: row.category,
+    amount: Number(row.amount),
+    payment_method: row.payment_method,
+    business_purpose: row.business_purpose,
+    receipt_url: row.receipt_url ?? undefined,
+    attachment_type: row.attachment_type ?? undefined,
+    or_number: row.or_number ?? undefined,
   };
 }
 
-/**
- * Replaces every line item for one liquidation. Mirrors
- * coreLoopRepo.ts's persistExpenseLineItems — line items are always set as
- * a whole set from the in-memory array, so delete-then-reinsert is simplest.
- */
-export async function persistLiquidationLineItems(liquidationId: string, items: LiquidationLineItem[]): Promise<void> {
+export async function persistLiquidationLineItems(
+  liquidationId: string,
+  items: LiquidationLineItem[],
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
-  await db.transaction(async (tx: typeof db) => {
-    await tx.delete(liquidationLineItemsTable).where(eq(liquidationLineItemsTable.liquidationId, liquidationId));
-    for (const item of items) {
-      await tx.insert(liquidationLineItemsTable).values(lineItemToRow(item));
+  await getDb().$transaction(async (tx) => {
+    await tx.liquidation_line_items.deleteMany({
+      where: { liquidation_id: liquidationId },
+    });
+    if (items.length > 0) {
+      await tx.liquidation_line_items.createMany({
+        data: items.map(lineItemToRow),
+      });
     }
   });
 }
 
-/** Upserts a single line item (add/edit one row without touching the rest of the set). */
-export async function persistLiquidationLineItem(item: LiquidationLineItem): Promise<void> {
+export async function persistLiquidationLineItem(
+  item: LiquidationLineItem,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = lineItemToRow(item);
-  await db.insert(liquidationLineItemsTable).values(row).onConflictDoUpdate({ target: liquidationLineItemsTable.id, set: row });
+  await getDb().liquidation_line_items.upsert({
+    where: { id: row.id },
+    create: row,
+    update: row,
+  });
 }
 
 export async function deleteLiquidationLineItem(itemId: string): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
-  await db.delete(liquidationLineItemsTable).where(eq(liquidationLineItemsTable.id, itemId));
+  await getDb().liquidation_line_items.deleteMany({ where: { id: itemId } });
 }
 
-/**
- * Deletes every cash advance/liquidation/line-item row. Used only by
- * POST /api/admin/reset — status_histories is cleared once, wholesale, by
- * coreLoopRepo.ts's clearCoreLoopInDb(), not here (avoids a redundant
- * second delete of the same shared table).
- */
 export async function clearCashAdvanceLoopInDb(): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
-  await db.transaction(async (tx: typeof db) => {
-    await tx.delete(liquidationLineItemsTable);
-    await tx.delete(liquidationsTable);
-    await tx.delete(cashAdvancesTable);
+  await getDb().$transaction(async (tx) => {
+    await tx.liquidation_line_items.deleteMany();
+    await tx.liquidations.deleteMany();
+    await tx.cash_advances.deleteMany();
   });
 }
 
-// --- boot-time load (DEMO_MODE=false only — see file header) --------------
-
-function historyFromRow(r: typeof statusHistoriesTable.$inferSelect): StatusHistory {
+function historyFromRow(row: StatusHistoryRow): StatusHistory {
   return {
-    id: r.id,
+    id: row.id,
     claim_id: '',
-    cash_advance_id: r.cashAdvanceId ?? undefined,
-    liquidation_id: r.liquidationId ?? undefined,
-    old_status: r.oldStatus,
-    new_status: r.newStatus,
-    changed_by: r.changedBy,
-    reason: r.reason ?? undefined,
-    timestamp: r.timestamp.toISOString(),
+    cash_advance_id: row.cash_advance_id ?? undefined,
+    liquidation_id: row.liquidation_id ?? undefined,
+    old_status: row.old_status,
+    new_status: row.new_status,
+    changed_by: row.changed_by,
+    reason: row.reason ?? undefined,
+    timestamp: row.timestamp.toISOString(),
   };
 }
 
 export async function loadCashAdvanceLoopFromDb(): Promise<{
-  cashAdvances: CashAdvance[]; liquidations: Liquidation[]; liquidationLineItems: LiquidationLineItem[]; statusHistories: StatusHistory[];
+  cashAdvances: CashAdvance[];
+  liquidations: Liquidation[];
+  liquidationLineItems: LiquidationLineItem[];
+  statusHistories: StatusHistory[];
 }> {
-  if (!isDbConfigured()) return { cashAdvances: [], liquidations: [], liquidationLineItems: [], statusHistories: [] };
+  if (!isDbConfigured()) {
+    return {
+      cashAdvances: [],
+      liquidations: [],
+      liquidationLineItems: [],
+      statusHistories: [],
+    };
+  }
   const db = getDb();
-  const [caRows, liqRows, lineItemRows, historyRows] = await Promise.all([
-    db.select().from(cashAdvancesTable),
-    db.select().from(liquidationsTable),
-    db.select().from(liquidationLineItemsTable),
-    db.select().from(statusHistoriesTable).where(or(isNotNull(statusHistoriesTable.cashAdvanceId), isNotNull(statusHistoriesTable.liquidationId))),
+  const [caRows, liquidationRows, lineItemRows, historyRows] = await Promise.all([
+    db.cash_advances.findMany(),
+    db.liquidations.findMany(),
+    db.liquidation_line_items.findMany(),
+    db.status_histories.findMany({
+      where: {
+        OR: [
+          { cash_advance_id: { not: null } },
+          { liquidation_id: { not: null } },
+        ],
+      },
+    }),
   ]);
   return {
     cashAdvances: caRows.map(cashAdvanceFromRow),
-    liquidations: liqRows.map(liquidationFromRow),
+    liquidations: liquidationRows.map(liquidationFromRow),
     liquidationLineItems: lineItemRows.map(lineItemFromRow),
     statusHistories: historyRows.map(historyFromRow),
   };

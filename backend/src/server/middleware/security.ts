@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { config } from '../config';
+import { serverEnv } from '../../../../src/config/env';
 
 export function configureSecurityMiddleware(app: Express) {
   const isProdEnv = config.isProduction;
@@ -22,7 +23,7 @@ export function configureSecurityMiddleware(app: Express) {
     },
   }));
 
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+  const allowedOrigins = serverEnv.allowedOrigins;
   app.use(cors({
     origin: allowedOrigins.length > 0 ? allowedOrigins : false,
     credentials: true,

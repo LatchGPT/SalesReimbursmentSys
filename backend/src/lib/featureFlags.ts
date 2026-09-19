@@ -1,3 +1,5 @@
+import { serverEnv } from '../../../src/config/env';
+
 type ClaimType = 'Reimbursement' | 'Transport Reimbursement' | 'Cash Advance' | 'Liquidation';
 
 const STATIC_CLAIM_TYPE_ENABLED: Record<ClaimType, boolean> = {
@@ -8,7 +10,7 @@ const STATIC_CLAIM_TYPE_ENABLED: Record<ClaimType, boolean> = {
 };
 
 export function isClaimTypeEnabled(type: ClaimType): boolean {
-  return process.env.ENABLE_ALL_CLAIM_TYPES === '1' || STATIC_CLAIM_TYPE_ENABLED[type] !== false;
+  return serverEnv.enableAllClaimTypes || STATIC_CLAIM_TYPE_ENABLED[type] !== false;
 }
 
 export const COMING_SOON_MESSAGE =

@@ -3,8 +3,10 @@ import { state } from '../state';
 import { addDelegationHistory } from './history';
 import { persistDelegation } from '../../db/workflowExtrasRepo';
 
-export function syncDelegationStatuses() {
+export function syncDelegationStatuses(): Promise<number> {
   const now = new Date();
+  const writes: Promise<void>[] = [];
+  let expiredCount = 0;
   state.delegations.forEach(d => {
     if (d.status === DelegationStatus.ACTIVE) {
       const end = new Date(d.end_date);
@@ -13,12 +15,15 @@ export function syncDelegationStatuses() {
         const oldStatus = d.status;
         d.status = DelegationStatus.EXPIRED;
         d.updated_at = now.toISOString();
+        expiredCount += 1;
         addDelegationHistory(d.id, oldStatus, DelegationStatus.EXPIRED, 'system', 'Delegation window ended.');
-        persistDelegation(d).catch((err: unknown) =>
-          console.error('[db] Could not persist delegation expiry to Postgres:', err));
+        writes.push(persistDelegation(d).catch((err: unknown) => {
+          console.error('[db] Could not persist delegation expiry to Postgres:', err);
+        }));
       }
     }
   });
+  return Promise.all(writes).then(() => expiredCount);
 }
 
 export function getActiveDelegation(approverId: string, atDate: Date = new Date()): ApproverDelegation | undefined {

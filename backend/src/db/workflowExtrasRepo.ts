@@ -1,210 +1,229 @@
-/**
- * Persistence for approver delegations, review meetings, and support
- * requests/messages — real user-generated business data, migrated alongside
- * referenceDataRepo.ts as the last domain per docs/DATABASE-MIGRATION.md.
- *
- * Same pattern as the earlier repos: targeted upserts per mutation,
- * boot-time load only replaces the in-memory arrays when DEMO_MODE=false,
- * every real route writes through regardless of DEMO_MODE.
- *
- * Deliberately NOT migrated in this pass (still in-memory only): the mock
- * email/Teams outbox (ephemeral notification log, not business data —
- * README already documents mock delivery as a pre-production item),
- * last_seen (per-user "have I viewed this" UI state, safe to lose), and
- * import_batches (admin historical-import log, low value relative to the
- * effort of also migrating the import records it summarizes).
- */
-import { isNotNull } from 'drizzle-orm';
-import { getDb } from './index';
+import type {
+  approver_delegations as DelegationRow,
+  review_meetings as ReviewMeetingRow,
+  status_histories as StatusHistoryRow,
+  support_priority,
+  support_request_messages as SupportMessageRow,
+  support_requests as SupportRequestRow,
+  support_status,
+} from '../../../src/generated/prisma/client';
+import { serverEnv } from '../../../src/config/env';
 import {
-  approverDelegations as delegationsTable, reviewMeetings as reviewMeetingsTable,
-  supportRequests as supportRequestsTable, supportRequestMessages as supportMessagesTable,
-  statusHistories as statusHistoriesTable,
-} from './schema';
-import type { ApproverDelegation, ReviewMeeting, SupportRequest, SupportRequestMessage, StatusHistory } from '../serverTypes';
-import { DelegationStatus, ReviewMeetingStatus, SupportRequestPriority, SupportRequestStatus } from '../serverTypes';
+  DelegationStatus,
+  ReviewMeetingStatus,
+  SupportRequestPriority,
+  SupportRequestStatus,
+} from '../serverTypes';
+import type {
+  ApproverDelegation,
+  ReviewMeeting,
+  StatusHistory,
+  SupportRequest,
+  SupportRequestMessage,
+} from '../serverTypes';
+import { getDb } from './index';
 
-export const isDbConfigured = () => !!process.env.DATABASE_URL;
+export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
-// --- approver delegations ---------------------------------------------
+function supportStatusToPrisma(status: SupportRequestStatus): support_status {
+  return status === 'In Progress' ? 'In_Progress' : status as support_status;
+}
 
-function delegationToRow(d: ApproverDelegation) {
+function supportStatusFromPrisma(status: support_status): SupportRequestStatus {
+  return status === 'In_Progress'
+    ? 'In Progress' as SupportRequestStatus
+    : status as SupportRequestStatus;
+}
+
+function delegationToRow(delegation: ApproverDelegation) {
   return {
-    id: d.id,
-    approverId: d.approver_id,
-    delegateId: d.delegate_id,
-    startDate: d.start_date,
-    endDate: d.end_date,
-    status: d.status,
-    declineReason: d.decline_reason ?? null,
-    createdBy: d.created_by,
+    id: delegation.id,
+    approver_id: delegation.approver_id,
+    delegate_id: delegation.delegate_id,
+    start_date: delegation.start_date,
+    end_date: delegation.end_date,
+    status: delegation.status,
+    decline_reason: delegation.decline_reason ?? null,
+    created_by: delegation.created_by,
   };
 }
 
-function delegationFromRow(r: typeof delegationsTable.$inferSelect): ApproverDelegation {
+function delegationFromRow(row: DelegationRow): ApproverDelegation {
   return {
-    id: r.id,
-    approver_id: r.approverId,
-    delegate_id: r.delegateId,
-    start_date: r.startDate,
-    end_date: r.endDate,
-    status: r.status as DelegationStatus,
-    decline_reason: r.declineReason ?? undefined,
-    created_by: r.createdBy,
-    created_at: r.createdAt.toISOString(),
-    updated_at: r.updatedAt.toISOString(),
+    id: row.id,
+    approver_id: row.approver_id,
+    delegate_id: row.delegate_id,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    status: row.status as DelegationStatus,
+    decline_reason: row.decline_reason ?? undefined,
+    created_by: row.created_by,
+    created_at: row.created_at.toISOString(),
+    updated_at: row.updated_at.toISOString(),
   };
 }
 
-export async function persistDelegation(delegation: ApproverDelegation): Promise<void> {
+export async function persistDelegation(
+  delegation: ApproverDelegation,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = delegationToRow(delegation);
-  await db.insert(delegationsTable).values(row).onConflictDoUpdate({ target: delegationsTable.id, set: row });
+  await getDb().approver_delegations.upsert({
+    where: { id: row.id },
+    create: row,
+    update: row,
+  });
 }
 
 export async function loadDelegationsFromDb(): Promise<ApproverDelegation[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(delegationsTable);
-  return rows.map(delegationFromRow);
+  return (await getDb().approver_delegations.findMany()).map(delegationFromRow);
 }
 
-function delegationHistoryFromRow(r: typeof statusHistoriesTable.$inferSelect): StatusHistory {
+function delegationHistoryFromRow(row: StatusHistoryRow): StatusHistory {
   return {
-    id: r.id,
+    id: row.id,
     claim_id: '',
-    delegation_id: r.delegationId ?? undefined,
-    old_status: r.oldStatus,
-    new_status: r.newStatus,
-    changed_by: r.changedBy,
-    reason: r.reason ?? undefined,
-    timestamp: r.timestamp.toISOString(),
+    delegation_id: row.delegation_id ?? undefined,
+    old_status: row.old_status,
+    new_status: row.new_status,
+    changed_by: row.changed_by,
+    reason: row.reason ?? undefined,
+    timestamp: row.timestamp.toISOString(),
   };
 }
 
 export async function loadDelegationHistoryFromDb(): Promise<StatusHistory[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(statusHistoriesTable).where(isNotNull(statusHistoriesTable.delegationId));
+  const rows = await getDb().status_histories.findMany({
+    where: { delegation_id: { not: null } },
+  });
   return rows.map(delegationHistoryFromRow);
 }
 
-// --- review meetings ----------------------------------------------------
-
-function reviewMeetingToRow(m: ReviewMeeting) {
+function reviewMeetingToRow(meeting: ReviewMeeting) {
   return {
-    id: m.id,
-    claimId: m.claim_id,
-    requestorId: m.requestor_id,
-    approverId: m.approver_id,
-    meetingDate: m.meeting_date,
-    meetingTime: m.meeting_time,
-    status: m.status,
-    declineReason: m.decline_reason ?? null,
+    id: meeting.id,
+    claim_id: meeting.claim_id,
+    requestor_id: meeting.requestor_id,
+    approver_id: meeting.approver_id,
+    meeting_date: meeting.meeting_date,
+    meeting_time: meeting.meeting_time,
+    status: meeting.status,
+    decline_reason: meeting.decline_reason ?? null,
   };
 }
 
-function reviewMeetingFromRow(r: typeof reviewMeetingsTable.$inferSelect): ReviewMeeting {
+function reviewMeetingFromRow(row: ReviewMeetingRow): ReviewMeeting {
   return {
-    id: r.id,
-    claim_id: r.claimId,
-    requestor_id: r.requestorId,
-    approver_id: r.approverId,
-    meeting_date: r.meetingDate,
-    meeting_time: r.meetingTime,
-    status: r.status as ReviewMeetingStatus,
-    decline_reason: r.declineReason ?? undefined,
-    created_at: r.createdAt.toISOString(),
+    id: row.id,
+    claim_id: row.claim_id,
+    requestor_id: row.requestor_id,
+    approver_id: row.approver_id,
+    meeting_date: row.meeting_date,
+    meeting_time: row.meeting_time,
+    status: row.status as ReviewMeetingStatus,
+    decline_reason: row.decline_reason ?? undefined,
+    created_at: row.created_at.toISOString(),
   };
 }
 
-/** Upserts one review meeting. Call after its claim already exists (claim_id has no DB FK, but always references a real persisted claim in practice). */
 export async function persistReviewMeeting(meeting: ReviewMeeting): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = reviewMeetingToRow(meeting);
-  await db.insert(reviewMeetingsTable).values(row).onConflictDoUpdate({ target: reviewMeetingsTable.id, set: row });
+  await getDb().review_meetings.upsert({
+    where: { id: row.id },
+    create: row,
+    update: row,
+  });
 }
 
 export async function loadReviewMeetingsFromDb(): Promise<ReviewMeeting[]> {
   if (!isDbConfigured()) return [];
-  const db = getDb();
-  const rows = await db.select().from(reviewMeetingsTable);
-  return rows.map(reviewMeetingFromRow);
+  return (await getDb().review_meetings.findMany()).map(reviewMeetingFromRow);
 }
 
-// --- support requests + messages -------------------------------------------
-
-function supportRequestToRow(s: SupportRequest) {
+function supportRequestToRow(request: SupportRequest) {
   return {
-    id: s.id,
-    requestorId: s.requestor_id,
-    subject: s.subject,
-    description: s.description,
-    relatedEntityType: s.related_entity_type ?? null,
-    relatedEntityId: s.related_entity_id ?? null,
-    priority: s.priority,
-    status: s.status,
-    assignedAdminId: s.assigned_admin_id ?? null,
+    id: request.id,
+    requestor_id: request.requestor_id,
+    subject: request.subject,
+    description: request.description,
+    related_entity_type: request.related_entity_type ?? null,
+    related_entity_id: request.related_entity_id ?? null,
+    priority: request.priority as support_priority,
+    status: supportStatusToPrisma(request.status),
+    assigned_admin_id: request.assigned_admin_id ?? null,
   };
 }
 
-function supportRequestFromRow(r: typeof supportRequestsTable.$inferSelect): SupportRequest {
+function supportRequestFromRow(row: SupportRequestRow): SupportRequest {
   return {
-    id: r.id,
-    requestor_id: r.requestorId,
-    subject: r.subject,
-    description: r.description,
-    related_entity_type: (r.relatedEntityType ?? undefined) as SupportRequest['related_entity_type'],
-    related_entity_id: r.relatedEntityId ?? undefined,
-    priority: r.priority as SupportRequestPriority,
-    status: r.status as SupportRequestStatus,
-    assigned_admin_id: r.assignedAdminId ?? undefined,
-    created_at: r.createdAt.toISOString(),
-    updated_at: r.updatedAt.toISOString(),
+    id: row.id,
+    requestor_id: row.requestor_id,
+    subject: row.subject,
+    description: row.description,
+    related_entity_type: (row.related_entity_type ?? undefined) as
+      SupportRequest['related_entity_type'],
+    related_entity_id: row.related_entity_id ?? undefined,
+    priority: row.priority as SupportRequestPriority,
+    status: supportStatusFromPrisma(row.status),
+    assigned_admin_id: row.assigned_admin_id ?? undefined,
+    created_at: row.created_at.toISOString(),
+    updated_at: row.updated_at.toISOString(),
   };
 }
 
-export async function persistSupportRequest(request: SupportRequest): Promise<void> {
+export async function persistSupportRequest(
+  request: SupportRequest,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
   const row = supportRequestToRow(request);
-  await db.insert(supportRequestsTable).values(row).onConflictDoUpdate({ target: supportRequestsTable.id, set: row });
+  await getDb().support_requests.upsert({
+    where: { id: row.id },
+    create: row,
+    update: row,
+  });
 }
 
-function supportMessageToRow(m: SupportRequestMessage) {
+function supportMessageToRow(message: SupportRequestMessage) {
   return {
-    id: m.id,
-    requestId: m.request_id,
-    senderId: m.sender_id,
-    message: m.message,
-    timestamp: new Date(m.timestamp),
+    id: message.id,
+    request_id: message.request_id,
+    sender_id: message.sender_id,
+    message: message.message,
+    timestamp: new Date(message.timestamp),
   };
 }
 
-function supportMessageFromRow(r: typeof supportMessagesTable.$inferSelect): SupportRequestMessage {
+function supportMessageFromRow(row: SupportMessageRow): SupportRequestMessage {
   return {
-    id: r.id,
-    request_id: r.requestId,
-    sender_id: r.senderId,
-    message: r.message,
-    timestamp: r.timestamp.toISOString(),
+    id: row.id,
+    request_id: row.request_id,
+    sender_id: row.sender_id,
+    message: row.message,
+    timestamp: row.timestamp.toISOString(),
   };
 }
 
-export async function insertSupportMessage(message: SupportRequestMessage): Promise<void> {
+export async function insertSupportMessage(
+  message: SupportRequestMessage,
+): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
-  await db.insert(supportMessagesTable).values(supportMessageToRow(message)).onConflictDoNothing();
+  await getDb().support_request_messages.createMany({
+    data: [supportMessageToRow(message)],
+    skipDuplicates: true,
+  });
 }
 
-export async function loadSupportRequestsFromDb(): Promise<{ requests: SupportRequest[]; messages: SupportRequestMessage[] }> {
+export async function loadSupportRequestsFromDb(): Promise<{
+  requests: SupportRequest[];
+  messages: SupportRequestMessage[];
+}> {
   if (!isDbConfigured()) return { requests: [], messages: [] };
-  const db = getDb();
   const [requestRows, messageRows] = await Promise.all([
-    db.select().from(supportRequestsTable),
-    db.select().from(supportMessagesTable),
+    getDb().support_requests.findMany(),
+    getDb().support_request_messages.findMany(),
   ]);
   return {
     requests: requestRows.map(supportRequestFromRow),
@@ -212,18 +231,12 @@ export async function loadSupportRequestsFromDb(): Promise<{ requests: SupportRe
   };
 }
 
-/**
- * Deletes every delegation, review meeting, and support request/message row.
- * Used only by POST /api/admin/reset — delegation-scoped status_histories is
- * cleared once, wholesale, by coreLoopRepo.ts's clearCoreLoopInDb(), not here.
- */
 export async function clearWorkflowExtrasInDb(): Promise<void> {
   if (!isDbConfigured()) return;
-  const db = getDb();
-  await db.transaction(async (tx: typeof db) => {
-    await tx.delete(supportMessagesTable);
-    await tx.delete(supportRequestsTable);
-    await tx.delete(reviewMeetingsTable);
-    await tx.delete(delegationsTable);
+  await getDb().$transaction(async (tx) => {
+    await tx.support_request_messages.deleteMany();
+    await tx.support_requests.deleteMany();
+    await tx.review_meetings.deleteMany();
+    await tx.approver_delegations.deleteMany();
   });
 }
