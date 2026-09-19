@@ -111,7 +111,9 @@ export function fromServerMom(m: any): MOM | null {
     participantsExternal: m.participants_external || undefined,
     customFields: m.custom_fields || undefined,
     typeOfAccount: m.custom_fields?.type_of_account || undefined,
-    category: m.custom_fields?.category || undefined,
+    category: m.custom_fields?.category === 'Other' && m.custom_fields?.category_other
+      ? `Other (${m.custom_fields.category_other})`
+      : (m.custom_fields?.category || undefined),
   };
 }
 
