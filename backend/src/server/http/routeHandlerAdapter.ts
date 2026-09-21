@@ -45,6 +45,7 @@ const apiRouters: Router[] = [
 const NO_DATABASE_PATHS = new Set([
   '/auth/config',
   '/auth/microsoft/start',
+  '/demo-users',
 ]);
 
 const JSON_HEADERS = {
