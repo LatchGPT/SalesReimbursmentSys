@@ -162,7 +162,8 @@ export async function uploadToSupabase(request: Request): Promise<Response> {
       cache: 'no-store',
     });
     if (!result.ok) {
-      console.error(`[storage] Upload failed with status ${result.status}`);
+      const errBody = await result.text().catch(() => '(unreadable)');
+      console.error(`[storage] Supabase upload failed — status ${result.status}, body: ${errBody}`);
       return json({ error: 'Upload failed.' }, 502);
     }
 
