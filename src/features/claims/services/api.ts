@@ -178,8 +178,8 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
         return li;
       })
     );
-  } catch {
-    throw new Error('Could not upload one or more receipts.');
+  } catch (err: any) {
+    throw new Error(err?.message || 'Could not upload one or more receipts.');
   }
 
   const missing = uploaded.findIndex((li) => !li.receiptUrl);
@@ -262,8 +262,8 @@ export async function resubmitClaimFlow(input: ResubmitClaimInput) {
         return li;
       })
     );
-  } catch {
-    throw new Error('Could not upload one or more receipts.');
+  } catch (err: any) {
+    throw new Error(err?.message || 'Could not upload one or more receipts.');
   }
 
   const missing = uploaded.findIndex((li) => !li.receiptUrl);

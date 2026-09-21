@@ -18,6 +18,7 @@
 // `.env`. `isDbConfigured()` is `!!process.env.DATABASE_URL`, so `''` reads as
 // "not configured".
 process.env.DATABASE_URL = '';
+process.env.SUPABASE_SERVICE_ROLE_KEY = '';
 
 // Cash Advance / Liquidation are soft-launched OFF for real users
 // (src/lib/featureFlags.ts), but the workflow suites still need to exercise
