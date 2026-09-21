@@ -39,74 +39,81 @@ export async function hydrateServerlessState(): Promise<void> {
   if (activeHydration) return activeHydration;
 
   activeHydration = (async () => {
-    const [
-      users,
-      userHistory,
-      core,
-      advances,
-      companies,
-      departments,
-      costCenters,
-      businessUnits,
-      branches,
-      projectCodes,
-      vendors,
-      fieldDefinitions,
-      systemSettings,
-      masterDataHistory,
-      delegations,
-      delegationHistory,
-      reviewMeetings,
-      support,
-    ] = await Promise.all([
-      loadUsersFromDb(),
-      loadUserHistoryFromDb(),
-      loadCoreLoopFromDb(),
-      loadCashAdvanceLoopFromDb(),
-      loadCompaniesFromDb(),
-      loadMasterDataTable('departments'),
-      loadMasterDataTable('cost-centers'),
-      loadMasterDataTable('business-units'),
-      loadMasterDataTable('branches'),
-      loadMasterDataTable('project-codes'),
-      loadMasterDataTable('vendors'),
-      loadFieldDefinitionsFromDb(),
-      loadSystemSettingsFromDb(),
-      loadMasterDataHistoryFromDb(),
-      loadDelegationsFromDb(),
-      loadDelegationHistoryFromDb(),
-      loadReviewMeetingsFromDb(),
-      loadSupportRequestsFromDb(),
-    ]);
+    try {
+      const [
+        users,
+        userHistory,
+        core,
+        advances,
+        companies,
+        departments,
+        costCenters,
+        businessUnits,
+        branches,
+        projectCodes,
+        vendors,
+        fieldDefinitions,
+        systemSettings,
+        masterDataHistory,
+        delegations,
+        delegationHistory,
+        reviewMeetings,
+        support,
+      ] = await Promise.all([
+        loadUsersFromDb(),
+        loadUserHistoryFromDb(),
+        loadCoreLoopFromDb(),
+        loadCashAdvanceLoopFromDb(),
+        loadCompaniesFromDb(),
+        loadMasterDataTable('departments'),
+        loadMasterDataTable('cost-centers'),
+        loadMasterDataTable('business-units'),
+        loadMasterDataTable('branches'),
+        loadMasterDataTable('project-codes'),
+        loadMasterDataTable('vendors'),
+        loadFieldDefinitionsFromDb(),
+        loadSystemSettingsFromDb(),
+        loadMasterDataHistoryFromDb(),
+        loadDelegationsFromDb(),
+        loadDelegationHistoryFromDb(),
+        loadReviewMeetingsFromDb(),
+        loadSupportRequestsFromDb(),
+      ]);
 
-    if (users.length > 0) state.users = users;
-    state.moms = core.moms;
-    state.claims = core.claims;
-    state.expenses = core.expenses;
-    state.approvals = core.approvals;
-    state.cashAdvances = advances.cashAdvances;
-    state.liquidations = advances.liquidations;
-    state.liquidationLineItems = advances.liquidationLineItems;
-    if (companies.length > 0) state.companies = companies;
-    if (departments.length > 0) state.departments = departments;
-    if (costCenters.length > 0) state.costCenters = costCenters;
-    if (businessUnits.length > 0) state.businessUnits = businessUnits;
-    if (branches.length > 0) state.branches = branches;
-    if (projectCodes.length > 0) state.projectCodes = projectCodes;
-    if (vendors.length > 0) state.vendors = vendors;
-    if (fieldDefinitions.length > 0) state.fieldDefinitions = fieldDefinitions;
-    if (systemSettings) state.systemSettings = systemSettings;
-    state.delegations = delegations;
-    state.reviewMeetings = reviewMeetings;
-    state.supportRequests = support.requests;
-    state.supportMessages = support.messages;
-    state.statusHistories = [
-      ...userHistory,
-      ...core.statusHistories,
-      ...advances.statusHistories,
-      ...masterDataHistory,
-      ...delegationHistory,
-    ];
+      if (users.length > 0) state.users = users;
+      state.moms = core.moms;
+      state.claims = core.claims;
+      state.expenses = core.expenses;
+      state.approvals = core.approvals;
+      state.cashAdvances = advances.cashAdvances;
+      state.liquidations = advances.liquidations;
+      state.liquidationLineItems = advances.liquidationLineItems;
+      if (companies.length > 0) state.companies = companies;
+      if (departments.length > 0) state.departments = departments;
+      if (costCenters.length > 0) state.costCenters = costCenters;
+      if (businessUnits.length > 0) state.businessUnits = businessUnits;
+      if (branches.length > 0) state.branches = branches;
+      if (projectCodes.length > 0) state.projectCodes = projectCodes;
+      if (vendors.length > 0) state.vendors = vendors;
+      if (fieldDefinitions.length > 0) state.fieldDefinitions = fieldDefinitions;
+      if (systemSettings) state.systemSettings = systemSettings;
+      state.delegations = delegations;
+      state.reviewMeetings = reviewMeetings;
+      state.supportRequests = support.requests;
+      state.supportMessages = support.messages;
+      state.statusHistories = [
+        ...userHistory,
+        ...core.statusHistories,
+        ...advances.statusHistories,
+        ...masterDataHistory,
+        ...delegationHistory,
+      ];
+    } catch (err) {
+      console.error('[stateLoader] Could not hydrate state from PostgreSQL:', err);
+      if (!config.demoMode) {
+        throw err;
+      }
+    }
   })().finally(() => {
     activeHydration = undefined;
   });
