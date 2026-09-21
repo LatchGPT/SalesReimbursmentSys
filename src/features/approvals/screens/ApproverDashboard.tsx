@@ -10,9 +10,9 @@ import { formatDate, formatDateTime, formatLongDate } from '../../../lib/date';
 import { claimTypeIcon, getClaimAgingInfo } from '@/features/claims';
 import { TeamMemberSpending } from '@/features/analytics';
 
-const DECISION_STATUSES: string[] = [ClaimStatus.APPROVED, ClaimStatus.REJECTED, ClaimStatus.RETURNED];
+const DECISION_STATUSES: string[] = [ClaimStatus.APPROVED, ClaimStatus.PROCESSING, ClaimStatus.REJECTED, ClaimStatus.RETURNED];
 const PENDING_STATUSES: string[] = [ClaimStatus.PENDING_APPROVAL, ClaimStatus.SUBMITTED];
-const TEAM_SPEND_STATUSES: string[] = [ClaimStatus.APPROVED, ClaimStatus.RELEASED, ClaimStatus.COMPLETED];
+const TEAM_SPEND_STATUSES: string[] = [ClaimStatus.APPROVED, ClaimStatus.PROCESSING, ClaimStatus.READY_FOR_CLAIM, ClaimStatus.RELEASED, ClaimStatus.COMPLETED];
 
 function currentMonthValue() {
   const now = new Date();
@@ -288,7 +288,8 @@ export function ApproverDashboard() {
             <div className="space-y-6">
               {myDecisions.slice(0, 4).map((h, i) => {
                 const claim = claims.find(c => c.id === h.claimId);
-                const dotColor = h.newStatus === ClaimStatus.APPROVED ? 'bg-primary' : h.newStatus === ClaimStatus.REJECTED ? 'bg-error' : 'bg-tertiary';
+                const dotColor = (h.newStatus === ClaimStatus.APPROVED || h.newStatus === ClaimStatus.PROCESSING) ? 'bg-primary' : h.newStatus === ClaimStatus.REJECTED ? 'bg-error' : 'bg-tertiary';
+                const displayStatus = h.newStatus === ClaimStatus.PROCESSING ? ClaimStatus.APPROVED : h.newStatus;
                 return (
                   <div key={h.id} className="flex gap-4">
                     <div className="flex flex-col items-center">
@@ -296,7 +297,7 @@ export function ApproverDashboard() {
                       {i < Math.min(myDecisions.length, 4) - 1 && <div className="w-[1px] flex-1 bg-outline-variant my-1"></div>}
                     </div>
                     <div className="pb-2">
-                      <p className="font-label-md text-on-surface">{claim ? `${claim.ref} — ${h.newStatus}` : h.newStatus}</p>
+                      <p className="font-label-md text-on-surface">{claim ? `${claim.ref} — ${displayStatus}` : displayStatus}</p>
                       {h.comment && <p className="text-body-sm text-outline">{h.comment}</p>}
                       <p className="text-[12px] text-outline mt-1">{formatDateTime(h.timestamp)}</p>
                     </div>

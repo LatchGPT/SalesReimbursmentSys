@@ -79,7 +79,7 @@ export function ApprovalQueue() {
   const approvalHistory = useMemo(() => statusHistory
     .filter(entry =>
       entry.changedBy === currentUser.id &&
-      [ClaimStatus.APPROVED, ClaimStatus.REJECTED, ClaimStatus.RETURNED].includes(entry.newStatus as ClaimStatus)
+      [ClaimStatus.APPROVED, ClaimStatus.PROCESSING, ClaimStatus.REJECTED, ClaimStatus.RETURNED].includes(entry.newStatus as ClaimStatus)
     )
     .map(entry => ({ entry, claim: claims.find(claim => claim.id === entry.claimId) }))
     .filter((record): record is { entry: typeof statusHistory[number]; claim: typeof claims[number] } => Boolean(record.claim))
@@ -401,7 +401,9 @@ export function ApprovalQueue() {
                         <p className="font-mono-data font-bold text-on-surface">{claim.ref}</p>
                         <p className="text-body-sm text-outline mt-0.5">{claim.type}</p>
                       </td>
-                      <td className="px-6 py-4"><StatusBadge status={entry.newStatus as ClaimStatus} /></td>
+                      <td className="px-6 py-4">
+                        <StatusBadge status={entry.newStatus === ClaimStatus.PROCESSING ? ClaimStatus.APPROVED : (entry.newStatus as ClaimStatus)} />
+                      </td>
                       <td className="px-6 py-4 text-sm text-on-surface-variant whitespace-nowrap">{formatDate(entry.timestamp)}</td>
                       <td className="px-6 py-4 text-sm text-on-surface-variant max-w-[360px]">{entry.comment || '—'}</td>
                       <td className="px-6 py-4 text-right font-mono-data font-bold text-on-surface">{formatMoney(claim.total)}</td>

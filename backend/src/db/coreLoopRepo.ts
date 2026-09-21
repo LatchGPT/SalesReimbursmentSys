@@ -28,9 +28,10 @@ import { trackPersistence } from './persistenceScope';
 
 export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
-function claimStatusToPrisma(status: ClaimStatus): claim_status {
+function claimStatusToPrisma(status: ClaimStatus | string): claim_status {
   if (status === 'Pending Approval') return 'Pending_Approval';
   if (status === 'Ready for Claim') return 'Ready_for_Claim';
+  if (status === 'Returned for Revision' || status === 'Returned') return 'Returned';
   return status as claim_status;
 }
 
