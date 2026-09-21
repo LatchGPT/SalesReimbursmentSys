@@ -18,8 +18,19 @@ export function __setTestDb(db: PrismaClientInstance | undefined): void {
 }
 
 function createPrismaClient(): PrismaClientInstance {
-  const connectionString = requireServerValue('DATABASE_URL', serverEnv.databaseUrl);
+  let connectionString = requireServerValue('DATABASE_URL', serverEnv.databaseUrl);
   const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
+
+  // Supabase poolers and serverless environments: prevent "self-signed certificate in certificate chain"
+  if (!isLocal) {
+    if (connectionString.includes('sslmode=require')) {
+      connectionString = connectionString.replace('sslmode=require', 'sslmode=no-verify');
+    } else if (!connectionString.includes('sslmode=')) {
+      const separator = connectionString.includes('?') ? '&' : '?';
+      connectionString = `${connectionString}${separator}sslmode=no-verify`;
+    }
+  }
+
   const pool = new Pool({
     connectionString,
     // A Vercel deployment can create many function instances. Keep each
