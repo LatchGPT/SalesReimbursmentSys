@@ -19,12 +19,14 @@ export function __setTestDb(db: PrismaClientInstance | undefined): void {
 
 function createPrismaClient(): PrismaClientInstance {
   const connectionString = requireServerValue('DATABASE_URL', serverEnv.databaseUrl);
+  const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
   const pool = new Pool({
     connectionString,
     // A Vercel deployment can create many function instances. Keep each
     // instance's pool small and let Supabase's transaction pooler multiplex it.
     max: serverEnv.databasePoolMax,
     connectionTimeoutMillis: 10_000,
+    ...(!isLocal ? { ssl: { rejectUnauthorized: false } } : {}),
   });
   const adapter = new PrismaPg(pool, { disposeExternalPool: true });
 

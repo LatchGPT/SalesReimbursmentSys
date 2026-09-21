@@ -29,9 +29,11 @@ let activeHydration: Promise<void> | undefined;
  * it needs.
  */
 export async function hydrateServerlessState(): Promise<void> {
-  if (config.demoMode) return;
   if (!isDbConfigured()) {
-    throw new Error('DATABASE_URL is required when DEMO_MODE=false');
+    if (!config.demoMode) {
+      throw new Error('DATABASE_URL is required when DEMO_MODE=false');
+    }
+    return;
   }
 
   if (activeHydration) return activeHydration;
@@ -77,7 +79,7 @@ export async function hydrateServerlessState(): Promise<void> {
       loadSupportRequestsFromDb(),
     ]);
 
-    state.users = users;
+    if (users.length > 0) state.users = users;
     state.moms = core.moms;
     state.claims = core.claims;
     state.expenses = core.expenses;
@@ -85,14 +87,14 @@ export async function hydrateServerlessState(): Promise<void> {
     state.cashAdvances = advances.cashAdvances;
     state.liquidations = advances.liquidations;
     state.liquidationLineItems = advances.liquidationLineItems;
-    state.companies = companies;
-    state.departments = departments;
-    state.costCenters = costCenters;
-    state.businessUnits = businessUnits;
-    state.branches = branches;
-    state.projectCodes = projectCodes;
-    state.vendors = vendors;
-    state.fieldDefinitions = fieldDefinitions;
+    if (companies.length > 0) state.companies = companies;
+    if (departments.length > 0) state.departments = departments;
+    if (costCenters.length > 0) state.costCenters = costCenters;
+    if (businessUnits.length > 0) state.businessUnits = businessUnits;
+    if (branches.length > 0) state.branches = branches;
+    if (projectCodes.length > 0) state.projectCodes = projectCodes;
+    if (vendors.length > 0) state.vendors = vendors;
+    if (fieldDefinitions.length > 0) state.fieldDefinitions = fieldDefinitions;
     if (systemSettings) state.systemSettings = systemSettings;
     state.delegations = delegations;
     state.reviewMeetings = reviewMeetings;
