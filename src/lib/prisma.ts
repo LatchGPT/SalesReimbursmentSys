@@ -23,9 +23,9 @@ function createPrismaClient(): PrismaClientInstance {
 
   // Supabase poolers and serverless environments: prevent "self-signed certificate in certificate chain"
   if (!isLocal) {
-    if (connectionString.includes('sslmode=require')) {
-      connectionString = connectionString.replace('sslmode=require', 'sslmode=no-verify');
-    } else if (!connectionString.includes('sslmode=')) {
+    if (/sslmode=[^&]+/i.test(connectionString)) {
+      connectionString = connectionString.replace(/sslmode=[^&]+/i, 'sslmode=no-verify');
+    } else {
       const separator = connectionString.includes('?') ? '&' : '?';
       connectionString = `${connectionString}${separator}sslmode=no-verify`;
     }
