@@ -14,6 +14,7 @@ import {
   loadReviewMeetingsFromDb,
   loadSupportRequestsFromDb,
 } from '../db/workflowExtrasRepo';
+import { serverEnv } from '../../../src/config/env';
 import { config } from './config';
 import { state } from './state';
 
@@ -28,11 +29,22 @@ let activeHydration: Promise<void> | undefined;
  * these reads into feature repositories so each handler requests only the rows
  * it needs.
  */
+const globalForStateLoader = globalThis as typeof globalThis & {
+  hasHydratedOnce?: boolean;
+  dbConnectionFailed?: boolean;
+};
+
 export async function hydrateServerlessState(): Promise<void> {
   if (!isDbConfigured()) {
     if (!config.demoMode) {
       throw new Error('DATABASE_URL is required when DEMO_MODE=false');
     }
+    return;
+  }
+
+  // In development (localhost), if database is unreachable (e.g. Wi-Fi blocks ports),
+  // don't stall every subsequent request for 10 seconds.
+  if (!serverEnv.isProduction && (globalForStateLoader.hasHydratedOnce || globalForStateLoader.dbConnectionFailed)) {
     return;
   }
 
@@ -110,11 +122,13 @@ export async function hydrateServerlessState(): Promise<void> {
       ];
     } catch (err) {
       console.error('[stateLoader] Could not hydrate state from PostgreSQL:', err);
-      if (!config.demoMode) {
+      globalForStateLoader.dbConnectionFailed = true;
+      if (!config.demoMode && serverEnv.isProduction) {
         throw err;
       }
     }
   })().finally(() => {
+    globalForStateLoader.hasHydratedOnce = true;
     activeHydration = undefined;
   });
 
