@@ -1,1 +1,1 @@
-export { momsRouter } from '../../../../backend/src/server/routes/moms.routes';
+export { momsRouter } from '../../../server/routes/moms.routes';

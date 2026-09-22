@@ -1,1 +1,1 @@
-export { supportRouter } from '../../../../backend/src/server/routes/support.routes';
+export { supportRouter } from '../../../services/support/supportRouter';

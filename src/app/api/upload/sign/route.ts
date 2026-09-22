@@ -1,5 +1,5 @@
-import { enforceApiRateLimit } from '../../../../../backend/src/server/http/routeHandlerAdapter';
-import { createSupabaseSignedUpload } from '../../../../../backend/src/server/http/storageHandlers';
+import { enforceApiRateLimit } from '../../../../services/http/apiDispatcher';
+import { createSupabaseSignedUpload } from '../../../../services/storage/supabaseStorage';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

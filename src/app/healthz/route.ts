@@ -1,4 +1,4 @@
-export { healthz as GET } from '../../../backend/src/server/http/healthHandlers';
+export { healthz as GET } from '../../services/health/healthHandlers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

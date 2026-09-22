@@ -2,7 +2,6 @@ node_modules/
 build/
 dist/
 .next/
-backend/dist/
 coverage/
 tmp/
 .DS_Store
@@ -11,10 +10,7 @@ tmp/
 .env*
 !.env.example
 .local-backups/
-backend/src/generated/prisma/
 src/generated/prisma/
-backend/uploads/*
-!backend/uploads/.gitkeep
 <<<<<<< HEAD
 .vercel
 .env*

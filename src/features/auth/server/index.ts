@@ -1,1 +1,1 @@
-export { authRouter } from '../../../../backend/src/server/routes/auth.routes';
+export { authRouter } from '../../../server/routes/auth.routes';

@@ -1,1 +1,1 @@
-export { analyticsRouter } from '../../../../backend/src/server/routes/analytics.routes';
+export { analyticsRouter } from '../../../server/routes/analytics.routes';

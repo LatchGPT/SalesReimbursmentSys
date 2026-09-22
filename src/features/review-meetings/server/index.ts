@@ -1,1 +1,1 @@
-export { reviewMeetingsRouter } from '../../../../backend/src/server/routes/reviewMeetings.routes';
+export { reviewMeetingsRouter } from '../../../services/review-meetings/reviewMeetingsRouter';

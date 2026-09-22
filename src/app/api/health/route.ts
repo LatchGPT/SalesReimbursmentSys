@@ -1,4 +1,4 @@
-export { legacyApiHealth as GET } from '../../../../backend/src/server/http/healthHandlers';
+export { legacyApiHealth as GET } from '../../../services/health/healthHandlers';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

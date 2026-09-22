@@ -1,1 +1,1 @@
-export { activityRouter } from '../../../../backend/src/server/routes/activity.routes';
+export { activityRouter } from '../../../services/activity/activityRouter';

@@ -1,2 +1,2 @@
-export { delegationsRouter } from '../../../../backend/src/server/routes/delegations.routes';
-export { usersRouter } from '../../../../backend/src/server/routes/users.routes';
+export { delegationsRouter } from '../../../services/users/delegationsRouter';
+export { usersRouter } from '../../../services/users/usersRouter';
