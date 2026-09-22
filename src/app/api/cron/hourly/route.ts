@@ -1,4 +1,4 @@
-export { runHourlyMaintenance as GET } from '../../../../../backend/src/server/http/cronHandlers';
+export { runHourlyMaintenance as GET } from '../../../../services/jobs/hourlyMaintenance';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

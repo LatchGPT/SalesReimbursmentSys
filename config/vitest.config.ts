@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.join(projectRoot, 'src'),
-      '@server': path.join(projectRoot, 'backend/src/server'),
+      '@server': path.join(projectRoot, 'src/server'),
     },
   },
   test: {

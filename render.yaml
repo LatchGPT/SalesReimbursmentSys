@@ -3,8 +3,8 @@ services:
     name: salesreimbursmentsystem
     runtime: node
     plan: free
-    buildCommand: npm ci --include=dev && npm run build --workspace backend
-    startCommand: npm run start --workspace backend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start
     healthCheckPath: /readyz
     autoDeployTrigger: commit
     envVars:

@@ -1,4 +1,4 @@
-import { dispatchApiRoute } from '../../../../backend/src/server/http/routeHandlerAdapter';
+import { dispatchApiRoute } from '../../../services/http/apiDispatcher';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
