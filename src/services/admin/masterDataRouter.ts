@@ -1,135 +1,66 @@
-import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  UserRole, MasterDataRecord, Department, CostCenter, BusinessUnit, Branch, ProjectCode, Vendor,
-} from '../../lib/db/serverTypes';
+import { UserRole, type MasterDataRecord } from '../../lib/db/serverTypes';
+import { persistMasterDataRecord, type MasterDataKey } from '../../lib/db/referenceDataRepo';
 import { state } from '../../server/state';
-import { getUser } from '../../server/middleware/auth';
 import { addMasterDataHistory } from '../../server/services/history';
-import { persistMasterDataRecord, MasterDataKey } from '../../lib/db/referenceDataRepo';
 
-export const masterDataRouter = Router();
+type ErrorBody = { error: string };
+type Result<T> = { status: number; body: T };
+type Catalog = { key: MasterDataKey; label: string; store: () => MasterDataRecord[] };
 
-interface MasterDataEntityConfig<T extends MasterDataRecord> {
-  key: string;
-  dbKey: MasterDataKey;
-  label: string;
-  store: () => T[];
-  validateFields: (body: any, existing: T[], editingId?: string) => { errors: string[]; fields: Partial<T> };
-}
-
-const registerMasterDataRoutes = <T extends MasterDataRecord>(config: MasterDataEntityConfig<T>) => {
-  const base = `/master-data/${config.key}`;
-
-  masterDataRouter.get(base, (req, res) => {
-    const user = getUser(req);
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
-    res.json([...config.store()].sort((a, b) => a.name.localeCompare(b.name)));
-  });
-
-  masterDataRouter.post(base, async (req, res) => {
-    const user = getUser(req);
-    if (!user || user.role !== UserRole.ADMIN) return res.status(403).json({ error: 'Forbidden' });
-
-    const { errors, fields } = config.validateFields(req.body, config.store());
-    if (errors.length) return res.status(400).json({ error: errors[0] });
-
-    const now = new Date().toISOString();
-    const record = { id: uuidv4(), active: true, created_at: now, updated_at: now, ...fields } as T;
-    config.store().push(record);
-    try {
-      await persistMasterDataRecord(config.dbKey, record);
-    } catch (err) {
-      console.error(`[db] Could not persist new ${config.label} to Postgres:`, err);
-    }
-    res.json(record);
-  });
-
-  masterDataRouter.put(`${base}/:id`, async (req, res) => {
-    const user = getUser(req);
-    if (!user || user.role !== UserRole.ADMIN) return res.status(403).json({ error: 'Forbidden' });
-
-    const record = config.store().find(r => r.id === req.params.id);
-    if (!record) return res.status(404).json({ error: `${config.label} not found` });
-
-    const { errors, fields } = config.validateFields(req.body, config.store(), req.params.id);
-    if (errors.length) return res.status(400).json({ error: errors[0] });
-
-    (Object.entries(fields) as [keyof T, any][]).forEach(([field, value]) => {
-      if (value !== undefined && record[field] !== value) {
-        addMasterDataHistory(config.key, record.id, String(field), String(record[field]), String(value), user.id);
-        record[field] = value;
-      }
-    });
-    record.updated_at = new Date().toISOString();
-    try {
-      await persistMasterDataRecord(config.dbKey, record);
-    } catch (err) {
-      console.error(`[db] Could not persist ${config.label} changes to Postgres:`, err);
-    }
-    res.json(record);
-  });
+const catalogs: Record<string, Catalog> = {
+  departments: { key: 'departments', label: 'Department', store: () => state.departments },
+  'cost-centers': { key: 'cost-centers', label: 'Cost Center', store: () => state.costCenters },
+  'business-units': { key: 'business-units', label: 'Business Unit', store: () => state.businessUnits },
+  branches: { key: 'branches', label: 'Branch', store: () => state.branches },
+  'project-codes': { key: 'project-codes', label: 'Project Code', store: () => state.projectCodes },
+  vendors: { key: 'vendors', label: 'Vendor', store: () => state.vendors },
 };
 
-const validateNamedCatalogEntity = <T extends MasterDataRecord>(label: string) =>
-  (body: any, existing: T[], editingId?: string): { errors: string[]; fields: Partial<T> } => {
-    const errors: string[] = [];
-    const fields: Partial<T> = {};
-    if (body.name !== undefined) {
-      const trimmed = String(body.name).trim();
-      if (!trimmed) errors.push(`${label} name is required.`);
-      else if (existing.some(r => r.id !== editingId && r.name.toLowerCase() === trimmed.toLowerCase())) {
-        errors.push(`A ${label.toLowerCase()} with this name already exists.`);
-      } else {
-        (fields as any).name = trimmed;
-      }
-    }
-    if (body.code !== undefined) (fields as any).code = body.code ? String(body.code).trim() : undefined;
-    if (body.notes !== undefined) (fields as any).notes = body.notes;
-    if (body.active !== undefined) (fields as any).active = !!body.active;
-    return { errors, fields };
-  };
+function userFor(userId: string | null) { return state.users.find((user) => user.id === userId || user.entra_object_id === userId || user.user_principal_name === userId); }
+function catalogFor(entity: string) { return catalogs[entity]; }
+function validate(body: Record<string, unknown>, catalog: Catalog, editingId?: string) {
+  const fields: Partial<MasterDataRecord> = {};
+  if (body.name !== undefined) {
+    const name = String(body.name).trim();
+    if (!name) return { error: `${catalog.label} name is required.` };
+    if (catalog.store().some((record) => record.id !== editingId && record.name.toLowerCase() === name.toLowerCase())) return { error: `A ${catalog.label.toLowerCase()} with this name already exists.` };
+    fields.name = name;
+  }
+  if (body.code !== undefined) fields.code = body.code ? String(body.code).trim() : undefined;
+  if (body.notes !== undefined) fields.notes = body.notes ? String(body.notes) : undefined;
+  if (body.active !== undefined) fields.active = !!body.active;
+  return { fields };
+}
+function sorted(records: MasterDataRecord[]) { return [...records].sort((left, right) => left.name.localeCompare(right.name)); }
 
-registerMasterDataRoutes<Department>({
-  key: 'departments', dbKey: 'departments', label: 'Department',
-  store: () => state.departments,
-  validateFields: validateNamedCatalogEntity('Department'),
-});
-registerMasterDataRoutes<CostCenter>({
-  key: 'cost-centers', dbKey: 'cost-centers', label: 'Cost Center',
-  store: () => state.costCenters,
-  validateFields: validateNamedCatalogEntity('Cost Center'),
-});
-registerMasterDataRoutes<BusinessUnit>({
-  key: 'business-units', dbKey: 'business-units', label: 'Business Unit',
-  store: () => state.businessUnits,
-  validateFields: validateNamedCatalogEntity('Business Unit'),
-});
-registerMasterDataRoutes<Branch>({
-  key: 'branches', dbKey: 'branches', label: 'Branch',
-  store: () => state.branches,
-  validateFields: validateNamedCatalogEntity('Branch'),
-});
-registerMasterDataRoutes<ProjectCode>({
-  key: 'project-codes', dbKey: 'project-codes', label: 'Project Code',
-  store: () => state.projectCodes,
-  validateFields: validateNamedCatalogEntity('Project Code'),
-});
-registerMasterDataRoutes<Vendor>({
-  key: 'vendors', dbKey: 'vendors', label: 'Vendor',
-  store: () => state.vendors,
-  validateFields: validateNamedCatalogEntity('Vendor'),
-});
-
-masterDataRouter.get('/master-data/all', (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-  res.json({
-    departments: [...state.departments].sort((a, b) => a.name.localeCompare(b.name)),
-    costCenters: [...state.costCenters].sort((a, b) => a.name.localeCompare(b.name)),
-    businessUnits: [...state.businessUnits].sort((a, b) => a.name.localeCompare(b.name)),
-    branches: [...state.branches].sort((a, b) => a.name.localeCompare(b.name)),
-    projectCodes: [...state.projectCodes].sort((a, b) => a.name.localeCompare(b.name)),
-    vendors: [...state.vendors].sort((a, b) => a.name.localeCompare(b.name)),
-  });
-});
+export function listMasterData(userId: string | null, entity: string): Result<MasterDataRecord[] | ErrorBody> {
+  if (!userFor(userId)) return { status: 401, body: { error: 'Unauthorized' } };
+  const catalog = catalogFor(entity);
+  return catalog ? { status: 200, body: sorted(catalog.store()) } : { status: 404, body: { error: 'Not found' } };
+}
+export function listAllMasterData(userId: string | null): Result<Record<string, MasterDataRecord[]> | ErrorBody> {
+  if (!userFor(userId)) return { status: 401, body: { error: 'Unauthorized' } };
+  return { status: 200, body: { departments: sorted(state.departments), costCenters: sorted(state.costCenters), businessUnits: sorted(state.businessUnits), branches: sorted(state.branches), projectCodes: sorted(state.projectCodes), vendors: sorted(state.vendors) } };
+}
+export async function createMasterData(userId: string | null, entity: string, body: Record<string, unknown>): Promise<Result<MasterDataRecord | ErrorBody>> {
+  const user = userFor(userId); const catalog = catalogFor(entity);
+  if (!user || user.role !== UserRole.ADMIN) return { status: 403, body: { error: 'Forbidden' } };
+  if (!catalog) return { status: 404, body: { error: 'Not found' } };
+  const result = validate(body, catalog); if ('error' in result) return { status: 400, body: { error: result.error! } };
+  const now = new Date().toISOString(); const record: MasterDataRecord = { id: uuidv4(), active: true, created_at: now, updated_at: now, ...result.fields } as MasterDataRecord;
+  catalog.store().push(record);
+  try { await persistMasterDataRecord(catalog.key, record); } catch (error) { console.error(`[db] Could not persist new ${catalog.label} to Postgres:`, error); }
+  return { status: 200, body: record };
+}
+export async function updateMasterData(userId: string | null, entity: string, id: string, body: Record<string, unknown>): Promise<Result<MasterDataRecord | ErrorBody>> {
+  const user = userFor(userId); const catalog = catalogFor(entity);
+  if (!user || user.role !== UserRole.ADMIN) return { status: 403, body: { error: 'Forbidden' } };
+  if (!catalog) return { status: 404, body: { error: 'Not found' } };
+  const record = catalog.store().find((entry) => entry.id === id); if (!record) return { status: 404, body: { error: `${catalog.label} not found` } };
+  const result = validate(body, catalog, id); if ('error' in result) return { status: 400, body: { error: result.error! } };
+  Object.entries(result.fields).forEach(([field, value]) => { if (value !== undefined && record[field as keyof MasterDataRecord] !== value) { addMasterDataHistory(entity, record.id, field, String(record[field as keyof MasterDataRecord]), String(value), user.id); (record as unknown as Record<string, unknown>)[field] = value; } });
+  record.updated_at = new Date().toISOString();
+  try { await persistMasterDataRecord(catalog.key, record); } catch (error) { console.error(`[db] Could not persist ${catalog.label} changes to Postgres:`, error); }
+  return { status: 200, body: record };
+}

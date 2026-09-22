@@ -1,2 +1,2 @@
-export { delegationsRouter } from '../../../services/users/delegationsRouter';
-export { usersRouter } from '../../../services/users/usersRouter';
+export { acceptDelegation, cancelDelegation, createDelegation, declineDelegation, listDelegations } from '../../../services/users/delegationsRouter';
+export { listUsers, updateUser, wouldCreateCycle } from '../../../services/users/usersRouter';

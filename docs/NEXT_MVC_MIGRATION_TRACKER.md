@@ -15,6 +15,15 @@
 - [x] Moved health, storage, cron, and dispatcher code to `src/services/`.
 - [x] Converted receipts to `src/services/claims/receipts.ts` and `/api/receipts`.
 - [x] Receipts is framework-neutral and removed from the Express dispatcher.
+- [x] Converted field definitions to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted master data to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted companies to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted users to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted delegations to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted support to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted review meetings to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted activity to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted analytics to a framework-neutral service and explicit Next Route Handler.
 - [x] Relocated field-definitions and master-data routers to `src/services/admin/`.
 - [x] Relocated users and delegations routers to `src/services/users/`.
 - [x] Relocated companies router to `src/services/admin/`.
@@ -23,6 +32,12 @@
 ## Pending verification
 
 - [x] Verified the master-data relocation: lint and 114 Vitest tests pass.
+- [x] Verified the users conversion: lint and 114 Vitest tests pass.
+- [x] Verified the delegations conversion: lint and 114 Vitest tests pass.
+- [x] Verified the support conversion: lint and 114 Vitest tests pass.
+- [x] Verified the review-meetings conversion: lint and 114 Vitest tests pass.
+- [x] Verified the activity conversion: lint and 114 Vitest tests pass.
+- [x] Verified the analytics conversion: lint and 114 Vitest tests pass.
 
 ## Phase 1: router relocation
 
@@ -31,9 +46,9 @@
 ## Phase 2: explicit MVC controller conversion
 
 - [x] Convert receipts into a service and explicit `/api/receipts` Route Handler.
-- [ ] Convert field definitions: GET, POST, and PUT `/api/field-definitions` endpoints.
-- [ ] Convert users, companies, and delegations.
-- [ ] Convert support, review meetings, and activity.
+- [x] Convert field definitions: GET, POST, and PUT `/api/field-definitions` endpoints.
+- [x] Convert users, companies, and delegations.
+- [x] Convert support, review meetings, and activity.
 - [ ] Convert analytics, cash advances, and liquidations.
 - [ ] Convert auth, admin, and claims as isolated high-risk batches.
 

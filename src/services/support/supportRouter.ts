@@ -1,159 +1,18 @@
-import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  UserRole, SupportRequest, SupportRequestMessage,
-  SupportRequestStatus, SupportRequestPriority
-} from '../../lib/db/serverTypes';
+import { type SupportRequest, type SupportRequestMessage, SupportRequestPriority, SupportRequestStatus, UserRole } from '../../lib/db/serverTypes';
 import { state } from '../../server/state';
-import { getUser } from '../../server/middleware/auth';
 import { sendEmail } from '../../server/services/notifications';
-import { persistSupportRequest, insertSupportMessage } from '../../lib/db/workflowExtrasRepo';
+import { insertSupportMessage, persistSupportRequest } from '../../lib/db/workflowExtrasRepo';
 
-export const supportRouter = Router();
+type ErrorBody = { error: string }; type Result<T> = { status: number; body: T };
+function userFor(id: string | null) { return state.users.find((user) => user.id === id || user.entra_object_id === id || user.user_principal_name === id); }
+function permitted(userId: string | null, id: string) { const user = userFor(userId); const request = state.supportRequests.find((candidate) => candidate.id === id); if (!user) return { result: { status: 401, body: { error: 'Unauthorized' } } as Result<ErrorBody> }; if (!request) return { result: { status: 404, body: { error: 'Not found' } } as Result<ErrorBody> }; if (user.role !== UserRole.ADMIN && request.requestor_id !== user.id) return { result: { status: 403, body: { error: 'Forbidden' } } as Result<ErrorBody> }; return { user, request }; }
 
-supportRouter.get('/support', (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export function listSupportRequests(userId: string | null): Result<SupportRequest[] | ErrorBody> { const user = userFor(userId); return !user ? { status: 401, body: { error: 'Unauthorized' } } : { status: 200, body: user.role === UserRole.ADMIN ? state.supportRequests : state.supportRequests.filter((request) => request.requestor_id === user.id) }; }
+export function getSupportRequest(userId: string | null, id: string): Result<(SupportRequest & { messages: SupportRequestMessage[] }) | ErrorBody> { const access = permitted(userId, id); if (access.result) return access.result; return { status: 200, body: { ...access.request!, messages: state.supportMessages.filter((message) => message.request_id === id).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()) } }; }
 
-  let userRequests = state.supportRequests;
-  if (user.role !== UserRole.ADMIN) {
-    userRequests = state.supportRequests.filter(sr => sr.requestor_id === user.id);
-  }
+export async function createSupportRequest(userId: string | null, body: Partial<SupportRequest>): Promise<Result<SupportRequest | ErrorBody>> { const user = userFor(userId); if (!user) return { status: 401, body: { error: 'Unauthorized' } }; if (user.role === UserRole.ADMIN) return { status: 403, body: { error: 'Admins manage support requests and cannot file their own.' } }; const request: SupportRequest = { id: uuidv4(), requestor_id: user.id, subject: body.subject!, description: body.description!, related_entity_type: body.related_entity_type, related_entity_id: body.related_entity_id, priority: body.priority || SupportRequestPriority.LOW, status: SupportRequestStatus.OPEN, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }; state.supportRequests.push(request); state.users.filter((candidate) => candidate.role === UserRole.ADMIN).forEach((admin) => sendEmail(admin.id, `New Support Request: ${request.subject}`, `A new support request has been created by ${user.name}.\n\nPriority: ${request.priority}\nSubject: ${request.subject}\nDescription: ${request.description}`)); try { await persistSupportRequest(request); } catch (error) { console.error('[db] Could not persist new support request to Postgres:', error); } return { status: 201, body: request }; }
 
-  res.json(userRequests);
-});
+export async function addSupportMessage(userId: string | null, id: string, body: { message?: string }): Promise<Result<SupportRequestMessage | ErrorBody>> { const access = permitted(userId, id); if (access.result) return access.result; const user = access.user!; const request = access.request!; const message: SupportRequestMessage = { id: uuidv4(), request_id: id, sender_id: user.id, message: body.message!, timestamp: new Date().toISOString() }; state.supportMessages.push(message); request.updated_at = message.timestamp; if (user.id === request.requestor_id) { if (request.assigned_admin_id) sendEmail(request.assigned_admin_id, `New message on Support Request: ${request.subject}`, `${user.name}: ${message.message}`); } else sendEmail(request.requestor_id, `New message on Support Request: ${request.subject}`, `${user.name}: ${message.message}`); try { await persistSupportRequest(request); await insertSupportMessage(message); } catch (error) { console.error('[db] Could not persist support message to Postgres:', error); } return { status: 201, body: message }; }
 
-supportRouter.get('/support/:id', (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const request = state.supportRequests.find(sr => sr.id === req.params.id);
-  if (!request) return res.status(404).json({ error: 'Not found' });
-
-  if (user.role !== UserRole.ADMIN && request.requestor_id !== user.id) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  const messages = state.supportMessages.filter(sm => sm.request_id === request.id)
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-
-  res.json({ ...request, messages });
-});
-
-supportRouter.post('/support', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-  if (user.role === UserRole.ADMIN) return res.status(403).json({ error: 'Admins manage support requests and cannot file their own.' });
-
-  const { subject, description, related_entity_type, related_entity_id, priority } = req.body;
-
-  const newRequest: SupportRequest = {
-    id: uuidv4(),
-    requestor_id: user.id,
-    subject,
-    description,
-    related_entity_type,
-    related_entity_id,
-    priority: priority || SupportRequestPriority.LOW,
-    status: SupportRequestStatus.OPEN,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  };
-
-  state.supportRequests.push(newRequest);
-
-  // Notify Admins
-  const admins = state.users.filter(u => u.role === UserRole.ADMIN);
-  admins.forEach(admin => {
-    sendEmail(
-      admin.id,
-      `New Support Request: ${subject}`,
-      `A new support request has been created by ${user.name}.\n\nPriority: ${newRequest.priority}\nSubject: ${subject}\nDescription: ${description}`,
-    );
-  });
-
-  try {
-    await persistSupportRequest(newRequest);
-  } catch (err) {
-    console.error('[db] Could not persist new support request to Postgres:', err);
-  }
-  res.status(201).json(newRequest);
-});
-
-supportRouter.post('/support/:id/messages', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const request = state.supportRequests.find(sr => sr.id === req.params.id);
-  if (!request) return res.status(404).json({ error: 'Not found' });
-
-  if (user.role !== UserRole.ADMIN && request.requestor_id !== user.id) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  const { message } = req.body;
-
-  const newMessage: SupportRequestMessage = {
-    id: uuidv4(),
-    request_id: request.id,
-    sender_id: user.id,
-    message,
-    timestamp: new Date().toISOString()
-  };
-
-  state.supportMessages.push(newMessage);
-  request.updated_at = newMessage.timestamp;
-
-  if (user.id === request.requestor_id) {
-    if (request.assigned_admin_id) {
-      sendEmail(request.assigned_admin_id, `New message on Support Request: ${request.subject}`, `${user.name}: ${message}`);
-    }
-  } else {
-    sendEmail(request.requestor_id, `New message on Support Request: ${request.subject}`, `${user.name}: ${message}`);
-  }
-
-  try {
-    await persistSupportRequest(request);
-    await insertSupportMessage(newMessage);
-  } catch (err) {
-    console.error('[db] Could not persist support message to Postgres:', err);
-  }
-  res.status(201).json(newMessage);
-});
-
-supportRouter.put('/support/:id', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const request = state.supportRequests.find(sr => sr.id === req.params.id);
-  if (!request) return res.status(404).json({ error: 'Not found' });
-
-  if (user.role !== UserRole.ADMIN && request.requestor_id !== user.id) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  if (req.body.status) {
-    const oldStatus = request.status;
-    request.status = req.body.status;
-    if (oldStatus !== request.status && request.status === SupportRequestStatus.RESOLVED) {
-      sendEmail(request.requestor_id, `Support Request Resolved: ${request.subject}`, 'Your support request has been marked as resolved.');
-    }
-  }
-
-  if (req.body.priority && user.role === UserRole.ADMIN) {
-    request.priority = req.body.priority;
-  }
-
-  if (req.body.assigned_admin_id && user.role === UserRole.ADMIN) {
-    request.assigned_admin_id = req.body.assigned_admin_id;
-  }
-
-  request.updated_at = new Date().toISOString();
-
-  try {
-    await persistSupportRequest(request);
-  } catch (err) {
-    console.error('[db] Could not persist support request changes to Postgres:', err);
-  }
-  res.json(request);
-});
+export async function updateSupportRequest(userId: string | null, id: string, body: Partial<Pick<SupportRequest, 'status' | 'priority' | 'assigned_admin_id'>>): Promise<Result<SupportRequest | ErrorBody>> { const access = permitted(userId, id); if (access.result) return access.result; const user = access.user!; const request = access.request!; if (body.status) { const oldStatus = request.status; request.status = body.status; if (oldStatus !== request.status && request.status === SupportRequestStatus.RESOLVED) sendEmail(request.requestor_id, `Support Request Resolved: ${request.subject}`, 'Your support request has been marked as resolved.'); } if (body.priority && user.role === UserRole.ADMIN) request.priority = body.priority; if (body.assigned_admin_id && user.role === UserRole.ADMIN) request.assigned_admin_id = body.assigned_admin_id; request.updated_at = new Date().toISOString(); try { await persistSupportRequest(request); } catch (error) { console.error('[db] Could not persist support request changes to Postgres:', error); } return { status: 200, body: request }; }

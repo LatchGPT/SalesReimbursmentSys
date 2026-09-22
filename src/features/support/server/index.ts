@@ -1,1 +1,1 @@
-export { supportRouter } from '../../../services/support/supportRouter';
+export { addSupportMessage, createSupportRequest, getSupportRequest, listSupportRequests, updateSupportRequest } from '../../../services/support/supportRouter';

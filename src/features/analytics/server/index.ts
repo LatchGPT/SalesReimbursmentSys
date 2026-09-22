@@ -1,1 +1,1 @@
-export { analyticsRouter } from '../../../server/routes/analytics.routes';
+export { buildAnalyticsRecords, getAnalyticsSummary } from '../../../services/analytics/analytics';

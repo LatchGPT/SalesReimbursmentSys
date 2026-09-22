@@ -1,1 +1,1 @@
-export { activityRouter } from '../../../services/activity/activityRouter';
+export { getActivityStatus, listHistory, listOutbox, listSystemActivity, markActivitySeen, markOutboxRead } from '../../../services/activity/userActivity';

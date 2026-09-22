@@ -3,17 +3,18 @@ import { UserRole } from '../../lib/db/serverTypes';
 import { withPersistenceScope } from '../../lib/db/persistenceScope';
 import { state } from '../../server/state';
 import { hydrateServerlessState } from '../../server/stateLoader';
-import { activityRouter } from '../../features/activity/server';
-import { adminRouter, companiesRouter, fieldDefinitionsRouter, masterDataRouter } from '../../features/admin/server';
-import { analyticsRouter } from '../../features/analytics/server';
+import { adminRouter } from '../../features/admin/server';
 import { authRouter } from '../../features/auth/server';
 import { claimsRouter } from '../../features/claims/server';
 import { cashAdvancesRouter, liquidationsRouter } from '../../features/disbursements/server';
 import { momsRouter } from '../../features/moms/server';
-import { reviewMeetingsRouter } from '../../features/review-meetings/server';
-import { supportRouter } from '../../features/support/server';
-import { delegationsRouter, usersRouter } from '../../features/users/server';
 import { serverEnv } from '../../config/env';
+import { listUsers, updateUser } from '../users/usersRouter';
+import { acceptDelegation, cancelDelegation, createDelegation, declineDelegation, listDelegations } from '../users/delegationsRouter';
+import { addSupportMessage, createSupportRequest, getSupportRequest, listSupportRequests, updateSupportRequest } from '../support/supportRouter';
+import { confirmReviewMeeting, declineReviewMeeting, listApproverReviewMeetings, listApproverSchedule, listReviewMeetings, rescheduleReviewMeeting } from '../review-meetings/reviewMeetingsRouter';
+import { getActivityStatus, listHistory, listOutbox, listSystemActivity, markActivitySeen, markOutboxRead } from '../activity/userActivity';
+import { getAnalyticsSummary } from '../analytics/analytics';
 
 type RouteLayer = {
   route?: {
@@ -25,19 +26,10 @@ type RouteLayer = {
 
 const apiRouters: Router[] = [
   authRouter,
-  companiesRouter,
-  masterDataRouter,
-  fieldDefinitionsRouter,
-  usersRouter,
   momsRouter,
   claimsRouter,
   cashAdvancesRouter,
   liquidationsRouter,
-  delegationsRouter,
-  reviewMeetingsRouter,
-  supportRouter,
-  activityRouter,
-  analyticsRouter,
   adminRouter,
 ];
 
@@ -195,6 +187,42 @@ async function dispatchApiRouteInner(request: Request, pathname: string): Promis
 
     const url = new URL(request.url);
     const body = await requestBody(request);
+    if (pathname === '/users') {
+      if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+      const result = listUsers(request.headers.get('x-user-id'));
+      return json(result.body, result.status);
+    }
+    if (pathname === '/outbox') { const result = request.method === 'GET' ? listOutbox(request.headers.get('x-user-id'), url.searchParams) : request.method === 'PUT' ? markOutboxRead(request.headers.get('x-user-id'), body as { ids?: string[] }) : { status: 405, body: { error: 'Method not allowed' } }; return json(result.body, result.status); }
+    if (pathname === '/analytics/summary') { if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405); const result = getAnalyticsSummary(request.headers.get('x-user-id'), url.searchParams); return json(result.body, result.status); }
+    if (pathname === '/activity/status' || pathname === '/history' || pathname === '/system-activity') { if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405); const result = pathname === '/activity/status' ? getActivityStatus(request.headers.get('x-user-id')) : pathname === '/history' ? listHistory(request.headers.get('x-user-id'), url.searchParams) : listSystemActivity(request.headers.get('x-user-id'), url.searchParams); return json(result.body, result.status); }
+    if (pathname === '/activity/seen') { if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405); const result = markActivitySeen(request.headers.get('x-user-id'), body as { section?: string }); return json(result.body, result.status); }
+    const userMatch = /^\/users\/([^/]+)$/.exec(pathname);
+    if (userMatch) {
+      if (request.method !== 'PUT') return json({ error: 'Method not allowed' }, 405);
+      const result = await updateUser(request.headers.get('x-user-id'), decodeURIComponent(userMatch[1]), body as Record<string, unknown>);
+      return json(result.body, result.status);
+    }
+    if (pathname === '/delegations') {
+      if (request.method === 'GET') { const result = listDelegations(request.headers.get('x-user-id')); return json(result.body, result.status); }
+      if (request.method === 'POST') { const result = await createDelegation(request.headers.get('x-user-id'), body as Record<string, unknown>); return json(result.body, result.status); }
+      return json({ error: 'Method not allowed' }, 405);
+    }
+    const delegationMatch = /^\/delegations\/([^/]+)\/(accept|decline|cancel)$/.exec(pathname);
+    if (delegationMatch) {
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+      const [, rawId, action] = delegationMatch; const id = decodeURIComponent(rawId); const userId = request.headers.get('x-user-id');
+      const result = action === 'accept' ? await acceptDelegation(userId, id) : action === 'decline' ? await declineDelegation(userId, id, body as { reason?: string }) : await cancelDelegation(userId, id);
+      return json(result.body, result.status);
+    }
+    if (pathname === '/support') { if (request.method === 'GET') { const result = listSupportRequests(request.headers.get('x-user-id')); return json(result.body, result.status); } if (request.method === 'POST') { const result = await createSupportRequest(request.headers.get('x-user-id'), body as Record<string, unknown>); return json(result.body, result.status); } return json({ error: 'Method not allowed' }, 405); }
+    const supportMessagesMatch = /^\/support\/([^/]+)\/messages$/.exec(pathname);
+    if (supportMessagesMatch) { if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405); const result = await addSupportMessage(request.headers.get('x-user-id'), decodeURIComponent(supportMessagesMatch[1]), body as { message?: string }); return json(result.body, result.status); }
+    const supportMatch = /^\/support\/([^/]+)$/.exec(pathname);
+    if (supportMatch) { const id = decodeURIComponent(supportMatch[1]); if (request.method === 'GET') { const result = getSupportRequest(request.headers.get('x-user-id'), id); return json(result.body, result.status); } if (request.method === 'PUT') { const result = await updateSupportRequest(request.headers.get('x-user-id'), id, body as Record<string, unknown>); return json(result.body, result.status); } return json({ error: 'Method not allowed' }, 405); }
+    if (pathname === '/review-meetings') { if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405); const result = listReviewMeetings(request.headers.get('x-user-id')); return json(result.body, result.status); }
+    if (pathname === '/approver/schedule' || pathname === '/approver/review-meetings') { if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405); const result = pathname.endsWith('/schedule') ? listApproverSchedule(request.headers.get('x-user-id')) : listApproverReviewMeetings(request.headers.get('x-user-id')); return json(result.body, result.status); }
+    const reviewMatch = /^\/review-meetings\/([^/]+)\/(confirm|decline|reschedule)$/.exec(pathname);
+    if (reviewMatch) { const [, rawId, action] = reviewMatch; const id = decodeURIComponent(rawId); const userId = request.headers.get('x-user-id'); if ((action === 'confirm' || action === 'decline') && request.method === 'POST') { const result = action === 'confirm' ? await confirmReviewMeeting(userId, id) : await declineReviewMeeting(userId, id, body as { reason?: string }); return json(result.body, result.status); } if (action === 'reschedule' && request.method === 'PUT') { const result = await rescheduleReviewMeeting(userId, id, body as { meeting_date?: string; meeting_time?: string }); return json(result.body, result.status); } return json({ error: 'Method not allowed' }, 405); }
     let pathExists = false;
 
     for (const router of apiRouters) {
