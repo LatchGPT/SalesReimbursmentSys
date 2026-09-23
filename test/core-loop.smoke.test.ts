@@ -40,6 +40,35 @@ async function api(path: string, userId: string, init: RequestInit = {}) {
 }
 
 describe('core reimbursement loop (submit -> approve -> process -> ready -> complete)', () => {
+  it('saves a partial reimbursement as a draft without relaxing submission validation', async () => {
+    const mom = await api('/api/moms', REQUESTOR_ID, {
+      method: 'POST',
+      body: JSON.stringify({ status: 'Draft' }),
+    });
+    expect(mom.status).toBe(200);
+
+    const draft = await api('/api/claims', REQUESTOR_ID, {
+      method: 'POST',
+      body: JSON.stringify({
+        mom_id: mom.body.id,
+        is_draft: true,
+        line_items: [{ category: 'Meals', amount: 0, receipt_url: '' }],
+      }),
+    });
+    expect(draft.status).toBe(200);
+    expect(draft.body.status).toBe('Draft');
+    expect(draft.body.receipt_url).toBe('');
+
+    const incompleteSubmission = await api('/api/claims', REQUESTOR_ID, {
+      method: 'POST',
+      body: JSON.stringify({
+        mom_id: mom.body.id,
+        line_items: [{ category: 'Meals', amount: 0, receipt_url: '' }],
+      }),
+    });
+    expect(incompleteSubmission.status).toBe(400);
+  });
+
   it('drives a claim through every status transition against the real routes', async () => {
     // 1. Requestor completes a Minutes of Meeting.
     const mom = await api('/api/moms', REQUESTOR_ID, {

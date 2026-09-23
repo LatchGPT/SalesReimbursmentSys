@@ -33,10 +33,14 @@ export function SubmitClaimWizard() {
     previewMom,
     previewExporting,
     setPreviewExporting,
+    unsavedChangesDialog,
   } = wizard;
 
   if (step === 0) {
-    return <ClaimTypeStep wizard={wizard} />;
+    return <>
+      <ClaimTypeStep wizard={wizard} />
+      {unsavedChangesDialog}
+    </>;
   }
 
   return (
@@ -180,6 +184,7 @@ export function SubmitClaimWizard() {
           }
         />
       )}
+      {unsavedChangesDialog}
     </div>
   );
 }

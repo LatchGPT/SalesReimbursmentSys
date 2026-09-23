@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { Input, Select } from '../../../components/ui/Input';
 import { KPICard } from '../../../components/ui/KPICard';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { useAppContext } from '../../../components/AppContext';
@@ -13,6 +14,10 @@ import { claimTypeIcon, isFinanceVisibleClaim } from '@/features/claims';
 export function FinanceDashboard() {
   const navigate = useNavigate();
   const { claims, users } = useAppContext();
+  const [recordSearch, setRecordSearch] = useState('');
+  const [recordType, setRecordType] = useState('');
+  const [recordStatus, setRecordStatus] = useState('');
+  const [showRecordFilters, setShowRecordFilters] = useState(false);
 
   const financeClaims = useMemo(() => claims.filter(isFinanceVisibleClaim), [claims]);
   const inProcessing = financeClaims.filter(c =>
@@ -30,10 +35,29 @@ export function FinanceDashboard() {
 
   const processingValue = inProcessing.reduce((sum, c) => sum + (c.approvedAmount || 0), 0);
   const readyValue = readyForClaim.reduce((sum, c) => sum + c.paidAmount, 0);
-  const recent = financeClaims
-    .slice()
-    .sort((a, b) => new Date(b.submittedAt || b.createdAt).getTime() - new Date(a.submittedAt || a.createdAt).getTime())
-    .slice(0, 8);
+  const recordTypes = useMemo(
+    () => Array.from(new Set(financeClaims.map(claim => claim.type))).sort(),
+    [financeClaims]
+  );
+  const recent = useMemo(() => {
+    const query = recordSearch.trim().toLowerCase();
+    return financeClaims
+      .filter(claim => {
+        const requestor = users.find(user => user.id === claim.requestorId);
+        const matchesSearch = !query || [claim.ref, claim.type, claim.client, requestor?.name]
+          .some(value => value?.toLowerCase().includes(query));
+        return matchesSearch && (!recordType || claim.type === recordType) && (!recordStatus || claim.status === recordStatus);
+      })
+      .sort((a, b) => new Date(b.submittedAt || b.createdAt).getTime() - new Date(a.submittedAt || a.createdAt).getTime())
+      .slice(0, 8);
+  }, [financeClaims, recordSearch, recordStatus, recordType, users]);
+  const hasRecordFilters = Boolean(recordType || recordStatus);
+
+  const clearRecordFilters = () => {
+    setRecordSearch('');
+    setRecordType('');
+    setRecordStatus('');
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -57,10 +81,48 @@ export function FinanceDashboard() {
       </div>
 
       <Card>
-        <CardHeader className="bg-surface-container-low">
+        <CardHeader className="bg-surface-container-lowest">
           <h2 className="font-headline-md text-on-surface">Recent Financial Records</h2>
           <Button size="sm" variant="ghost" onClick={() => navigate('/claims')}>View all</Button>
         </CardHeader>
+        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative min-w-0 flex-1">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+              <Input
+                className="pl-10"
+                value={recordSearch}
+                onChange={event => setRecordSearch(event.target.value)}
+                placeholder="Search reference, requestor, client, or type..."
+                aria-label="Search recent financial records"
+              />
+            </div>
+            <Button
+              variant="outline"
+              className="gap-2 md:flex-none"
+              onClick={() => setShowRecordFilters(open => !open)}
+              aria-expanded={showRecordFilters}
+            >
+              <span className="material-symbols-outlined text-[18px]">filter_list</span>
+              Filters{hasRecordFilters ? ' (active)' : ''}
+            </Button>
+            {(recordSearch || hasRecordFilters) && (
+              <button className="text-xs font-semibold text-primary hover:underline md:flex-none" onClick={clearRecordFilters}>Clear all</button>
+            )}
+          </div>
+          {showRecordFilters && (
+            <div className="mt-4 grid grid-cols-1 gap-3 border-t border-outline-variant pt-4 sm:grid-cols-2">
+              <Select value={recordType} onChange={event => setRecordType(event.target.value)} aria-label="Filter recent financial records by type">
+                <option value="">All types</option>
+                {recordTypes.map(type => <option key={type} value={type}>{type}</option>)}
+              </Select>
+              <Select value={recordStatus} onChange={event => setRecordStatus(event.target.value)} aria-label="Filter recent financial records by status">
+                <option value="">All statuses</option>
+                {Array.from(new Set(financeClaims.map(claim => claim.status))).map(status => <option key={status} value={status}>{status}</option>)}
+              </Select>
+            </div>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
@@ -74,7 +136,14 @@ export function FinanceDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {recent.map(claim => {
+              {recent.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-outline">
+                    <span className="material-symbols-outlined text-4xl opacity-50">manage_search</span>
+                    <p className="mt-2 font-label-md">No financial records match these filters.</p>
+                  </td>
+                </tr>
+              ) : recent.map(claim => {
                 const requestor = users.find(u => u.id === claim.requestorId);
                 return (
                   <tr key={claim.id} className="hover:bg-primary-container/5 cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>

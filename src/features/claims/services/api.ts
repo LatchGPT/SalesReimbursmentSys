@@ -183,7 +183,7 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
   }
 
   const missing = uploaded.findIndex((li) => !li.receiptUrl);
-  if (missing !== -1) {
+  if (!isDraft && missing !== -1) {
     throw new Error(`Expense row ${missing + 1} needs a receipt attached before you can submit.`);
   }
 

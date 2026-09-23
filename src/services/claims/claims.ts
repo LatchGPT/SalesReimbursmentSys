@@ -158,8 +158,8 @@ export async function createClaim(userId: string | null, body: any) {
     for (const [index, item] of line_items.entries()) {
       if (!is_draft && !item.category) return { status: 400, body: { error: 'Each expense must have a category.' } };
       const numericAmount = Number(item.amount);
-      if (isNaN(numericAmount) || numericAmount <= 0) return { status: 400, body: { error: 'Each expense amount must be a valid number greater than zero.' } };
-      if (!item.receipt_url) return { status: 400, body: { error: 'Each expense must have a receipt.' } };
+      if (!is_draft && (isNaN(numericAmount) || numericAmount <= 0)) return { status: 400, body: { error: 'Each expense amount must be a valid number greater than zero.' } };
+      if (!is_draft && !item.receipt_url) return { status: 400, body: { error: 'Each expense must have a receipt.' } };
       if (!is_draft) {
         const dateError = getReimbursementDateError(item.expense_date, getTodayIsoDate());
         if (dateError) return { status: 400, body: { error: `Expense row ${index + 1}: ${dateError}` } };
@@ -167,7 +167,7 @@ export async function createClaim(userId: string | null, body: any) {
 
       itemsToCreate.push({
         category: normalizeExpenseCategory(item.category),
-        amount: numericAmount,
+        amount: isNaN(numericAmount) ? 0 : numericAmount,
         receipt_url: item.receipt_url,
         or_number: item.or_number,
         vendor: item.vendor,
@@ -185,22 +185,22 @@ export async function createClaim(userId: string | null, body: any) {
       const dateError = getReimbursementDateError(expense_date, getTodayIsoDate());
       if (dateError) return { status: 400, body: { error: dateError } };
     }
-    if (!expense_category) return { status: 400, body: { error: 'Expense Category is required.' } };
-    if (total_amount === undefined || total_amount === null || total_amount === '') {
+    if (!is_draft && !expense_category) return { status: 400, body: { error: 'Expense Category is required.' } };
+    if (!is_draft && (total_amount === undefined || total_amount === null || total_amount === '')) {
       return { status: 400, body: { error: 'Expense amount is required.' } };
     }
     const numericAmount = Number(total_amount);
-    if (isNaN(numericAmount)) {
+    if (!is_draft && isNaN(numericAmount)) {
       return { status: 400, body: { error: 'Expense amount must be a valid number.' } };
     }
-    if (numericAmount <= 0) {
+    if (!is_draft && numericAmount <= 0) {
       return { status: 400, body: { error: 'Expense amount must be greater than zero.' } };
     }
-    if (!receipt_url) return { status: 400, body: { error: 'Receipt image or PDF is required.' } };
+    if (!is_draft && !receipt_url) return { status: 400, body: { error: 'Receipt image or PDF is required.' } };
 
     itemsToCreate.push({
       category: normalizeExpenseCategory(expense_category),
-      amount: numericAmount,
+      amount: isNaN(numericAmount) ? 0 : numericAmount,
       receipt_url: receipt_url,
       or_number: or_number,
       expense_date,

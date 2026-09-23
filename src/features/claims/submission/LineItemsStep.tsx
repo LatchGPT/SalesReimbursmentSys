@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button, cn } from '../../../components/ui/Button';
 import { Input, Select, Label } from '../../../components/ui/Input';
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card';
@@ -9,8 +10,10 @@ import {
   validateReimbursementPurchaseDate,
 } from '../domain/reimbursementPolicy';
 import { useClaimWizard } from './useClaimWizard';
+import { ReceiptAttachmentPreviewModal } from '../detail/ReceiptAttachmentPreviewModal';
 
 export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWizard> }) {
+  const [previewReceipt, setPreviewReceipt] = useState<{ url: string; fileName?: string; fileType?: string } | null>(null);
   const {
     claimType,
     lineItemsLocal,
@@ -218,15 +221,34 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         {item.receiptFile ? (
-                          <div className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded text-xs">
-                            <span className="material-symbols-outlined text-[14px] text-primary">description</span>
-                            <span className="truncate max-w-[100px]">{item.receiptFile.name}</span>
-                            <button type="button" onClick={() => setLineItemsLocal(prev => prev.map((li, i) =>
-                              i === idx ? { ...li, receiptFile: undefined, receiptUrl: undefined } : li
-                            ))} className="text-error hover:opacity-80">
-                              <span className="material-symbols-outlined text-[14px]">close</span>
-                            </button>
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded text-xs">
+                              <span className="material-symbols-outlined text-[14px] text-primary">description</span>
+                              <span className="truncate max-w-[100px]">{item.receiptFile.name}</span>
+                              <button type="button" aria-label={`Remove ${item.receiptFile.name}`} onClick={() => setLineItemsLocal(prev => prev.map((li, i) =>
+                                i === idx ? { ...li, receiptFile: undefined, receiptUrl: undefined } : li
+                              ))} className="text-error hover:opacity-80">
+                                <span className="material-symbols-outlined text-[14px]">close</span>
+                              </button>
+                            </div>
+                            {item.receiptUrl && (
+                              <button
+                                type="button"
+                                className="text-xs font-semibold text-primary hover:underline"
+                                onClick={() => setPreviewReceipt({ url: item.receiptUrl!, fileName: item.receiptFile?.name, fileType: item.receiptFile?.type })}
+                              >
+                                View Receipt
+                              </button>
+                            )}
                           </div>
+                        ) : item.receiptUrl ? (
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-primary hover:underline"
+                            onClick={() => setPreviewReceipt({ url: item.receiptUrl! })}
+                          >
+                            View Receipt
+                          </button>
                         ) : (
                           <label className="cursor-pointer inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
                             <span className="material-symbols-outlined text-[16px]">upload_file</span> Attach OR/Receipt
@@ -289,6 +311,12 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
           </div>
         )}
       </CardContent>
+      <ReceiptAttachmentPreviewModal
+        url={previewReceipt?.url || null}
+        fileName={previewReceipt?.fileName}
+        fileType={previewReceipt?.fileType}
+        onClose={() => setPreviewReceipt(null)}
+      />
     </Card>
   );
 }

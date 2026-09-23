@@ -225,6 +225,52 @@
   width: 0;
 }
 
+/* Tables share the same visual hierarchy regardless of the feature that
+   renders them: a muted header row separates labels from white data rows. */
+table > thead {
+  background-color: var(--color-surface-container-low);
+}
+
+table > tbody {
+  background-color: var(--color-surface-container-lowest);
+}
+
+/* Shared data-table rhythm: matching header/body insets keep values aligned,
+   while ordinary prose can wrap instead of crowding adjacent columns. */
+table th {
+  padding: 0.875rem 1.25rem !important;
+  vertical-align: middle;
+}
+
+table td {
+  padding: 1rem 1.25rem !important;
+  vertical-align: middle;
+}
+
+table th:not(.whitespace-nowrap),
+table td:not(.whitespace-nowrap) {
+  overflow-wrap: anywhere;
+  white-space: normal !important;
+}
+
+@media (max-width: 639px) {
+  table th {
+    padding: 0.75rem 1rem !important;
+  }
+
+  table td {
+    padding: 0.875rem 1rem !important;
+  }
+}
+
+/* Give every table caption a clearer visual hierarchy than its column labels. */
+.table-section-title h2,
+.table-section-title h3,
+.table-section-title h4 {
+  font-size: 1.375rem;
+  line-height: 1.75rem;
+}
+
 @media print {
   /* Hide sidebar, topbar, and any other non-essential UI */
   header, nav, aside, .sidebar, .topbar, button:not(.print-keep), [role="navigation"] {
