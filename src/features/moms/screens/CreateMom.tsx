@@ -135,6 +135,7 @@ export function CreateMom() {
     customFields,
   };
 
+<<<<<<< HEAD
   const save = async (status: 'Draft' | 'Completed', leaveAfterSave = true): Promise<boolean> => {
     if (status === 'Completed' && (!form.client.trim() || !form.purpose.trim() || !form.meetingDate)) {
       addToast('Client, purpose, and date of meeting are required.', 'error');
@@ -161,14 +162,54 @@ export function CreateMom() {
       addToast('Add at least one client email before enabling client notifications.', 'error');
       window.setTimeout(() => clientEmailInputRef.current?.focus(), 0);
       return false;
+=======
+  const save = async (status: 'Draft' | 'Completed') => {
+    if (status === 'Completed') {
+      if (!form.client.trim() || !form.purpose.trim() || !form.meetingDate) {
+        addToast('Client, purpose, and date of meeting are required to finalize.', 'error');
+        return;
+      }
+      // Validate the dynamic MoM fields exactly as DynamicFieldRenderer shows them
+      // (entity 'mom', active, minus the excluded legacy designation column).
+      const activeMomFields = fieldDefinitions.filter(
+        fd => fd.entity === 'mom' && fd.active && fd.key !== 'contact_person_designation',
+      );
+      const { errors: fieldErrors, firstError } = validateDynamicFields(activeMomFields, customFields);
+      if (firstError) {
+        setMomErrors(fieldErrors);
+        addToast(firstError.message, 'error');
+        return;
+      }
+      setMomErrors({});
+      // Fold a half-typed address in the box into the list before validating.
+      const pending = emailDraft.trim().replace(/,$/, '');
+      const emails = pending && EMAIL_RE.test(pending) && !clientEmails.includes(pending)
+        ? [...clientEmails, pending]
+        : clientEmails;
+      if (form.ccClient && emails.length === 0) {
+        addToast('Add at least one client email before enabling client notifications.', 'error');
+        window.setTimeout(() => clientEmailInputRef.current?.focus(), 0);
+        return;
+      }
+    } else {
+      setMomErrors({});
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
     }
+
     setSaving(true);
     try {
+      const pending = emailDraft.trim().replace(/,$/, '');
+      const emails = pending && EMAIL_RE.test(pending) && !clientEmails.includes(pending)
+        ? [...clientEmails, pending]
+        : clientEmails;
       // contact_person_designation stays in sync as a comma-joined legacy
       // field for any consumer still reading the old single-designation shape.
       const mergedCustomFields = { ...customFields, contact_person_designation: joinDesignations(contacts) };
       const payload = {
         ...form,
+        client: form.client.trim() || 'Untitled Meeting Draft',
+        purpose: form.purpose.trim() || (status === 'Draft' ? 'Draft Purpose' : ''),
+        meetingDate: form.meetingDate || new Date().toISOString().split('T')[0],
         contactPerson: serializeContacts(contacts),
         contactPersonEmail: emails.join(', '),
         documentType,
@@ -397,9 +438,16 @@ export function CreateMom() {
           </section>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant">
-            {!isEdit && <Button variant="outline" onClick={() => save('Draft')} disabled={saving}>Save Draft</Button>}
-            <Button onClick={() => save(isEdit ? (editing?.status === 'Completed' ? 'Completed' : 'Draft') : 'Completed')} disabled={saving}>
-              {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Finalize Record'}
+            {(!isEdit || editing?.status === 'Draft') && (
+              <Button variant="outline" onClick={() => save('Draft')} disabled={saving}>
+                {saving ? 'Saving…' : 'Save Draft'}
+              </Button>
+            )}
+            <Button
+              onClick={() => save(isEdit && editing?.status !== 'Draft' ? 'Completed' : 'Completed')}
+              disabled={saving}
+            >
+              {saving ? 'Saving…' : isEdit && editing?.status !== 'Draft' ? 'Save Changes' : 'Finalize Record'}
             </Button>
           </div>
         </CardContent>

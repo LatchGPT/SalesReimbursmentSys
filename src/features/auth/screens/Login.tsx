@@ -113,6 +113,7 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
 
     try {
       login(selectedUserId);
+      window.history.replaceState(null, '', '/');
       onLoggedIn();
     } catch {
       setNotice('The demo session could not be prepared. Please try again.');

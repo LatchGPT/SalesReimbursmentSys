@@ -19,7 +19,10 @@ export function __setTestDb(db: PrismaClientInstance | undefined): void {
 
 function createPrismaClient(): PrismaClientInstance {
   let connectionString = requireServerValue('DATABASE_URL', serverEnv.databaseUrl);
-  const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
+  const isLocal =
+    connectionString.includes('localhost') ||
+    connectionString.includes('127.0.0.1') ||
+    /[?&]sslmode=disable\b/i.test(connectionString);
 
   // Supabase poolers and serverless environments: prevent "self-signed certificate in certificate chain"
   if (!isLocal) {

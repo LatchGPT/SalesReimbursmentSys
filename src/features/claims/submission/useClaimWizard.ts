@@ -285,8 +285,13 @@ export function useClaimWizard() {
     setStep(prevIndex >= 0 ? stepFlow[prevIndex] : 0);
   };
 
+<<<<<<< HEAD
   const send = async (isDraft: boolean, leaveAfterSave = true): Promise<boolean> => {
     if (!isDraft && isReimbursement && showReimbursementDateError()) return false;
+=======
+  const send = async (isDraft: boolean) => {
+    if (!isDraft && isReimbursement && showReimbursementDateError()) return;
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
     if (!isDraft && claimType === 'Reimbursement' && momCore.ccClient && joinedClientEmails().trim() === '') {
       addToast('Add at least one client email to send claim status notifications.', 'error');
       setStep(2);
@@ -297,22 +302,28 @@ export function useClaimWizard() {
     try {
       if (claimType === 'Cash Advance') {
         await submitCashAdvanceFlow({
-          amount: cashAdvanceAmount,
-          purpose: cashAdvancePurpose,
+          amount: Number(cashAdvanceAmount) || 0,
+          purpose: cashAdvancePurpose || 'Draft Cash Advance',
           isDraft,
         });
       } else if (claimType === 'Liquidation') {
+        if (!isDraft && !cashAdvanceId) {
+          addToast('Please select the Cash Advance to liquidate.', 'error');
+          setLoading(false);
+          return;
+        }
         await submitLiquidationFlow({
-          cashAdvanceId,
+          cashAdvanceId: cashAdvanceId || (myCashAdvances[0]?.id || ''),
           lineItems: lineItemsLocal,
           refundMethod: varianceType === 'RefundDue' ? refundMethod : undefined,
           isDraft,
         });
       } else {
+        const hasMomData = Boolean(momCore.client || momCore.purpose);
         await submitClaimFlow({
           claimType,
           lineItems: lineItemsLocal,
-          mom: claimType === 'Reimbursement' ? {
+          mom: (claimType === 'Reimbursement' && (!isDraft || hasMomData)) ? {
             ...momCore,
             contactPerson: serializeContacts(contacts),
             contactPersonEmail: joinedClientEmails(),
@@ -321,7 +332,7 @@ export function useClaimWizard() {
           customFields: claimType === 'Reimbursement'
             ? { ...momData, contact_person_designation: joinDesignations(contacts), ...claimCustomFields }
             : { ...momData, ...claimCustomFields },
-          remarks: claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : momCore.purpose,
+          remarks: claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : (momCore.purpose || (isDraft ? 'Draft reimbursement' : '')),
           isDraft,
         });
       }
@@ -330,8 +341,12 @@ export function useClaimWizard() {
       if (leaveAfterSave) navigate('/claims');
       return true;
     } catch (err: any) {
+<<<<<<< HEAD
       addToast(err?.message || `Could not submit the ${claimType.toLowerCase()}.`, 'error');
       return false;
+=======
+      addToast(err?.message || (isDraft ? 'Could not save draft.' : `Could not submit the ${claimType.toLowerCase()}.`), 'error');
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
     } finally {
       setLoading(false);
     }
