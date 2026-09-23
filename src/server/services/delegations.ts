@@ -1,0 +1,42 @@
+import { DelegationStatus, ApproverDelegation } from '../../lib/db/serverTypes';
+import { state } from '../state';
+import { addDelegationHistory } from './history';
+import { persistDelegation } from '../../lib/db/workflowExtrasRepo';
+
+export function syncDelegationStatuses(): Promise<number> {
+  const now = new Date();
+  const writes: Promise<void>[] = [];
+  let expiredCount = 0;
+  state.delegations.forEach(d => {
+    if (d.status === DelegationStatus.ACTIVE) {
+      const end = new Date(d.end_date);
+      end.setHours(23, 59, 59, 999);
+      if (now > end) {
+        const oldStatus = d.status;
+        d.status = DelegationStatus.EXPIRED;
+        d.updated_at = now.toISOString();
+        expiredCount += 1;
+        addDelegationHistory(d.id, oldStatus, DelegationStatus.EXPIRED, 'system', 'Delegation window ended.');
+        writes.push(persistDelegation(d).catch((err: unknown) => {
+          console.error('[db] Could not persist delegation expiry to Postgres:', err);
+        }));
+      }
+    }
+  });
+  return Promise.all(writes).then(() => expiredCount);
+}
+
+export function getActiveDelegation(approverId: string, atDate: Date = new Date()): ApproverDelegation | undefined {
+  syncDelegationStatuses();
+  return state.delegations.find(d => {
+    if (d.approver_id !== approverId || d.status !== DelegationStatus.ACTIVE) return false;
+    const start = new Date(d.start_date);
+    const end = new Date(d.end_date);
+    end.setHours(23, 59, 59, 999);
+    return atDate >= start && atDate <= end;
+  });
+}export function isActiveDelegateFor(delegateId: string, approverId: string | undefined | null): boolean {
+  return !!approverId && state.delegations.some(d =>
+    d.delegate_id === delegateId && d.approver_id === approverId && d.status === DelegationStatus.ACTIVE
+  );
+}

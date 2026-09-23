@@ -1,4 +1,4 @@
-import { downloadFromSupabase } from '../../../../backend/src/server/http/storageHandlers';
+import { downloadFromSupabase } from '../../../services/storage/supabaseStorage';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

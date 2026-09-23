@@ -128,9 +128,9 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
           )}>
             <img 
               key={isCollapsed ? 'collapsed-logo' : 'full-logo'}
-              src={isCollapsed ? '/logo-icon.png' : '/logo/logo.png'}
+              src={isCollapsed ? '/logo/logo-icon.png' : '/logo/logo.png'}
               alt="Company Logo" 
-              loading="lazy"
+              fetchPriority="high"
               width={isCollapsed ? 32 : 180}
               height={isCollapsed ? 32 : 48}
               className={cn(

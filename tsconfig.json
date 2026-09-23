@@ -25,7 +25,7 @@
         "./src/*"
       ],
       "@server/*": [
-        "./backend/src/server/*"
+        "./src/server/*"
       ]
     },
     "allowImportingTsExtensions": true,
@@ -41,8 +41,6 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "next.config.ts",
-    "backend/src/**/*.ts",
-    "backend/server.ts",
     "test/**/*.ts",
     "config/vitest.config.ts",
     ".next/dev/types/**/*.ts"
@@ -54,7 +52,6 @@
     "build",
     "coverage",
     "tmp",
-    "uploads",
-    "backend/uploads"
+    "uploads"
   ]
 }

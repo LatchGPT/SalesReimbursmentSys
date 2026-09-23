@@ -13,7 +13,7 @@ Object.assign(process.env, { AUTO_SEED: 'false', NODE_ENV: 'production' });
 import { describe, it, expect } from 'vitest';
 import { getTodayIsoDate } from '../src/features/claims';
 
-const routeHandlers = await import('../src/app/api/[[...path]]/route');
+import { dispatchTestRequest } from './testRouter';
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.
@@ -23,18 +23,14 @@ const CUSTODIAN_ID = 'u3';
 const PURCHASE_DATE = getTodayIsoDate();
 
 async function api(path: string, userId: string, init: RequestInit = {}) {
-  const url = new URL(path, 'http://route-handler.test');
-  const method = (init.method || 'GET').toUpperCase() as keyof typeof routeHandlers;
-  const handler = routeHandlers[method] as typeof routeHandlers.GET;
-  const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
-  const res = await handler(new Request(url, {
+  const res = await dispatchTestRequest(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId,
       ...init.headers,
     },
-  }), { params: Promise.resolve({ path: segments }) });
+  });
   const body = await res.json().catch(() => undefined);
   return { status: res.status, body };
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import * as apiRoute from '../src/app/api/[[...path]]/route';
+import { dispatchTestRequest } from './testRouter';
 import { GET as apiHealth } from '../src/app/api/health/route';
 import { GET as cron } from '../src/app/api/cron/hourly/route';
 import { POST as upload } from '../src/app/api/upload/route';
@@ -7,6 +7,7 @@ import { POST as signUpload } from '../src/app/api/upload/sign/route';
 import { GET as healthz } from '../src/app/healthz/route';
 import { GET as readyz } from '../src/app/readyz/route';
 import { GET as download } from '../src/app/uploads/[filename]/route';
+import { GET as workspace } from '../src/app/api/workspace/route';
 
 const originalCronSecret = process.env.CRON_SECRET;
 
@@ -16,11 +17,7 @@ afterEach(() => {
 });
 
 async function callApi(path: string, init: RequestInit = {}): Promise<Response> {
-  const url = new URL(path, 'http://route-handler.test');
-  const method = (init.method || 'GET').toUpperCase() as keyof typeof apiRoute;
-  const handler = apiRoute[method] as typeof apiRoute.GET;
-  const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
-  return handler(new Request(url, init), { params: Promise.resolve({ path: segments }) });
+  return dispatchTestRequest(path, init);
 }
 
 describe('Next.js Route Handler boundary', () => {
@@ -95,5 +92,29 @@ describe('Next.js Route Handler boundary', () => {
       { params: Promise.resolve({ filename: 'not-linked.pdf' }) },
     );
     expect(missingDownload.status).toBe(404);
+  });
+
+  it('serves the consolidated /api/workspace payload in a single trip', async () => {
+    const unauth = await workspace(new Request('http://route-handler.test/api/workspace'));
+    expect(unauth.status).toBe(401);
+
+    const res = await workspace(new Request('http://route-handler.test/api/workspace', {
+      headers: { 'X-User-Id': 'u1' },
+    }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toHaveProperty('me');
+    expect(body).toHaveProperty('users');
+    expect(body).toHaveProperty('claims');
+    expect(body).toHaveProperty('advances');
+    expect(body).toHaveProperty('liquidations');
+    expect(body).toHaveProperty('masterAll');
+    expect(body).toHaveProperty('fieldDefinitions');
+    expect(body).toHaveProperty('moms');
+    expect(body).toHaveProperty('reviewMeetings');
+    expect(body).toHaveProperty('companies');
+    expect(body).toHaveProperty('settings');
+    expect(body).toHaveProperty('authConfig');
+    expect(body.me.id).toBe('u1');
   });
 });

@@ -23,16 +23,16 @@
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildPgMemDb } from './helpers/pgMemDb';
-import { __setTestDb } from '../backend/src/db/index';
-import { syncUsersToDb } from '../backend/src/db/usersRepo';
+import { __setTestDb } from '../src/lib/db/index';
+import { syncUsersToDb } from '../src/lib/db/usersRepo';
 import {
   persistMom,
   persistClaim,
   persistClaimWithLineItems,
   loadCoreLoopFromDb,
-} from '../backend/src/db/coreLoopRepo';
-import { UserRole, MomStatus, MinutesSource, ClaimStatus } from '../backend/src/serverTypes';
-import type { User, Mom, Claim, ExpenseLineItem } from '../backend/src/serverTypes';
+} from '../src/lib/db/coreLoopRepo';
+import { UserRole, MomStatus, MinutesSource, ClaimStatus } from '../src/lib/db/serverTypes';
+import type { User, Mom, Claim, ExpenseLineItem } from '../src/lib/db/serverTypes';
 
 const REQUESTOR: User = {
   id: 'pgmem-test-requestor',
