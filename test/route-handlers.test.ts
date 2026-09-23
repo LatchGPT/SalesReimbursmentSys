@@ -92,6 +92,17 @@ describe('Next.js Route Handler boundary', () => {
       { params: Promise.resolve({ filename: 'not-linked.pdf' }) },
     );
     expect(missingDownload.status).toBe(404);
+
+    const validForm = new FormData();
+    validForm.append('file', new File([new Uint8Array([1, 2, 3])], 'receipt.png', { type: 'image/png' }));
+    const validUpload = await upload(new Request('http://route-handler.test/api/upload', {
+      method: 'POST',
+      headers: { 'X-User-Id': 'u1' },
+      body: validForm,
+    }));
+    expect(validUpload.status).toBe(200);
+    const validUploadBody = await validUpload.json() as { url: string };
+    expect(validUploadBody.url).toMatch(/^\/uploads\/[0-9a-f-]+.png$/);
   });
 
   it('serves the consolidated /api/workspace payload in a single trip', async () => {

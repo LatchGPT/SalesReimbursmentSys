@@ -86,6 +86,27 @@ export async function clearUsersInDb(): Promise<void> {
   await getDb().users.deleteMany();
 }
 
+export async function deleteUserFromDb(userId: string): Promise<void> {
+  if (!isDbConfigured()) return;
+  await getDb().$transaction(async (tx) => {
+    await tx.status_histories.deleteMany({
+      where: { user_id: userId },
+    });
+    await tx.approver_delegations.deleteMany({
+      where: {
+        OR: [
+          { approver_id: userId },
+          { delegate_id: userId },
+          { created_by: userId },
+        ],
+      },
+    });
+    await tx.users.delete({
+      where: { id: userId },
+    });
+  });
+}
+
 function userHistoryFromRow(row: StatusHistoryRow): StatusHistory {
   return {
     id: row.id,

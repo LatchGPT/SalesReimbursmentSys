@@ -8,6 +8,7 @@ import * as claimApproveRoute from '../src/app/api/claims/[id]/approve/route';
 import * as claimCodeRoute from '../src/app/api/claims/[id]/claim-code/route';
 import * as claimReadyRoute from '../src/app/api/claims/[id]/ready-for-claim/route';
 import * as claimClaimRoute from '../src/app/api/claims/[id]/claim/route';
+import * as claimResubmitRoute from '../src/app/api/claims/[id]/resubmit/route';
 import * as custodianDecisionRoute from '../src/app/api/custodian/claims/[id]/decision/route';
 import * as outboxRoute from '../src/app/api/outbox/route';
 import * as historyRoute from '../src/app/api/history/route';
@@ -27,6 +28,7 @@ import * as loginRoute from '../src/app/api/login/route';
 import * as meRoute from '../src/app/api/me/route';
 import * as meNotificationPrefsRoute from '../src/app/api/me/notification-prefs/route';
 import * as usersRoute from '../src/app/api/users/route';
+import * as userIdRoute from '../src/app/api/users/[id]/route';
 import * as adminSettingsRoute from '../src/app/api/admin/settings/route';
 
 type RouteEntry = {
@@ -49,6 +51,7 @@ const routes: RouteEntry[] = [
   { pattern: /^\/api\/claims\/([^/]+)\/claim-code$/, paramNames: ['id'], module: claimCodeRoute },
   { pattern: /^\/api\/claims\/([^/]+)\/ready-for-claim$/, paramNames: ['id'], module: claimReadyRoute },
   { pattern: /^\/api\/claims\/([^/]+)\/claim$/, paramNames: ['id'], module: claimClaimRoute },
+  { pattern: /^\/api\/claims\/([^/]+)\/resubmit$/, paramNames: ['id'], module: claimResubmitRoute },
   { pattern: /^\/api\/claims\/([^/]+)$/, paramNames: ['id'], module: claimIdRoute },
   { pattern: /^\/api\/custodian\/claims\/([^/]+)\/decision$/, paramNames: ['id'], module: custodianDecisionRoute },
   { pattern: /^\/api\/outbox$/, paramNames: [], module: outboxRoute },
@@ -63,6 +66,7 @@ const routes: RouteEntry[] = [
   { pattern: /^\/api\/liquidations\/([^/]+)\/review$/, paramNames: ['id'], module: liquidationReviewRoute },
   { pattern: /^\/api\/analytics\/summary$/, paramNames: [], module: analyticsSummaryRoute },
   { pattern: /^\/api\/users$/, paramNames: [], module: usersRoute },
+  { pattern: /^\/api\/users\/([^/]+)$/, paramNames: ['id'], module: userIdRoute },
   { pattern: /^\/api\/admin\/settings$/, paramNames: [], module: adminSettingsRoute },
 ];
 

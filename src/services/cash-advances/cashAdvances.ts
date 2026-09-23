@@ -89,22 +89,29 @@ export async function createCashAdvance(userId: string | null, body: any) {
     return { status: 400, body: { error: 'A requestor may only have one active (unliquidated) Cash Advance at a time. Please liquidate or resolve your current open Cash Advance before requesting a new one.' } };
   }
 
-  const { amount, purpose, momId } = body || {};
-  if (amount === undefined || amount === null || amount === '') {
-    return { status: 400, body: { error: 'Amount is required.' } };
-  }
-  const numericAmount = Number(amount);
-  if (isNaN(numericAmount) || numericAmount <= 0) {
-    return { status: 400, body: { error: 'Amount must be a valid positive number.' } };
-  }
-  if (!purpose) {
-    return { status: 400, body: { error: 'Purpose is required.' } };
+  const { amount, purpose, momId, is_draft, isDraft } = body || {};
+  const isDraftFlag = Boolean(is_draft || isDraft);
+  let numericAmount = Number(amount);
+  if (!isDraftFlag) {
+    if (amount === undefined || amount === null || amount === '') {
+      return { status: 400, body: { error: 'Amount is required.' } };
+    }
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      return { status: 400, body: { error: 'Amount must be a valid positive number.' } };
+    }
+    if (!purpose) {
+      return { status: 400, body: { error: 'Purpose is required.' } };
+    }
+  } else {
+    if (isNaN(numericAmount) || numericAmount < 0) {
+      numericAmount = 0;
+    }
   }
 
   if (momId) {
     const mom = state.moms.find(m => m.id === momId);
     if (!mom) return { status: 400, body: { error: 'Minutes of Meeting (MOM) not found.' } };
-    if (mom.status !== MomStatus.COMPLETED) {
+    if (!isDraftFlag && mom.status !== MomStatus.COMPLETED) {
       return { status: 400, body: { error: 'Cannot attach an incomplete or draft Minutes of Meeting.' } };
     }
   }
@@ -114,7 +121,7 @@ export async function createCashAdvance(userId: string | null, body: any) {
     id: caId,
     requestorId: user.id,
     amount: numericAmount,
-    purpose,
+    purpose: purpose || (isDraftFlag ? 'Draft Cash Advance' : ''),
     momId,
     approverId: user.reports_to,
     status: CashAdvanceStatus.DRAFT,
