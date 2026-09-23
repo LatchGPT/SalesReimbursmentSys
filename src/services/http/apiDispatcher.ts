@@ -3,18 +3,13 @@ import { UserRole } from '../../lib/db/serverTypes';
 import { withPersistenceScope } from '../../lib/db/persistenceScope';
 import { state } from '../../server/state';
 import { hydrateServerlessState } from '../../server/stateLoader';
-import { adminRouter } from '../../features/admin/server';
-import { authRouter } from '../../features/auth/server';
 import { claimsRouter } from '../../features/claims/server';
-import { cashAdvancesRouter, liquidationsRouter } from '../../features/disbursements/server';
-import { momsRouter } from '../../features/moms/server';
 import { serverEnv } from '../../config/env';
 import { listUsers, updateUser } from '../users/usersRouter';
 import { acceptDelegation, cancelDelegation, createDelegation, declineDelegation, listDelegations } from '../users/delegationsRouter';
 import { addSupportMessage, createSupportRequest, getSupportRequest, listSupportRequests, updateSupportRequest } from '../support/supportRouter';
 import { confirmReviewMeeting, declineReviewMeeting, listApproverReviewMeetings, listApproverSchedule, listReviewMeetings, rescheduleReviewMeeting } from '../review-meetings/reviewMeetingsRouter';
 import { getActivityStatus, listHistory, listOutbox, listSystemActivity, markActivitySeen, markOutboxRead } from '../activity/userActivity';
-import { getAnalyticsSummary } from '../analytics/analytics';
 
 type RouteLayer = {
   route?: {
@@ -25,12 +20,7 @@ type RouteLayer = {
 };
 
 const apiRouters: Router[] = [
-  authRouter,
-  momsRouter,
   claimsRouter,
-  cashAdvancesRouter,
-  liquidationsRouter,
-  adminRouter,
 ];
 
 const NO_DATABASE_PATHS = new Set([
@@ -193,7 +183,6 @@ async function dispatchApiRouteInner(request: Request, pathname: string): Promis
       return json(result.body, result.status);
     }
     if (pathname === '/outbox') { const result = request.method === 'GET' ? listOutbox(request.headers.get('x-user-id'), url.searchParams) : request.method === 'PUT' ? markOutboxRead(request.headers.get('x-user-id'), body as { ids?: string[] }) : { status: 405, body: { error: 'Method not allowed' } }; return json(result.body, result.status); }
-    if (pathname === '/analytics/summary') { if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405); const result = getAnalyticsSummary(request.headers.get('x-user-id'), url.searchParams); return json(result.body, result.status); }
     if (pathname === '/activity/status' || pathname === '/history' || pathname === '/system-activity') { if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405); const result = pathname === '/activity/status' ? getActivityStatus(request.headers.get('x-user-id')) : pathname === '/history' ? listHistory(request.headers.get('x-user-id'), url.searchParams) : listSystemActivity(request.headers.get('x-user-id'), url.searchParams); return json(result.body, result.status); }
     if (pathname === '/activity/seen') { if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405); const result = markActivitySeen(request.headers.get('x-user-id'), body as { section?: string }); return json(result.body, result.status); }
     const userMatch = /^\/users\/([^/]+)$/.exec(pathname);

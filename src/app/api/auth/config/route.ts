@@ -1,0 +1,1 @@
+import { authConfig } from '../../../../services/auth/auth'; export const dynamic='force-dynamic'; export const GET=async()=>{const result=authConfig();return Response.json(result.body,{status:result.status});};
