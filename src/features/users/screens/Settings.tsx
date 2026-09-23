@@ -291,10 +291,15 @@ function DemoDataPanel() {
     <div className="space-y-8">
       <div>
         <h4 className="font-headline-sm text-on-surface mb-1">Generate demo data</h4>
-        <p className="text-body-sm text-outline mb-4">
-          Pick which categories to seed, then regenerate. This wipes the current data first, so the
-          app lands on exactly what you select. Users and master data are always kept.
-        </p>
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-tertiary/40 bg-tertiary-container/15 p-4 text-on-surface">
+          <span aria-hidden="true" className="material-symbols-outlined mt-0.5 shrink-0 text-[22px] text-tertiary">warning_amber</span>
+          <div>
+            <p className="font-label-md text-on-surface">Regenerating demo data replaces current transactional data.</p>
+            <p className="mt-1 text-body-sm text-on-surface-variant">
+              Select the categories to create before continuing. Unselected categories will be empty; users and master data are retained.
+            </p>
+          </div>
+        </div>
         <div className="space-y-2">
           {DEMO_CATEGORIES.map(cat => (
             <div
@@ -383,6 +388,22 @@ const DEFAULT_NOTIFY_PREFS: Record<string, { inApp: boolean, email: boolean }> =
   delegation: { inApp: true, email: true },
 };
 
+function normalizeNotificationPrefs(value: unknown): Record<string, { inApp: boolean, email: boolean }> {
+  const saved = value && typeof value === 'object'
+    ? value as Record<string, Partial<{ inApp: boolean; email: boolean }>>
+    : {};
+
+  return Object.fromEntries(
+    Object.entries(DEFAULT_NOTIFY_PREFS).map(([key, defaults]) => [
+      key,
+      {
+        inApp: typeof saved[key]?.inApp === 'boolean' ? saved[key].inApp : defaults.inApp,
+        email: typeof saved[key]?.email === 'boolean' ? saved[key].email : defaults.email,
+      },
+    ])
+  );
+}
+
 export function Settings() {
   const { addToast } = useToast();
   const { currentUser, refresh, demoModeEnabled } = useAppContext();
@@ -390,14 +411,14 @@ export function Settings() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'profile');
   const [savingPrefs, setSavingPrefs] = useState(false);
 
-  const [notifyPrefs, setNotifyPrefs] = useState<Record<string, { inApp: boolean, email: boolean }>>(
-    (currentUser.notificationPrefs as any) || DEFAULT_NOTIFY_PREFS
+  const [notifyPrefs, setNotifyPrefs] = useState<Record<string, { inApp: boolean, email: boolean }>>(() =>
+    normalizeNotificationPrefs(currentUser.notificationPrefs)
   );
 
   const handleNotifyChange = (key: string, type: 'inApp' | 'email', value: boolean) => {
     setNotifyPrefs(prev => ({
       ...prev,
-      [key]: { ...prev[key], [type]: value }
+      [key]: { ...(prev[key] || DEFAULT_NOTIFY_PREFS[key]), [type]: value }
     }));
   };
 

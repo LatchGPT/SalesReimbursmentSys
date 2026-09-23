@@ -158,6 +158,11 @@ export async function createClaim(userId: string | null, body: any) {
     for (const [index, item] of line_items.entries()) {
       if (!is_draft && !item.category) return { status: 400, body: { error: 'Each expense must have a category.' } };
       const numericAmount = Number(item.amount);
+<<<<<<< HEAD
+      if (!is_draft && (isNaN(numericAmount) || numericAmount <= 0)) return { status: 400, body: { error: 'Each expense amount must be a valid number greater than zero.' } };
+      if (!is_draft && !item.receipt_url) return { status: 400, body: { error: 'Each expense must have a receipt.' } };
+=======
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
       if (!is_draft) {
         if (isNaN(numericAmount) || numericAmount <= 0) return { status: 400, body: { error: 'Each expense amount must be a valid number greater than zero.' } };
         if (!item.receipt_url) return { status: 400, body: { error: 'Each expense must have a receipt.' } };
@@ -167,6 +172,15 @@ export async function createClaim(userId: string | null, body: any) {
 
       const validAmount = isNaN(numericAmount) || numericAmount < 0 ? 0 : numericAmount;
       itemsToCreate.push({
+<<<<<<< HEAD
+        category: normalizeExpenseCategory(item.category),
+        amount: isNaN(numericAmount) ? 0 : numericAmount,
+        receipt_url: item.receipt_url,
+        or_number: item.or_number,
+        vendor: item.vendor,
+        expense_date: item.expense_date,
+        payment_method: item.payment_method,
+=======
         category: normalizeExpenseCategory(item.category || 'Other'),
         amount: validAmount,
         receipt_url: item.receipt_url || '',
@@ -174,6 +188,7 @@ export async function createClaim(userId: string | null, body: any) {
         vendor: item.vendor || '',
         expense_date: item.expense_date || getTodayIsoDate(),
         payment_method: item.payment_method || '',
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
         business_purpose: item.business_purpose || remarks ||
           (isTransportReimbursement ? 'Business transport reimbursement' : `Sales reimbursement for meeting with ${mom?.client || 'client'}`)
       });
@@ -185,6 +200,21 @@ export async function createClaim(userId: string | null, body: any) {
     if (!is_draft) {
       const dateError = getReimbursementDateError(expense_date, getTodayIsoDate());
       if (dateError) return { status: 400, body: { error: dateError } };
+<<<<<<< HEAD
+    }
+    if (!is_draft && !expense_category) return { status: 400, body: { error: 'Expense Category is required.' } };
+    if (!is_draft && (total_amount === undefined || total_amount === null || total_amount === '')) {
+      return { status: 400, body: { error: 'Expense amount is required.' } };
+    }
+    const numericAmount = Number(total_amount);
+    if (!is_draft && isNaN(numericAmount)) {
+      return { status: 400, body: { error: 'Expense amount must be a valid number.' } };
+    }
+    if (!is_draft && numericAmount <= 0) {
+      return { status: 400, body: { error: 'Expense amount must be greater than zero.' } };
+    }
+    if (!is_draft && !receipt_url) return { status: 400, body: { error: 'Receipt image or PDF is required.' } };
+=======
       if (!expense_category) return { status: 400, body: { error: 'Expense Category is required.' } };
       if (total_amount === undefined || total_amount === null || total_amount === '') {
         return { status: 400, body: { error: 'Expense amount is required.' } };
@@ -197,6 +227,7 @@ export async function createClaim(userId: string | null, body: any) {
         return { status: 400, body: { error: 'Expense amount must be greater than zero.' } };
       }
       if (!receipt_url) return { status: 400, body: { error: 'Receipt image or PDF is required.' } };
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
 
       itemsToCreate.push({
         category: normalizeExpenseCategory(expense_category),
@@ -228,12 +259,22 @@ export async function createClaim(userId: string | null, body: any) {
 
   if (itemsToCreate.length === 0 && is_draft) {
     itemsToCreate.push({
+<<<<<<< HEAD
+      category: normalizeExpenseCategory(expense_category),
+      amount: isNaN(numericAmount) ? 0 : numericAmount,
+      receipt_url: receipt_url,
+      or_number: or_number,
+      expense_date,
+      business_purpose: remarks ||
+        (isTransportReimbursement ? 'Business transport reimbursement' : `Sales reimbursement for meeting with ${mom?.client || 'client'}`)
+=======
       category: 'Other',
       amount: 0,
       receipt_url: '',
       or_number: '',
       expense_date: getTodayIsoDate(),
       business_purpose: remarks || (isTransportReimbursement ? 'Business transport reimbursement' : 'Draft reimbursement')
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
     });
     mainCategory = 'Other';
     mainReceipt = '';

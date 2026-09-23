@@ -141,13 +141,6 @@ export function AdminReporting({ audience = 'admin' }: ReportingProps = {}) {
         </Button>
       </div>
 
-      <AnalyticsFilters
-        value={filters}
-        dimensions={summary?.dimensions}
-        onChange={setFilters}
-        loading={loading}
-      />
-
       {error && (
         <Card className="p-5 border-error/30 bg-error-container/10 text-error">
           <div className="flex items-center gap-2">
@@ -185,7 +178,7 @@ export function AdminReporting({ audience = 'admin' }: ReportingProps = {}) {
       </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="bg-surface-container-low border-b border-outline-variant">
+        <CardHeader className="bg-surface-container-lowest border-b border-outline-variant">
           <div>
             <h3 className="font-headline-sm text-on-surface">
               {audience === 'finance' ? 'Monthly obligations and releases' : 'Monthly claimed and paid'}
@@ -241,7 +234,7 @@ export function AdminReporting({ audience = 'admin' }: ReportingProps = {}) {
           emptyText="No requestor activity matches these filters."
         />
         <Card>
-          <CardHeader className="bg-surface-container-low border-b border-outline-variant">
+          <CardHeader className="bg-surface-container-lowest border-b border-outline-variant">
             <div>
               <h3 className="font-headline-sm text-on-surface">Records by Status</h3>
               <p className="text-xs text-outline mt-1">Counts use the same role scope and filters.</p>
@@ -270,13 +263,20 @@ export function AdminReporting({ audience = 'admin' }: ReportingProps = {}) {
       </div>
 
       <Card>
-        <CardHeader className="bg-surface-container-low border-b border-outline-variant">
+        <CardHeader className="bg-surface-container-lowest border-b border-outline-variant">
           <div>
             <h3 className="font-headline-sm text-on-surface">Filtered Records</h3>
-            <p className="text-xs text-outline mt-1">Drill down from any KPI or chart using the shared filters above.</p>
+            <p className="text-xs text-outline mt-1">Search and filter the records shown below.</p>
           </div>
           <span className="text-xs font-semibold text-outline">{summary?.records.length || 0} records</span>
         </CardHeader>
+        <AnalyticsFilters
+          className="rounded-none border-x-0 border-t-0 bg-surface-container-lowest p-4"
+          value={filters}
+          dimensions={summary?.dimensions}
+          onChange={setFilters}
+          loading={loading}
+        />
         <div className="overflow-x-auto">
           <table className="w-full text-left min-w-[1050px]">
             <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
@@ -343,7 +343,7 @@ function MetricBarCard({
 }) {
   return (
     <Card>
-      <CardHeader className="bg-surface-container-low border-b border-outline-variant">
+      <CardHeader className="bg-surface-container-lowest border-b border-outline-variant">
         <h3 className="font-headline-sm text-on-surface">{title}</h3>
       </CardHeader>
       <CardContent className="p-6 h-80">

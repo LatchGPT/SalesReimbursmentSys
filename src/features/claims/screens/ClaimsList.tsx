@@ -233,6 +233,9 @@ export function ClaimsList() {
         </>
       )}
 
+<<<<<<< HEAD
+      <div className="space-y-0">
+=======
       {/* Drafts Callout Banner (when drafts exist and not currently filtering to drafts) */}
       {!isFinance && draftsCount > 0 && statusFilter !== ClaimStatus.DRAFT && (
         <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
@@ -356,7 +359,10 @@ export function ClaimsList() {
       )}
 
       <div className="mb-5">
+>>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
         <FilterBar
+          className="rounded-b-none"
+          title="Claims"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search claims..."
@@ -395,9 +401,7 @@ export function ClaimsList() {
           ]}
           popoverDescription="Narrow claims by client, location, or submitted date."
         />
-      </div>
-
-      <Card>
+      <Card className="!mt-[-1px] rounded-t-none">
         {groupBy === 'none' ? (
           <>
             {renderClaimsBody(paginatedClaims)}
@@ -429,6 +433,7 @@ export function ClaimsList() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 

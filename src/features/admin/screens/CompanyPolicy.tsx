@@ -72,7 +72,7 @@ export function CompanyPolicy() {
       </div>
 
       <Card>
-        <CardHeader className="bg-surface-container-low">
+        <CardHeader className="bg-surface-container-lowest">
           <h3 className="font-label-md uppercase tracking-wider text-on-surface">Per-Category Spending Limits</h3>
         </CardHeader>
         <div className="overflow-x-auto">
@@ -112,7 +112,7 @@ export function CompanyPolicy() {
       </Card>
 
       <Card>
-        <CardHeader className="bg-surface-container-low">
+        <CardHeader className="bg-surface-container-lowest">
           <h3 className="font-label-md uppercase tracking-wider text-on-surface">High-Value Flag</h3>
         </CardHeader>
         <div className="p-6 flex flex-col sm:flex-row sm:items-center gap-4">

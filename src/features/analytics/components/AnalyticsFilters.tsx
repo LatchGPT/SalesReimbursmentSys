@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '../../../components/ui/Button';
+import { Button, cn } from '../../../components/ui/Button';
 import { Input, Label, Select } from '../../../components/ui/Input';
 import {
   AnalyticsFilters as AnalyticsFilterState,
@@ -12,6 +12,7 @@ export interface AnalyticsFiltersProps {
   dimensions?: AnalyticsSummary['dimensions'];
   onChange: (next: AnalyticsFilterState) => void;
   loading?: boolean;
+  className?: string;
 }
 
 const DATE_BASIS_OPTIONS: Array<{ value: AnalyticsFilterState['dateBasis']; label: string }> = [
@@ -22,7 +23,7 @@ const DATE_BASIS_OPTIONS: Array<{ value: AnalyticsFilterState['dateBasis']; labe
   { value: 'completed', label: 'Completed / Closed' },
 ];
 
-export function AnalyticsFilters({ value, dimensions, onChange, loading = false }: AnalyticsFiltersProps) {
+export function AnalyticsFilters({ value, dimensions, onChange, loading = false, className }: AnalyticsFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   const update = <K extends keyof AnalyticsFilterState>(key: K, nextValue: AnalyticsFilterState[K]) => {
     onChange({ ...value, [key]: nextValue });
@@ -43,7 +44,7 @@ export function AnalyticsFilters({ value, dimensions, onChange, loading = false 
   ].filter(Boolean) as Array<{ key: keyof AnalyticsFilterState; label: string }>;
 
   return (
-    <div className="rounded-xl border border-outline-variant bg-surface-container-low p-3">
+    <div className={cn('rounded-xl border border-outline-variant bg-surface-container-low p-3', className)}>
       <div className="flex flex-col md:flex-row md:items-center gap-2">
         <div className="min-w-0 flex-1">
           <Input value={value.search} onChange={event => update('search', event.target.value)} placeholder="Search reference, requestor, client, or purpose..." />

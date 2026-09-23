@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { ClaimStatus, Claim } from '../../../types';
 import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
+import { Portal } from '../../../components/shared/Portal';
 
 export interface ApproverActionButtonsProps {
   claim: Claim;
@@ -25,10 +26,71 @@ export function ApproverActionButtons({ claim, size = 'sm', compact = false }: A
   const [reviewMeetingDate, setReviewMeetingDate] = useState('');
   const [reviewMeetingTime, setReviewMeetingTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const menuRef = useRef<HTMLDetailsElement>(null);
+  const actionButtonRef = useRef<HTMLButtonElement>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, maxHeight: 0 });
+
+  const updateMenuPosition = () => {
+    const trigger = actionButtonRef.current;
+    if (!trigger) return;
+
+    const triggerBounds = trigger.getBoundingClientRect();
+    const menuHeight = actionMenuRef.current?.getBoundingClientRect().height || 132;
+    const viewportPadding = 8;
+    const menuWidth = 160;
+    const spaceBelow = window.innerHeight - triggerBounds.bottom - viewportPadding;
+    const spaceAbove = triggerBounds.top - viewportPadding;
+    const openUpward = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+    const maxHeight = Math.max(0, openUpward ? spaceAbove : spaceBelow);
+
+    setMenuPosition({
+      top: openUpward
+        ? Math.max(viewportPadding, triggerBounds.top - Math.min(menuHeight, maxHeight))
+        : triggerBounds.bottom + viewportPadding,
+      left: Math.min(
+        Math.max(viewportPadding, triggerBounds.right - menuWidth),
+        window.innerWidth - menuWidth - viewportPadding,
+      ),
+      maxHeight,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!isMenuOpen) return;
+    updateMenuPosition();
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!actionButtonRef.current?.contains(target) && !actionMenuRef.current?.contains(target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+        actionButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('resize', updateMenuPosition);
+    window.addEventListener('scroll', updateMenuPosition, true);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('resize', updateMenuPosition);
+      window.removeEventListener('scroll', updateMenuPosition, true);
+    };
+  }, [isMenuOpen]);
 
   const handleAction = (action: 'approve' | 'reject' | 'return') => {
-    menuRef.current?.removeAttribute('open');
+    setIsMenuOpen(false);
     setComment('');
     setReviewMeetingDate('');
     setReviewMeetingTime('');
@@ -100,27 +162,44 @@ export function ApproverActionButtons({ claim, size = 'sm', compact = false }: A
     <>
       <div className="flex items-center gap-2 flex-wrap" onClick={e => e.stopPropagation()}>
         {compact ? (
-          <details ref={menuRef} className="relative">
-            <summary className="list-none inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg border border-primary px-3 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
+          <>
+            <button
+              ref={actionButtonRef}
+              type="button"
+              className="inline-flex h-9 items-center gap-1 rounded-lg border border-primary px-3 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen(open => !open)}
+            >
               Actions
               <span aria-hidden="true" className="material-symbols-outlined text-[17px]">expand_more</span>
-            </summary>
-            <div className="mt-2 ml-auto w-40 overflow-hidden rounded-lg border border-outline-variant bg-white p-1.5 text-left shadow-lg">
-              <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/10" onClick={() => handleAction('approve')}>
-                <span aria-hidden="true" className="material-symbols-outlined text-[18px]">check_circle</span>Approve
-              </button>
-              {claim.type !== 'Cash Advance' && (
-                <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-tertiary hover:bg-tertiary/10" onClick={() => handleAction('return')}>
-                  <span aria-hidden="true" className="material-symbols-outlined text-[18px]">undo</span>Return
-                </button>
-              )}
-              {claim.type !== 'Liquidation' && (
-                <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-error hover:bg-error/10" onClick={() => handleAction('reject')}>
-                  <span aria-hidden="true" className="material-symbols-outlined text-[18px]">cancel</span>Reject
-                </button>
-              )}
-            </div>
-          </details>
+            </button>
+            {isMenuOpen && (
+              <Portal>
+                <div
+                  ref={actionMenuRef}
+                  role="menu"
+                  className="fixed z-[60] w-40 overflow-y-auto rounded-lg border border-outline-variant bg-white p-1.5 text-left shadow-lg"
+                  style={{ top: menuPosition.top, left: menuPosition.left, maxHeight: menuPosition.maxHeight }}
+                  onClick={event => event.stopPropagation()}
+                >
+                  <button role="menuitem" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/10" onClick={() => handleAction('approve')}>
+                    <span aria-hidden="true" className="material-symbols-outlined text-[18px]">check_circle</span>Approve
+                  </button>
+                  {claim.type !== 'Cash Advance' && (
+                    <button role="menuitem" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-tertiary hover:bg-tertiary/10" onClick={() => handleAction('return')}>
+                      <span aria-hidden="true" className="material-symbols-outlined text-[18px]">undo</span>Return
+                    </button>
+                  )}
+                  {claim.type !== 'Liquidation' && (
+                    <button role="menuitem" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-error hover:bg-error/10" onClick={() => handleAction('reject')}>
+                      <span aria-hidden="true" className="material-symbols-outlined text-[18px]">cancel</span>Reject
+                    </button>
+                  )}
+                </div>
+              </Portal>
+            )}
+          </>
         ) : (
           <>
             <Button size={size} variant="outline" className="text-primary border-primary hover:bg-primary/10" onClick={() => handleAction('approve')}>Approve</Button>

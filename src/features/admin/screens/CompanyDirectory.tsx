@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Modal } from '../../../components/shared/Modal';
-import { Card, CardHeader } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input, Label, Select } from '../../../components/ui/Input';
 import { useToast } from '../../../components/shared/ToastContext';
@@ -189,7 +189,12 @@ export function CompanyDirectory() {
         </div>
       </div>
 
-      <Card className="p-4">
+      <div className="space-y-0">
+      <Card className="rounded-b-none p-4 shadow-none">
+        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
+          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Registered Entities</h3>
+          <span className="font-label-sm text-outline">{filtered.length} of {companies.length}</span>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-xl"><Input type="text" placeholder="Search name, contact, location, or notes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
           <Button variant="outline" className="gap-2" onClick={() => setShowFilters(open => !open)}><span className="material-symbols-outlined text-[18px]">filter_list</span>Filters{hasFilters ? ' (active)' : ''}</Button>
@@ -208,11 +213,7 @@ export function CompanyDirectory() {
         </div>}
       </Card>
 
-      <Card>
-        <CardHeader className="bg-surface-container-low">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Registered Entities</h3>
-          <span className="font-label-sm text-outline">{filtered.length} of {companies.length}</span>
-        </CardHeader>
+      <Card className="rounded-t-none">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
@@ -275,6 +276,7 @@ export function CompanyDirectory() {
           </table>
         </div>
       </Card>
+      </div>
 
       {showModal && (
         <Modal isOpen onClose={() => setShowModal(false)} titleId="company-editor-title" className="max-w-md">

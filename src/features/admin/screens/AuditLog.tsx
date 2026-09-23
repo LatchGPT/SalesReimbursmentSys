@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal } from '../../../components/shared/Modal';
-import { Card, CardHeader } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input, Label, Select } from '../../../components/ui/Input';
 import { Pagination } from '../../../components/ui/Pagination';
@@ -158,7 +158,12 @@ export function AuditLog() {
         <p className="text-body-md text-outline mt-1">User actions, automated events, and sent notifications in one chronological feed.</p>
       </div>
 
-      <Card className="p-4">
+      <div className="space-y-0">
+      <Card className="rounded-b-none p-4 shadow-none">
+        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
+          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Unified Activity Feed</h3>
+          <span className="font-label-sm text-outline">{total} event{total === 1 ? '' : 's'}</span>
+        </div>
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-2xl">
             <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search person, reference, subject, status, or details..." />
@@ -199,11 +204,7 @@ export function AuditLog() {
         </div>}
       </Card>
 
-      <Card>
-        <CardHeader className="bg-surface-container-low">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Unified Activity Feed</h3>
-          <span className="font-label-sm text-outline">{total} event{total === 1 ? '' : 's'}</span>
-        </CardHeader>
+      <Card className="rounded-t-none">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
@@ -260,6 +261,7 @@ export function AuditLog() {
         </div>
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </Card>
+      </div>
 
       {selected && (
         <Modal isOpen onClose={() => setSelected(null)} titleId="activity-detail-title" className="ml-auto h-full max-h-none max-w-xl rounded-none">

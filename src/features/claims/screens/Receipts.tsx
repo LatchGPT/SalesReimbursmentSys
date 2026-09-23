@@ -433,7 +433,10 @@ export function Receipts() {
         </Card>
       </div>
 
+      <div className="space-y-0">
       <FilterBar
+        className="rounded-b-none"
+        title="Expense records"
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search vendor, purpose, OR number, or claim..."
@@ -512,13 +515,13 @@ export function Receipts() {
 
       {/* Expense records */}
       {filteredReceipts.length === 0 ? (
-        <Card className="p-12 text-center text-outline">
+        <Card className="!mt-[-1px] rounded-t-none p-12 text-center text-outline">
           <span className="material-symbols-outlined text-[48px] mb-3">folder_open</span>
           <p className="font-headline-sm text-on-surface mb-1">No expenses found</p>
           <p className="text-sm">Expense lines will appear here when they are added to a claim.</p>
         </Card>
       ) : groupBy !== 'none' ? (
-        <div className="space-y-6">
+        <div className="!mt-[-1px] space-y-5 border-x border-b border-outline-variant bg-surface-container-lowest p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-sm text-outline pl-2">
               {receiptGroups.length} {groupBy === 'member' ? (receiptGroups.length === 1 ? 'team member' : 'team members') : (receiptGroups.length === 1 ? 'client' : 'clients')}
@@ -546,7 +549,7 @@ export function Receipts() {
           ))}
         </div>
       ) : (
-        <Card className="overflow-hidden">
+        <Card className="!mt-[-1px] overflow-hidden rounded-t-none">
           <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
             <div>
               <h2 className="text-[16px] font-bold text-on-surface">Expense records</h2>
@@ -584,6 +587,7 @@ export function Receipts() {
           />
         </Card>
       )}
+      </div>
 
       {isApprover && scope === 'team' && (
         <TeamAnalytics
