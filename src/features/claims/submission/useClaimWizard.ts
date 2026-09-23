@@ -305,7 +305,7 @@ export function useClaimWizard() {
         if (!isDraft && !cashAdvanceId) {
           addToast('Please select the Cash Advance to liquidate.', 'error');
           setLoading(false);
-          return;
+          return false;
         }
         await submitLiquidationFlow({
           cashAdvanceId: cashAdvanceId || (myCashAdvances[0]?.id || ''),

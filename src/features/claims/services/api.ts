@@ -200,40 +200,35 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
     throw new Error(`Expense row ${missing + 1} needs a receipt attached before you can submit.`);
   }
 
-  // 2. MOM. Transport Reimbursement is deliberately lightweight and skips
-  // this write; standard Reimbursement remains anchored to template minutes.
-  let createdMom: any | undefined;
+  // 2. Atomic Claim Submission (MOM + Claim + Line Items in a single request).
+  let momPayload: any | undefined;
   if (claimType === 'Reimbursement') {
     if (!mom && !isDraft) throw new Error('Minutes of Meeting details are required.');
     if (mom && (mom.client || mom.purpose || !isDraft)) {
-      createdMom = await apiFetch('/api/moms', {
-        method: 'POST',
-        body: JSON.stringify({
-          client: mom.client || (isDraft ? 'Draft Client' : ''),
-          purpose: mom.purpose || (isDraft ? 'Draft Meeting' : ''),
-          location: mom.location || '',
-          contact_person: mom.contactPerson || '',
-          contact_person_email: mom.contactPersonEmail || '',
-          cc_client: Boolean(mom.ccClient),
-          discussion: mom.discussion || '',
-          action_items: mom.actionItems || '',
-          meeting_date: mom.meetingDate || new Date().toISOString().split('T')[0],
-          meeting_time: mom.meetingTime || '',
-          minutes_source: MinutesSource.TEMPLATE,
-          document_type: mom.documentType || 'MoM',
-          status: isDraft ? 'Draft' : 'Completed',
-          custom_fields: customFields,
-        }),
-      });
+      momPayload = {
+        client: mom.client || (isDraft ? 'Draft Client' : ''),
+        purpose: mom.purpose || (isDraft ? 'Draft Meeting' : ''),
+        location: mom.location || '',
+        contact_person: mom.contactPerson || '',
+        contact_person_email: mom.contactPersonEmail || '',
+        cc_client: Boolean(mom.ccClient),
+        discussion: mom.discussion || '',
+        action_items: mom.actionItems || '',
+        meeting_date: mom.meetingDate || new Date().toISOString().split('T')[0],
+        meeting_time: mom.meetingTime || '',
+        minutes_source: MinutesSource.TEMPLATE,
+        document_type: mom.documentType || 'MoM',
+        status: isDraft ? 'Draft' : 'Completed',
+        custom_fields: customFields,
+      };
     }
   }
 
-  // 3. Claim.
   return apiFetch('/api/claims', {
     method: 'POST',
     body: JSON.stringify({
       claim_type: claimType,
-      mom_id: createdMom?.id,
+      mom: momPayload,
       remarks: remarks || mom?.purpose || (isDraft ? 'Draft reimbursement' : (claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : '')),
       is_draft: Boolean(isDraft),
       line_items: uploaded.map((li) => ({

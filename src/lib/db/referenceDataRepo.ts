@@ -12,6 +12,8 @@ import type {
 } from './serverTypes';
 import { getDb, type Db } from './index';
 
+import { isDbAvailable } from './coreLoopRepo';
+
 export const isDbConfigured = () => !!serverEnv.databaseUrl;
 
 function companyToRow(company: Company) {
@@ -55,7 +57,7 @@ function companyFromRow(row: CompanyRow): Company {
 }
 
 export async function persistCompany(company: Company): Promise<void> {
-  if (!isDbConfigured()) return;
+  if (!isDbAvailable()) return;
   const row = companyToRow(company);
   await getDb().companies.upsert({
     where: { id: row.id },

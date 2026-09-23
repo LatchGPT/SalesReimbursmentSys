@@ -1,8 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
   Claim, ClaimStatus, Approval, Mom, MomStatus, UserRole,
-  CashAdvanceStatus, LiquidationStatus, ReviewMeeting, ReviewMeetingStatus
+  CashAdvanceStatus, LiquidationStatus, ReviewMeeting, ReviewMeetingStatus,
+  MinutesSource
 } from '../../lib/db/serverTypes';
+import { getOrCreateCompany } from '../../server/services/companyService';
 import { state, checkCategoryLimits } from '../../server/state';
 import { canAccessClaim } from '../../server/services/authorization';
 import { isActiveDelegateFor, getActiveDelegation } from '../../server/services/delegations';
@@ -132,21 +134,60 @@ export async function createClaim(userId: string | null, body: any) {
     return { status: 403, body: { error: 'Forbidden: You must have a designated manager (reports_to) to submit.' } };
   }
 
-  const { claim_type, mom_id, expense_category, total_amount, receipt_url, or_number, expense_date, remarks, supporting_documents, line_items, is_draft } = body || {};
+  const { claim_type, mom_id, mom: momPayload, expense_category, total_amount, receipt_url, or_number, expense_date, remarks, supporting_documents, line_items, is_draft } = body || {};
   const claimType = claim_type === 'Transport Reimbursement' ? 'Transport Reimbursement' : 'Reimbursement';
   const isTransportReimbursement = claimType === 'Transport Reimbursement';
 
-  if (!is_draft && !isTransportReimbursement && !mom_id) {
+  let mom: Mom | undefined;
+  if (momPayload && typeof momPayload === 'object') {
+    if (!is_draft && (!momPayload.client || !momPayload.purpose)) {
+      return { status: 400, body: { error: 'Client and Purpose are required for Minutes of Meeting.' } };
+    }
+    const newMomId = uuidv4();
+    mom = {
+      id: newMomId,
+      claim_id: undefined,
+      requestor_id: user.id,
+      document_type: momPayload.document_type === 'LOA' || momPayload.documentType === 'LOA' ? 'LOA' : 'MoM',
+      client: momPayload.client || (is_draft ? 'Draft Client' : ''),
+      contact_person: momPayload.contact_person || momPayload.contactPerson || '',
+      contact_person_email: momPayload.contact_person_email || momPayload.contactPersonEmail || '',
+      cc_client: Boolean(momPayload.cc_client ?? momPayload.ccClient),
+      meeting_date: momPayload.meeting_date || momPayload.meetingDate || new Date().toISOString().split('T')[0],
+      meeting_time: momPayload.meeting_time || momPayload.meetingTime || '',
+      location: momPayload.location || '',
+      purpose: momPayload.purpose || (is_draft ? 'Draft Meeting' : ''),
+      discussion: momPayload.discussion || '',
+      agreements: momPayload.agreements || '',
+      action_items: momPayload.action_items || momPayload.actionItems || '',
+      prepared_by: user.name,
+      prepared_by_department: user.department,
+      prepared_by_job_title: user.job_title,
+      file_url: momPayload.file_url,
+      file_name: momPayload.file_name,
+      status: is_draft ? MomStatus.DRAFT : MomStatus.COMPLETED,
+      created_at: new Date().toISOString(),
+      minutes_source: momPayload.minutes_source || MinutesSource.TEMPLATE,
+      meeting_type: momPayload.meeting_type || '',
+      participants_internal: momPayload.participants_internal || '',
+      participants_external: momPayload.participants_external || '',
+      custom_fields: momPayload.custom_fields || undefined,
+    };
+    if (mom.client) {
+      await getOrCreateCompany(mom.client, user.id);
+    }
+    state.moms.push(mom);
+  } else if (mom_id) {
+    mom = state.moms.find(m => m.id === mom_id);
+    if (!mom) return { status: 400, body: { error: 'Minutes of Meeting (MOM) not found.' } };
+    if (!is_draft && mom.status !== MomStatus.COMPLETED) {
+      return { status: 400, body: { error: 'Cannot attach an incomplete or draft Minutes of Meeting.' } };
+    }
+    if (mom.claim_id) {
+      return { status: 400, body: { error: 'This Minutes of Meeting is already linked to another claim and cannot be reused.' } };
+    }
+  } else if (!is_draft && !isTransportReimbursement) {
     return { status: 400, body: { error: 'Minutes of Meeting (MOM) is required.' } };
-  }
-  const mom = mom_id ? state.moms.find(m => m.id === mom_id) : undefined;
-  if (mom_id && !mom) return { status: 400, body: { error: 'Minutes of Meeting (MOM) not found.' } };
-
-  if (!is_draft && mom && mom.status !== MomStatus.COMPLETED) {
-    return { status: 400, body: { error: 'Cannot attach an incomplete or draft Minutes of Meeting.' } };
-  }
-  if (mom?.claim_id) {
-    return { status: 400, body: { error: 'This Minutes of Meeting is already linked to another claim and cannot be reused.' } };
   }
 
   let itemsToCreate: any[] = [];
@@ -279,7 +320,7 @@ export async function createClaim(userId: string | null, body: any) {
     requestor_id: user.id,
     current_approver_id: currentApproverId,
     original_approver_id: originalApproverId,
-    mom_id: mom_id || undefined,
+    mom_id: mom?.id || mom_id || undefined,
     claim_type: claimType,
     status: is_draft ? ClaimStatus.DRAFT : ClaimStatus.PENDING_APPROVAL,
     total_amount: claimTotal,
@@ -370,7 +411,7 @@ You'll receive another email as soon as ${approverName} makes a decision.`,
     }
   }
 
-  return { status: 200, body: claim };
+  return { status: 200, body: { ...claim, mom } };
 }
 
 export async function resubmitClaim(userId: string | null, id: string, body: any) {
