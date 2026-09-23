@@ -1,6 +1,6 @@
 import { withPersistenceScope } from '../../../../lib/db/persistenceScope';
 import { hydrateServerlessState } from '../../../../server/stateLoader';
-import { getClaim } from '../../../../services/claims/claims';
+import { getClaim, deleteDraftClaim } from '../../../../services/claims/claims';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -12,6 +12,15 @@ export async function GET(request: Request, context: Context): Promise<Response>
     await hydrateServerlessState();
     const { id } = await context.params;
     const result = getClaim(request.headers.get('x-user-id'), id);
+    return Response.json(result.body, { status: result.status });
+  });
+}
+
+export async function DELETE(request: Request, context: Context): Promise<Response> {
+  return withPersistenceScope(async () => {
+    await hydrateServerlessState();
+    const { id } = await context.params;
+    const result = await deleteDraftClaim(request.headers.get('x-user-id'), id);
     return Response.json(result.body, { status: result.status });
   });
 }

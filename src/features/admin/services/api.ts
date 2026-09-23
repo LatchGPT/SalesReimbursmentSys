@@ -199,9 +199,15 @@ export const createFieldDefinition = (body: Record<string, unknown>) =>
 export const updateFieldDefinition = (id: string, body: Record<string, unknown>) =>
   apiFetch(`/api/field-definitions/${id}`, { method: 'PUT', body: JSON.stringify(body) });
 
-/** Users — the admin can edit an account (role, manager, status, etc.). */
+/** Users — the admin can create, edit, or delete an account. */
+export const createUser = (body: Record<string, unknown>) =>
+  apiFetch('/api/users', { method: 'POST', body: JSON.stringify(body) });
+
 export const updateUser = (id: string, body: Record<string, unknown>) =>
   apiFetch(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+
+export const deleteUser = (id: string) =>
+  apiFetch(`/api/users/${id}`, { method: 'DELETE' });
 
 /** Company directory. */
 export const createCompany = (body: Record<string, unknown>) =>

@@ -35,6 +35,12 @@ export function Modal({
   closeOnEscape = true,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const initialFocusRefRef = useRef(initialFocusRef);
+  initialFocusRefRef.current = initialFocusRef;
+  const closeOnEscapeRef = useRef(closeOnEscape);
+  closeOnEscapeRef.current = closeOnEscape;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,15 +50,19 @@ export function Modal({
     document.body.style.overflow = 'hidden';
 
     const focusDialog = window.setTimeout(() => {
-      const preferred = initialFocusRef?.current;
+      // If focus is already inside the modal, do not re-target or steal focus
+      if (dialogRef.current?.contains(document.activeElement)) {
+        return;
+      }
+      const preferred = initialFocusRefRef.current?.current;
       const firstFocusable = dialogRef.current?.querySelector<HTMLElement>(FOCUSABLE);
       (preferred || firstFocusable || dialogRef.current)?.focus();
     }, 0);
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && closeOnEscape) {
+      if (event.key === 'Escape' && closeOnEscapeRef.current) {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -85,7 +95,7 @@ export function Modal({
       document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
-  }, [closeOnEscape, initialFocusRef, isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

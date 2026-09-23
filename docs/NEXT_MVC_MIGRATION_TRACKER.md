@@ -49,6 +49,8 @@
 - [x] Verified the admin and imports conversion: lint and 115 Vitest tests pass.
 - [x] Verified the claims conversion: lint and 115 Vitest tests pass.
 - [x] Verified release verification: lint, 118 Vitest tests, and Playwright E2E pass.
+- [x] Verified draft requests saving, editing, submission, and deletion: lint and 136 Vitest tests pass.
+- [x] Verified upload storage dev/demo fallback and resilient draft saving: lint and 136 Vitest tests pass.
 
 ## Phase 1: router relocation
 
