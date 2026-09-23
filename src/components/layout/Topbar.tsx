@@ -55,7 +55,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
   const handleSignOut = () => {
     setShowProfileMenu(false);
     logout();
-    window.location.reload();
+    window.location.href = '/';
   };
 
   const handleMarkAllRead = () => {
