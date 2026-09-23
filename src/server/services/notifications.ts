@@ -4,7 +4,7 @@ import { state } from '../state';
 export type NotificationEventKey = 'submitted' | 'approved' | 'returned' | 'ready' | 'delegation';
 
 export function shouldNotify(recipientId: string, eventKey: NotificationEventKey): boolean {
-  const recipient = state.users.find(u => u.id === recipientId);
+  const recipient = state.users.find(u => u.id === recipientId || u.email === recipientId);
   const pref = recipient?.notification_prefs?.[eventKey];
   if (!pref) return true;
   return pref.inApp !== false || pref.email !== false;
@@ -18,7 +18,7 @@ export function sendEmail(
   opts?: { plain?: boolean; recipientName?: string; fromLabel?: string; timestamp?: string; eventKey?: NotificationEventKey }
 ) {
   if (opts?.eventKey && !shouldNotify(toOrId, opts.eventKey)) return;
-  const recipient = state.users.find(u => u.id === toOrId);
+  const recipient = state.users.find(u => u.id === toOrId || u.email === toOrId);
   const toEmail = recipient ? recipient.email : toOrId;
   const recipientId = recipient ? recipient.id : 'external';
   const recipientName = opts?.recipientName || (recipient ? recipient.name : toOrId.split('@')[0]);
@@ -85,7 +85,7 @@ Business Support Management Assistant`;
   }
 
   if (ccId) {
-    const ccRecipient = state.users.find(u => u.id === ccId);
+    const ccRecipient = state.users.find(u => u.id === ccId || u.email === ccId);
     if (ccRecipient) {
       state.teamsMessages.push({
         id: uuidv4(),

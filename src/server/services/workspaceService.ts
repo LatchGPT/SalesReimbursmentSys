@@ -190,9 +190,12 @@ export function getWorkspacePayload(userId: string) {
   const companies = state.companies;
 
   // 11. Outbox
+  const allNotifications = [...state.emails, ...state.teamsMessages].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
   const outbox = user.role === UserRole.ADMIN
-    ? state.emails
-    : state.emails.filter(e => e.recipient_id === user.id);
+    ? allNotifications
+    : allNotifications.filter(e => e.recipient_id === user.id);
 
   // 12. Support Requests
   const support = user.role === UserRole.ADMIN
