@@ -1,9 +1,30 @@
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { UserRole } from '../../lib/db/serverTypes';
 import { state } from '../../server/state';
 import { hydrateServerlessState } from '../../server/stateLoader';
 import { findUploadAccessCheck } from '../../server/services/authorization';
 import { serverEnv } from '../../config/env';
+
+const MIME_BY_EXT: Record<string, string> = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.pdf': 'application/pdf',
+  '.doc': 'application/msword',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+};
+
+function getLocalStorageDir(): string {
+  const uploadDir = serverEnv.uploadDir || path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  return uploadDir;
+}
 
 const MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024;
 const ALLOWED_UPLOAD_MIME_TYPES = new Set([
@@ -149,7 +170,16 @@ export async function uploadToSupabase(request: Request): Promise<Response> {
     if (validationError) return validationError;
 
     const config = storageConfig();
-    if (!config) return json({ error: 'Upload storage is not configured.' }, 503);
+    if (!config) {
+      if (!serverEnv.isProduction || serverEnv.demoMode) {
+        const uploadDir = getLocalStorageDir();
+        const filename = `${randomUUID()}${extension(file.name)}`;
+        const buffer = Buffer.from(await file.arrayBuffer());
+        fs.writeFileSync(path.join(uploadDir, filename), buffer);
+        return json({ url: `/uploads/${filename}` });
+      }
+      return json({ error: 'Upload storage is not configured.' }, 503);
+    }
 
     const filename = `${randomUUID()}${extension(file.name)}`;
     const result = await fetch(objectUrl(config, filename), {
@@ -191,7 +221,29 @@ export async function downloadFromSupabase(request: Request, filename: string): 
     if (!authorized(user)) return json({ error: 'Forbidden' }, 403);
 
     const config = storageConfig();
-    if (!config) return json({ error: 'File storage is not configured.' }, 503);
+    if (!config) {
+      if (!serverEnv.isProduction || serverEnv.demoMode) {
+        const uploadDir = getLocalStorageDir();
+        const filePath = path.join(uploadDir, filename);
+        if (!fs.existsSync(filePath)) {
+          return json({ error: 'File not found' }, 404);
+        }
+        const fileBuffer = fs.readFileSync(filePath);
+        const ext = extension(filename);
+        const contentType = MIME_BY_EXT[ext] || 'application/octet-stream';
+        return new Response(fileBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': String(fileBuffer.length),
+            'Cache-Control': 'private, no-store',
+            'Content-Disposition': `inline; filename="${filename.replace(/["\r\n]/g, '')}"`,
+            'X-Content-Type-Options': 'nosniff',
+          },
+        });
+      }
+      return json({ error: 'File storage is not configured.' }, 503);
+    }
     const result = await fetch(authenticatedObjectUrl(config, filename), {
       headers: storageHeaders(config.serviceKey),
       cache: 'no-store',
