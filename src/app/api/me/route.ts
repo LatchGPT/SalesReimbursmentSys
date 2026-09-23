@@ -1,0 +1,1 @@
+import { me } from '../../../services/auth/auth'; export const dynamic='force-dynamic'; export async function GET(request:Request){const result=me(request.headers.get('x-user-id'));return Response.json(result.body,{status:result.status});}

@@ -14,6 +14,7 @@ import { describe, it, expect } from 'vitest';
 import { getTodayIsoDate } from '../src/features/claims';
 
 const routeHandlers = await import('../src/app/api/[[...path]]/route');
+const momsRoute = await import('../src/app/api/moms/route');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.
@@ -24,6 +25,15 @@ const PURCHASE_DATE = getTodayIsoDate();
 
 async function api(path: string, userId: string, init: RequestInit = {}) {
   const url = new URL(path, 'http://route-handler.test');
+  if (url.pathname === '/api/moms') {
+    const handler = (init.method || 'GET').toUpperCase() === 'POST' ? momsRoute.POST : momsRoute.GET;
+    const res = await handler(new Request(url, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', 'X-User-Id': userId, ...init.headers },
+    }));
+    const body = await res.json().catch(() => undefined);
+    return { status: res.status, body };
+  }
   const method = (init.method || 'GET').toUpperCase() as keyof typeof routeHandlers;
   const handler = routeHandlers[method] as typeof routeHandlers.GET;
   const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);

@@ -24,6 +24,7 @@
 - [x] Converted review meetings to a framework-neutral service and explicit Next Route Handlers.
 - [x] Converted activity to a framework-neutral service and explicit Next Route Handlers.
 - [x] Converted analytics to a framework-neutral service and explicit Next Route Handler.
+- [x] Converted MOMs to a framework-neutral service and explicit Next Route Handlers.
 - [x] Relocated field-definitions and master-data routers to `src/services/admin/`.
 - [x] Relocated users and delegations routers to `src/services/users/`.
 - [x] Relocated companies router to `src/services/admin/`.
@@ -41,6 +42,11 @@
 
 ## Phase 1: router relocation
 
+- [x] Relocate MOMs business logic into `src/services/moms/` and remove MOMs from the compatibility dispatcher.
+- [x] Relocate Cash Advances business logic into `src/services/cash-advances/` and remove Cash Advances from the compatibility dispatcher.
+- [x] Relocate Liquidations business logic into `src/services/liquidations/` and remove Liquidations from the compatibility dispatcher.
+- [x] Relocate Auth business logic into `src/services/auth/` and remove Auth from the compatibility dispatcher.
+- [x] Relocate Admin business logic into `src/services/admin/` and remove Admin from the compatibility dispatcher.
 - [ ] Convert the remaining relocated routers into framework-neutral services plus explicit Route Handlers.
 
 ## Phase 2: explicit MVC controller conversion
@@ -49,12 +55,20 @@
 - [x] Convert field definitions: GET, POST, and PUT `/api/field-definitions` endpoints.
 - [x] Convert users, companies, and delegations.
 - [x] Convert support, review meetings, and activity.
-- [ ] Convert analytics, cash advances, and liquidations.
+- [x] Convert MOMs: list, detail, create, update, and send endpoints.
+- [x] Convert analytics to an explicit Route Handler and remove its compatibility dispatcher route.
+- [ ] Convert Liquidations.
+- [x] Convert Liquidations: list, detail, create, line items, submit, review, and refund collection endpoints.
+- [x] Convert Cash Advances: list, detail, create, update, submit, approve/reject, and release endpoints.
 - [ ] Convert auth, admin, and claims as isolated high-risk batches.
+- [x] Convert Auth as an isolated high-risk batch with demo and Microsoft/OIDC boundaries preserved.
+- [x] Convert Admin as an isolated high-risk batch, including non-destructive in-memory demo reset behavior.
 
 ## Phase 3: compatibility cleanup
 
-- [ ] Convert analytics, cash advances, and liquidations.
+- [x] Remove the legacy analytics Express route and compatibility dispatcher branch.
+- [ ] Remove the Liquidations compatibility dispatcher route.
+- [x] Remove the Liquidations compatibility dispatcher route.
 - [ ] Remove Express router barrels and the catch-all dispatcher.
 - [ ] Remove unused Express dependencies and `src/server/` compatibility code.
 

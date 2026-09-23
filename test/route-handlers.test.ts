@@ -7,6 +7,7 @@ import { POST as signUpload } from '../src/app/api/upload/sign/route';
 import { GET as healthz } from '../src/app/healthz/route';
 import { GET as readyz } from '../src/app/readyz/route';
 import { GET as download } from '../src/app/uploads/[filename]/route';
+import { POST as login } from '../src/app/api/login/route';
 
 const originalCronSecret = process.env.CRON_SECRET;
 
@@ -43,11 +44,11 @@ describe('Next.js Route Handler boundary', () => {
   });
 
   it('rejects malformed JSON before invoking a controller', async () => {
-    const response = await callApi('/api/login', {
+    const response = await login(new Request('http://route-handler.test/api/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{',
-    });
+    }));
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: 'Invalid JSON body.' });
   });

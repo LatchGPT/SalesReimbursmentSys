@@ -13,6 +13,13 @@ import { describe, it, expect } from 'vitest';
 import { getTodayIsoDate, shiftIsoDate } from '../src/features/claims';
 
 const routeHandlers = await import('../src/app/api/[[...path]]/route');
+const momsRoute = await import('../src/app/api/moms/route');
+const momRoute = await import('../src/app/api/moms/[id]/route');
+const momSendRoute = await import('../src/app/api/moms/[id]/send/route');
+const analyticsRoute = await import('../src/app/api/analytics/summary/route');
+const cashRoute = await import('../src/app/api/cash-advances/route'); const cashIdRoute = await import('../src/app/api/cash-advances/[id]/route'); const cashSubmitRoute = await import('../src/app/api/cash-advances/[id]/submit/route'); const cashApproveRoute = await import('../src/app/api/cash-advances/[id]/approve/route'); const cashReleaseRoute = await import('../src/app/api/cash-advances/[id]/release/route');
+const liqRoute = await import('../src/app/api/liquidations/route'); const liqIdRoute = await import('../src/app/api/liquidations/[id]/route'); const liqItemsRoute = await import('../src/app/api/liquidations/[id]/line-items/route'); const liqSubmitRoute = await import('../src/app/api/liquidations/[id]/submit/route'); const liqReviewRoute = await import('../src/app/api/liquidations/[id]/review/route');
+const authConfigRoute = await import('../src/app/api/auth/config/route'); const demoUsersRoute = await import('../src/app/api/demo-users/route'); const microsoftStartRoute = await import('../src/app/api/auth/microsoft/start/route');
 
 // Seeded org chart: Alice (u1, Requestor) reports to Bob (u2, Approver);
 // Carol (u3) is the Custodian who processes and releases payment.
@@ -24,6 +31,21 @@ const PURCHASE_DATE = getTodayIsoDate();
 
 async function requestRoute(path: string, init: RequestInit = {}): Promise<Response> {
   const url = new URL(path, 'http://route-handler.test');
+  if (url.pathname === '/api/auth/config') return authConfigRoute.GET(); if (url.pathname === '/api/demo-users') return demoUsersRoute.GET(); if (url.pathname === '/api/auth/microsoft/start') return microsoftStartRoute.GET();
+  const cashMatch = /^\/api\/cash-advances(?:\/([^/]+)(?:\/(submit|approve|release))?)?$/.exec(url.pathname);
+  if (cashMatch) { const id = cashMatch[1]; const action = cashMatch[2]; const method = (init.method || 'GET').toUpperCase(); const handler = !id ? (method === 'POST' ? cashRoute.POST : cashRoute.GET) : action === 'submit' ? cashSubmitRoute.POST : action === 'approve' ? cashApproveRoute.POST : action === 'release' ? cashReleaseRoute.POST : method === 'PUT' ? cashIdRoute.PUT : cashIdRoute.GET; return id ? (handler as typeof cashIdRoute.GET)(new Request(url, init), { params: Promise.resolve({ id }) }) : (handler as typeof cashRoute.GET)(new Request(url, init)); }
+  const liqMatch = /^\/api\/liquidations(?:\/([^/]+)(?:\/(line-items|submit|review))?)?$/.exec(url.pathname);
+  if (liqMatch) { const id = liqMatch[1]; const action = liqMatch[2]; const method = (init.method || 'GET').toUpperCase(); const handler = !id ? (method === 'POST' ? liqRoute.POST : liqRoute.GET) : action === 'line-items' ? liqItemsRoute.POST : action === 'submit' ? liqSubmitRoute.POST : action === 'review' ? liqReviewRoute.POST : liqIdRoute.GET; return id ? (handler as typeof liqIdRoute.GET)(new Request(url, init), { params: Promise.resolve({ id }) }) : (handler as typeof liqRoute.GET)(new Request(url, init)); }
+  if (url.pathname === '/api/analytics/summary') return analyticsRoute.GET(new Request(url, init));
+  const momMatch = /^\/api\/moms\/([^/]+)(?:\/(send))?$/.exec(url.pathname);
+  if (url.pathname === '/api/moms') {
+    const handler = (init.method || 'GET').toUpperCase() === 'POST' ? momsRoute.POST : momsRoute.GET;
+    return handler(new Request(url, init));
+  }
+  if (momMatch) {
+    const handler = momMatch[2] ? momSendRoute.POST : (init.method || 'GET').toUpperCase() === 'PUT' ? momRoute.PUT : momRoute.GET;
+    return handler(new Request(url, init), { params: Promise.resolve({ id: momMatch[1] }) } as never);
+  }
   const method = (init.method || 'GET').toUpperCase() as keyof typeof routeHandlers;
   const handler = routeHandlers[method] as typeof routeHandlers.GET;
   const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);

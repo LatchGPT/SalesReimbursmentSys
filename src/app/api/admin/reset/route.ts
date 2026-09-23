@@ -1,0 +1,1 @@
+import { resetDemoInMemory } from '../../../../services/admin/admin'; export const dynamic='force-dynamic'; export async function POST(request:Request){const result=resetDemoInMemory(request.headers.get('x-user-id'));return Response.json(result.body,{status:result.status});}
