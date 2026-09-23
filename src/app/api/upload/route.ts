@@ -1,5 +1,5 @@
 import { uploadToSupabase } from '../../../services/storage/supabaseStorage';
-import { enforceApiRateLimit } from '../../../services/http/apiDispatcher';
+import { enforceApiRateLimit } from '../../../services/http/rateLimit';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';

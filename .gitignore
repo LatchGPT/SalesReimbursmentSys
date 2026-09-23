@@ -11,10 +11,8 @@ tmp/
 !.env.example
 .local-backups/
 src/generated/prisma/
-<<<<<<< HEAD
 .vercel
-.env*
-=======
+test-results/
+playwright-report/
 SalesReimbursmentSystem/
 
->>>>>>> 6f33f80bc69737c1ac37a4291c1933bcb85419fc

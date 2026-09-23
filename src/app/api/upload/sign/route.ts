@@ -1,4 +1,4 @@
-import { enforceApiRateLimit } from '../../../../services/http/apiDispatcher';
+import { enforceApiRateLimit } from '../../../../services/http/rateLimit';
 import { createSupabaseSignedUpload } from '../../../../services/storage/supabaseStorage';
 
 export const dynamic = 'force-dynamic';

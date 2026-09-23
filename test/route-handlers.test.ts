@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import * as apiRoute from '../src/app/api/[[...path]]/route';
+import { dispatchTestRequest } from './testRouter';
 import { GET as apiHealth } from '../src/app/api/health/route';
 import { GET as cron } from '../src/app/api/cron/hourly/route';
 import { POST as upload } from '../src/app/api/upload/route';
@@ -17,11 +17,7 @@ afterEach(() => {
 });
 
 async function callApi(path: string, init: RequestInit = {}): Promise<Response> {
-  const url = new URL(path, 'http://route-handler.test');
-  const method = (init.method || 'GET').toUpperCase() as keyof typeof apiRoute;
-  const handler = apiRoute[method] as typeof apiRoute.GET;
-  const segments = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean);
-  return handler(new Request(url, init), { params: Promise.resolve({ path: segments }) });
+  return dispatchTestRequest(path, init);
 }
 
 describe('Next.js Route Handler boundary', () => {
