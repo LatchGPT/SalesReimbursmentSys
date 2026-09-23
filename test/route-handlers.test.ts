@@ -7,6 +7,7 @@ import { POST as signUpload } from '../src/app/api/upload/sign/route';
 import { GET as healthz } from '../src/app/healthz/route';
 import { GET as readyz } from '../src/app/readyz/route';
 import { GET as download } from '../src/app/uploads/[filename]/route';
+import { GET as workspace } from '../src/app/api/workspace/route';
 
 const originalCronSecret = process.env.CRON_SECRET;
 
@@ -95,5 +96,29 @@ describe('Next.js Route Handler boundary', () => {
       { params: Promise.resolve({ filename: 'not-linked.pdf' }) },
     );
     expect(missingDownload.status).toBe(404);
+  });
+
+  it('serves the consolidated /api/workspace payload in a single trip', async () => {
+    const unauth = await workspace(new Request('http://route-handler.test/api/workspace'));
+    expect(unauth.status).toBe(401);
+
+    const res = await workspace(new Request('http://route-handler.test/api/workspace', {
+      headers: { 'X-User-Id': 'u1' },
+    }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toHaveProperty('me');
+    expect(body).toHaveProperty('users');
+    expect(body).toHaveProperty('claims');
+    expect(body).toHaveProperty('advances');
+    expect(body).toHaveProperty('liquidations');
+    expect(body).toHaveProperty('masterAll');
+    expect(body).toHaveProperty('fieldDefinitions');
+    expect(body).toHaveProperty('moms');
+    expect(body).toHaveProperty('reviewMeetings');
+    expect(body).toHaveProperty('companies');
+    expect(body).toHaveProperty('settings');
+    expect(body).toHaveProperty('authConfig');
+    expect(body.me.id).toBe('u1');
   });
 });

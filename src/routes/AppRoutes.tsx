@@ -10,32 +10,32 @@ import { RequireRoles } from './RequireRoles';
 // fetched on first navigation rather than bundled into the initial load.
 // Dashboard is the common landing page. Admin analytics is kept in its own
 // chunk because its charting dependency is not needed by other roles.
-import { Dashboard } from '../features/dashboards/screens';
-const AdminDashboard = lazy(() => import('../features/admin/screens').then(m => ({ default: m.AdminDashboard })));
+const Dashboard = lazy(() => import('../features/dashboards/screens/Dashboard').then(m => ({ default: m.Dashboard })));
+const AdminDashboard = lazy(() => import('../features/admin/screens/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
 
-const ClaimsList = lazy(() => import('../features/claims/screens').then(m => ({ default: m.ClaimsList })));
-const Payouts = lazy(() => import('../features/claims/screens').then(m => ({ default: m.Payouts })));
-const SubmitClaim = lazy(() => import('../features/claims/screens').then(m => ({ default: m.SubmitClaim })));
-const ClaimDetail = lazy(() => import('../features/claims/screens').then(m => ({ default: m.ClaimDetail })));
-const ApprovalQueue = lazy(() => import('../features/approvals/screens').then(m => ({ default: m.ApprovalQueue })));
-const ProcessingQueue = lazy(() => import('../features/disbursements/screens').then(m => ({ default: m.ProcessingQueue })));
-const ReadyToClaimQueue = lazy(() => import('../features/disbursements/screens').then(m => ({ default: m.ReadyToClaimQueue })));
-const TransactionHistory = lazy(() => import('../features/disbursements/screens').then(m => ({ default: m.TransactionHistory })));
-const CustodianAnalytics = lazy(() => import('../features/disbursements/screens').then(m => ({ default: m.CustodianAnalytics })));
-const SystemActivity = lazy(() => import('../features/admin/screens').then(m => ({ default: m.SystemActivity })));
-const UserAccounts = lazy(() => import('../features/admin/screens').then(m => ({ default: m.UserAccounts })));
-const MOMs = lazy(() => import('../features/moms/screens').then(m => ({ default: m.MOMs })));
-const MomDetail = lazy(() => import('../features/moms/screens').then(m => ({ default: m.MomDetail })));
-const CreateMom = lazy(() => import('../features/moms/screens').then(m => ({ default: m.CreateMom })));
-const Calendar = lazy(() => import('../features/review-meetings/screens').then(m => ({ default: m.Calendar })));
-const Settings = lazy(() => import('../features/users/screens').then(m => ({ default: m.Settings })));
-const Support = lazy(() => import('../features/support/screens').then(m => ({ default: m.Support })));
-const Notifications = lazy(() => import('../features/activity/screens').then(m => ({ default: m.Notifications })));
-const CompanyDirectory = lazy(() => import('../features/admin/screens').then(m => ({ default: m.CompanyDirectory })));
-const Receipts = lazy(() => import('../features/claims/screens').then(m => ({ default: m.Receipts })));
-const AdminReporting = lazy(() => import('../features/admin/screens').then(m => ({ default: m.AdminReporting })));
-const FinanceAnalytics = lazy(() => import('../features/admin/screens').then(m => ({ default: m.FinanceAnalytics })));
-const HistoricalImport = lazy(() => import('../features/admin/screens').then(m => ({ default: m.HistoricalImport })));
+const ClaimsList = lazy(() => import('../features/claims/screens/ClaimsList').then(m => ({ default: m.ClaimsList })));
+const Payouts = lazy(() => import('../features/claims/screens/Payouts').then(m => ({ default: m.Payouts })));
+const SubmitClaim = lazy(() => import('../features/claims/screens/SubmitClaim').then(m => ({ default: m.SubmitClaim })));
+const ClaimDetail = lazy(() => import('../features/claims/screens/ClaimDetail').then(m => ({ default: m.ClaimDetail })));
+const ApprovalQueue = lazy(() => import('../features/approvals/screens/ApprovalQueue').then(m => ({ default: m.ApprovalQueue })));
+const ProcessingQueue = lazy(() => import('../features/disbursements/screens/ProcessingQueue').then(m => ({ default: m.ProcessingQueue })));
+const ReadyToClaimQueue = lazy(() => import('../features/disbursements/screens/ReadyToClaimQueue').then(m => ({ default: m.ReadyToClaimQueue })));
+const TransactionHistory = lazy(() => import('../features/disbursements/screens/TransactionHistory').then(m => ({ default: m.TransactionHistory })));
+const CustodianAnalytics = lazy(() => import('../features/disbursements/screens/CustodianAnalytics').then(m => ({ default: m.CustodianAnalytics })));
+const SystemActivity = lazy(() => import('../features/admin/screens/SystemActivity').then(m => ({ default: m.SystemActivity })));
+const UserAccounts = lazy(() => import('../features/admin/screens/UserAccounts').then(m => ({ default: m.UserAccounts })));
+const MOMs = lazy(() => import('../features/moms/screens/MOMs').then(m => ({ default: m.MOMs })));
+const MomDetail = lazy(() => import('../features/moms/screens/MomDetail').then(m => ({ default: m.MomDetail })));
+const CreateMom = lazy(() => import('../features/moms/screens/CreateMom').then(m => ({ default: m.CreateMom })));
+const Calendar = lazy(() => import('../features/review-meetings/screens/Calendar').then(m => ({ default: m.Calendar })));
+const Settings = lazy(() => import('../features/users/screens/Settings').then(m => ({ default: m.Settings })));
+const Support = lazy(() => import('../features/support/screens/Support').then(m => ({ default: m.Support })));
+const Notifications = lazy(() => import('../features/activity/screens/Notifications').then(m => ({ default: m.Notifications })));
+const CompanyDirectory = lazy(() => import('../features/admin/screens/CompanyDirectory').then(m => ({ default: m.CompanyDirectory })));
+const Receipts = lazy(() => import('../features/claims/screens/Receipts').then(m => ({ default: m.Receipts })));
+const AdminReporting = lazy(() => import('../features/admin/screens/AdminReporting').then(m => ({ default: m.AdminReporting })));
+const FinanceAnalytics = lazy(() => import('../features/admin/screens/AdminReporting').then(m => ({ default: m.FinanceAnalytics })));
+const HistoricalImport = lazy(() => import('../features/admin/screens/HistoricalImport').then(m => ({ default: m.HistoricalImport })));
 
 function RouteFallback() {
   return (

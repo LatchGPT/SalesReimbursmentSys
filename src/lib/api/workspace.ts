@@ -41,24 +41,49 @@ export interface WorkspaceData {
  * and merged here so components only ever see one list.
  */
 export async function loadWorkspace(): Promise<WorkspaceData> {
-  const [me, users, rawClaims, rawAdvances, rawLiquidations, masterAll, rawFields, rawMoms, rawReviewMeetings, rawCompanies, rawOutbox, rawSupport, rawDelegations, rawSettings, runtimeConfig] =
-    await Promise.all([
-      apiFetch('/api/me'),
-      apiFetch('/api/users'),
-      apiFetch('/api/claims'),
-      apiFetch('/api/cash-advances'),
-      apiFetch('/api/liquidations'),
-      apiFetch('/api/master-data/all'),
-      apiFetch('/api/field-definitions'),
-      apiFetch('/api/moms'),
-      apiFetch('/api/review-meetings'),
-      apiFetch('/api/companies'),
-      apiFetch('/api/outbox'),
-      apiFetch('/api/support'),
-      apiFetch('/api/delegations'),
-      apiFetch('/api/admin/settings'),
-      apiFetch('/api/auth/config'),
-    ]);
+  let me: any, users: any, rawClaims: any, rawAdvances: any, rawLiquidations: any,
+      masterAll: any, rawFields: any, rawMoms: any, rawReviewMeetings: any,
+      rawCompanies: any, rawOutbox: any, rawSupport: any, rawDelegations: any,
+      rawSettings: any, runtimeConfig: any;
+
+  try {
+    const ws = await apiFetch('/api/workspace');
+    me = ws.me;
+    users = ws.users;
+    rawClaims = ws.claims;
+    rawAdvances = ws.advances;
+    rawLiquidations = ws.liquidations;
+    masterAll = ws.masterAll;
+    rawFields = ws.fieldDefinitions;
+    rawMoms = ws.moms;
+    rawReviewMeetings = ws.reviewMeetings;
+    rawCompanies = ws.companies;
+    rawOutbox = ws.outbox;
+    rawSupport = ws.support;
+    rawDelegations = ws.delegations;
+    rawSettings = ws.settings;
+    runtimeConfig = ws.authConfig;
+  } catch (err) {
+    console.warn('[workspace] /api/workspace fetch failed, falling back to multi-endpoint:', err);
+    [me, users, rawClaims, rawAdvances, rawLiquidations, masterAll, rawFields, rawMoms, rawReviewMeetings, rawCompanies, rawOutbox, rawSupport, rawDelegations, rawSettings, runtimeConfig] =
+      await Promise.all([
+        apiFetch('/api/me'),
+        apiFetch('/api/users'),
+        apiFetch('/api/claims'),
+        apiFetch('/api/cash-advances'),
+        apiFetch('/api/liquidations'),
+        apiFetch('/api/master-data/all'),
+        apiFetch('/api/field-definitions'),
+        apiFetch('/api/moms'),
+        apiFetch('/api/review-meetings'),
+        apiFetch('/api/companies'),
+        apiFetch('/api/outbox'),
+        apiFetch('/api/support'),
+        apiFetch('/api/delegations'),
+        apiFetch('/api/admin/settings'),
+        apiFetch('/api/auth/config'),
+      ]);
+  }
 
   const demoModeEnabled = runtimeConfig?.demoModeEnabled === true;
   const claims: Claim[] = [

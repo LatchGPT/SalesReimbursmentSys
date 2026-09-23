@@ -129,7 +129,7 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
         </div>
 
         <div className="relative z-10">
-          <img src="/logo/logo.png" alt="Microgenesis" className="h-auto w-[205px] object-contain object-left" />
+          <img src="/logo/logo.png" alt="Microgenesis" fetchPriority="high" className="h-auto w-[205px] object-contain object-left" />
         </div>
 
         <div className="relative z-10 max-w-md pb-8">
