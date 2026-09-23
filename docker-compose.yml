@@ -1,0 +1,50 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sales-reim-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/sales_reimbursement?sslmode=disable}
+      - DIRECT_URL=${DIRECT_URL:-postgresql://postgres:postgres@db:5432/sales_reimbursement?sslmode=disable}
+      - DEMO_MODE=true
+      - AUTH_MODE=demo
+      - ENABLE_DEMO_LOGIN=true
+      - AUTO_SEED=true
+      - NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true
+      - NEXT_PUBLIC_ENABLE_ALL_CLAIM_TYPES=false
+    env_file:
+      - path: .env
+        required: false
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+
+  db:
+    image: postgres:16-alpine
+    container_name: sales-reim-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: sales_reimbursement
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sales_reimbursement"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  uploads_data:
