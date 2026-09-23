@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { useAppContext } from '../AppContext';
@@ -49,10 +50,12 @@ export const FILTERS: { id: string; label: string; match: (m: { subject: string;
 export interface NotificationsViewProps {
   initialSelectedId?: string | null;
   isModal?: boolean;
+  onCloseModal?: () => void;
 }
 
-export function NotificationsView({ initialSelectedId, isModal = false }: NotificationsViewProps) {
-  const { emails, currentUser, markEmailsRead } = useAppContext();
+export function NotificationsView({ initialSelectedId, isModal = false, onCloseModal }: NotificationsViewProps) {
+  const navigate = useNavigate();
+  const { emails, claims, currentUser, markEmailsRead } = useAppContext();
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -90,6 +93,12 @@ export function NotificationsView({ initialSelectedId, isModal = false }: Notifi
   const selectedMessage = useMemo(() => {
     return myMessages.find(m => m.id === selectedId) || filteredMessages[0] || null;
   }, [myMessages, filteredMessages, selectedId]);
+
+  const relatedClaim = useMemo(() => {
+    if (!selectedMessage) return null;
+    const text = `${selectedMessage.subject} ${selectedMessage.body}`;
+    return claims.find(c => text.includes(c.ref) || text.includes(c.id));
+  }, [selectedMessage, claims]);
 
   const handleMarkAllRead = () => {
     const unreadIds = myMessages.filter(m => !m.read).map(m => m.id);
@@ -240,6 +249,28 @@ export function NotificationsView({ initialSelectedId, isModal = false }: Notifi
                 <div className="text-sm md:text-body-base whitespace-pre-wrap leading-relaxed text-on-surface">
                   {selectedMessage.body}
                 </div>
+
+                {relatedClaim && (
+                  <div className="mt-6 pt-5 border-t border-brand-border flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs text-on-surface-variant">Related Reference: </span>
+                      <span className="text-xs font-semibold text-brand-slate">{relatedClaim.ref}</span>
+                      <span className="ml-2 text-xs text-outline capitalize">({relatedClaim.type})</span>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => {
+                        if (isModal && onCloseModal) onCloseModal();
+                        navigate(`/claims/${relatedClaim.id}`);
+                      }}
+                      className="gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                      View Request
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
