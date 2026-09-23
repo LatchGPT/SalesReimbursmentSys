@@ -9,6 +9,7 @@ tmp/
 *.tsbuildinfo
 .env*
 !.env.example
+!.env.docker.example
 .local-backups/
 src/generated/prisma/
 .vercel
