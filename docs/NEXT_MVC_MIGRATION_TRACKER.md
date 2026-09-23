@@ -24,6 +24,8 @@
 - [x] Converted review meetings to a framework-neutral service and explicit Next Route Handlers.
 - [x] Converted activity to a framework-neutral service and explicit Next Route Handlers.
 - [x] Converted analytics to a framework-neutral service and explicit Next Route Handler.
+- [x] Converted cash advances to a framework-neutral service and explicit Next Route Handlers.
+- [x] Converted liquidations to a framework-neutral service and explicit Next Route Handlers.
 - [x] Relocated field-definitions and master-data routers to `src/services/admin/`.
 - [x] Relocated users and delegations routers to `src/services/users/`.
 - [x] Relocated companies router to `src/services/admin/`.
@@ -38,6 +40,7 @@
 - [x] Verified the review-meetings conversion: lint and 114 Vitest tests pass.
 - [x] Verified the activity conversion: lint and 114 Vitest tests pass.
 - [x] Verified the analytics conversion: lint and 114 Vitest tests pass.
+- [x] Verified the cash-advances and liquidations conversion: lint and 115 Vitest tests pass.
 
 ## Phase 1: router relocation
 
@@ -49,12 +52,12 @@
 - [x] Convert field definitions: GET, POST, and PUT `/api/field-definitions` endpoints.
 - [x] Convert users, companies, and delegations.
 - [x] Convert support, review meetings, and activity.
-- [ ] Convert analytics, cash advances, and liquidations.
+- [x] Convert analytics, cash advances, and liquidations.
 - [ ] Convert auth, admin, and claims as isolated high-risk batches.
 
 ## Phase 3: compatibility cleanup
 
-- [ ] Convert analytics, cash advances, and liquidations.
+- [x] Convert analytics, cash advances, and liquidations.
 - [ ] Remove Express router barrels and the catch-all dispatcher.
 - [ ] Remove unused Express dependencies and `src/server/` compatibility code.
 

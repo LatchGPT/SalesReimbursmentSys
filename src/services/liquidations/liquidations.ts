@@ -1,23 +1,24 @@
-import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Liquidation, LiquidationStatus, LiquidationVarianceType, LiquidationLineItem,
   CashAdvanceStatus, Claim, ClaimStatus, UserRole
 } from '../../lib/db/serverTypes';
-import { state, checkCategoryLimits } from '../state';
-import { getUser } from '../middleware/auth';
-import { canAccessLiquidation } from '../services/authorization';
-import { isActiveDelegateFor } from '../services/delegations';
-import { generateClaimNumber } from '../services/claimNumber';
-import { addHistory, addCaHistory, addLiqHistory } from '../services/history';
-import { sendEmail } from '../services/notifications';
+import { state, checkCategoryLimits } from '../../server/state';
+import { canAccessLiquidation } from '../../server/services/authorization';
+import { isActiveDelegateFor } from '../../server/services/delegations';
+import { generateClaimNumber } from '../../server/services/claimNumber';
+import { addHistory, addCaHistory, addLiqHistory } from '../../server/services/history';
+import { sendEmail } from '../../server/services/notifications';
 import { normalizeExpenseCategory } from '../../lib/expenseCategories';
-import { isFinanceVisibleFinancialRecord, REIMBURSEMENT_CAP } from '../constants';
-import { isClaimTypeEnabled, COMING_SOON_MESSAGE } from '../../services/featureFlags';
+import { isFinanceVisibleFinancialRecord, REIMBURSEMENT_CAP } from '../../server/constants';
+import { isClaimTypeEnabled, COMING_SOON_MESSAGE } from '../featureFlags';
 import { persistLiquidation, persistLiquidationLineItems, persistCashAdvance } from '../../lib/db/cashAdvanceRepo';
 import { persistClaim, persistClaimWithLineItems, persistExpenseLineItems } from '../../lib/db/coreLoopRepo';
 
-export const liquidationsRouter = Router();
+function findUser(userId: string | null) {
+  if (!userId) return null;
+  return state.users.find(u => u.id === userId || u.entra_object_id === userId || u.user_principal_name === userId) || null;
+}
 
 export const recalculateLiquidation = async (liquidationId: string) => {
   const liq = state.liquidations.find(l => l.id === liquidationId);
@@ -47,10 +48,9 @@ export const recalculateLiquidation = async (liquidationId: string) => {
   }
 };
 
-// 8. Get all liquidations
-liquidationsRouter.get('/liquidations', (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export function listLiquidations(userId: string | null) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
   let filtered: Liquidation[] = [];
   if (user.role === UserRole.REQUESTOR) {
@@ -58,14 +58,19 @@ liquidationsRouter.get('/liquidations', (req, res) => {
   } else if (user.role === UserRole.APPROVER) {
     const reporteeIds = state.users.filter(u => u.reports_to === user.id).map(u => u.id);
     filtered = state.liquidations.filter(l => {
-      const ca = state.cashAdvances.find(ca => ca.id === l.cashAdvanceId);
+      const ca = state.cashAdvances.find(item => item.id === l.cashAdvanceId);
       const approverId = ca?.approverId;
-      return l.requestorId === user.id || approverId === user.id || reporteeIds.includes(l.requestorId) || isActiveDelegateFor(user.id, approverId);
+      return (
+        l.requestorId === user.id ||
+        approverId === user.id ||
+        reporteeIds.includes(l.requestorId) ||
+        isActiveDelegateFor(user.id, approverId)
+      );
     });
   } else if (user.role === UserRole.FINANCE) {
     filtered = state.liquidations.filter(l => isFinanceVisibleFinancialRecord('Liquidation', l.status));
   } else {
-    filtered = state.liquidations; // Custodian and Admin see all
+    filtered = state.liquidations;
   }
 
   const enriched = filtered.map(l => {
@@ -78,18 +83,19 @@ liquidationsRouter.get('/liquidations', (req, res) => {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return { ...l, requestor, cashAdvance, mom, lineItems: items, history };
   });
-  res.json(enriched);
-});
+  return { status: 200, body: enriched };
+}
 
-// 9. Get single liquidation
-liquidationsRouter.get('/liquidations/:id', (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export function getLiquidation(userId: string | null, id: string) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-  const l = state.liquidations.find(liq => liq.id === req.params.id);
-  if (!l) return res.status(404).json({ error: 'Liquidation not found' });
+  const l = state.liquidations.find(liq => liq.id === id);
+  if (!l) return { status: 404, body: { error: 'Liquidation not found' } };
 
-  if (!canAccessLiquidation(user, l)) return res.status(403).json({ error: 'Forbidden' });
+  if (!canAccessLiquidation(user, l)) {
+    return { status: 403, body: { error: 'Forbidden' } };
+  }
 
   const requestor = state.users.find(u => u.id === l.requestorId);
   const cashAdvance = state.cashAdvances.find(c => c.id === l.cashAdvanceId);
@@ -104,43 +110,42 @@ liquidationsRouter.get('/liquidations/:id', (req, res) => {
     }))
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  res.json({ ...l, requestor, cashAdvance, mom, lineItems: items, history });
-});
+  return { status: 200, body: { ...l, requestor, cashAdvance, mom, lineItems: items, history } };
+}
 
-// 10. Initiate liquidation for a Released Cash Advance
-liquidationsRouter.post('/liquidations', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-  if (!isClaimTypeEnabled('Liquidation')) return res.status(403).json({ error: COMING_SOON_MESSAGE });
+export async function createLiquidation(userId: string | null, body: any) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
+  if (!isClaimTypeEnabled('Liquidation')) return { status: 403, body: { error: COMING_SOON_MESSAGE } };
 
-  const { cashAdvanceId } = req.body;
-  if (!cashAdvanceId) return res.status(400).json({ error: 'Cash Advance ID is required.' });
+  const { cashAdvanceId } = body || {};
+  if (!cashAdvanceId) return { status: 400, body: { error: 'cashAdvanceId is required.' } };
 
   const ca = state.cashAdvances.find(c => c.id === cashAdvanceId);
-  if (!ca) return res.status(404).json({ error: 'Cash Advance not found' });
+  if (!ca) return { status: 404, body: { error: 'Cash Advance not found.' } };
 
   if (ca.requestorId !== user.id) {
-    return res.status(403).json({ error: 'You can only liquidate your own Cash Advances.' });
+    return { status: 403, body: { error: 'You can only file a liquidation for your own Cash Advance.' } };
   }
 
   if (ca.status !== CashAdvanceStatus.RELEASED) {
-    return res.status(400).json({ error: 'You can only liquidate Cash Advances that have been Released.' });
+    return { status: 400, body: { error: 'Can only file a liquidation against a Released Cash Advance.' } };
   }
 
-  const existing = state.liquidations.find(l => l.cashAdvanceId === cashAdvanceId);
+  const existing = state.liquidations.find(l => l.cashAdvanceId === cashAdvanceId && l.status !== LiquidationStatus.CLOSED);
   if (existing) {
-    return res.status(400).json({ error: 'A Liquidation already exists for this Cash Advance.' });
+    return { status: 400, body: { error: 'A Liquidation already exists for this Cash Advance.' } };
   }
 
-  const liquidationId = uuidv4();
+  const liqId = uuidv4();
   const liquidation: Liquidation = {
-    id: liquidationId,
-    cashAdvanceId,
+    id: liqId,
+    cashAdvanceId: ca.id,
     requestorId: user.id,
+    status: LiquidationStatus.DRAFT,
     totalSpent: 0,
     varianceAmount: -ca.amount,
     varianceType: LiquidationVarianceType.REFUND_DUE,
-    status: LiquidationStatus.DRAFT,
     createdAt: new Date().toISOString()
   };
 
@@ -150,192 +155,209 @@ liquidationsRouter.post('/liquidations', async (req, res) => {
   } catch (err) {
     console.error('[db] Could not persist new liquidation to Postgres:', err);
   }
-  addLiqHistory(liquidationId, '', LiquidationStatus.DRAFT, user.id, 'Liquidation Draft Started');
-  addCaHistory(ca.id, ca.status, ca.status, user.id, 'Liquidation Started');
-  res.json(liquidation);
-});
+  addLiqHistory(liqId, '', LiquidationStatus.DRAFT, user.id, 'Liquidation Draft Created');
+  return { status: 200, body: liquidation };
+}
 
-// 11. Add a line item to a Liquidation (editable only in Draft or ReturnedForRevision)
-liquidationsRouter.post('/liquidations/:id/line-items', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export async function addLiquidationLineItem(userId: string | null, id: string, body: any) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-  const l = state.liquidations.find(liq => liq.id === req.params.id);
-  if (!l) return res.status(404).json({ error: 'Liquidation not found' });
+  const l = state.liquidations.find(liq => liq.id === id);
+  if (!l) return { status: 404, body: { error: 'Liquidation not found' } };
 
-  if (l.requestorId !== user.id) {
-    return res.status(403).json({ error: 'You do not have permission to modify this Liquidation.' });
-  }
-
+  if (l.requestorId !== user.id) return { status: 403, body: { error: 'Forbidden' } };
   if (l.status !== LiquidationStatus.DRAFT && l.status !== LiquidationStatus.RETURNED_FOR_REVISION) {
-    return res.status(400).json({ error: 'This Liquidation is read-only because it has been submitted.' });
+    return { status: 400, body: { error: 'Cannot add line items to a submitted, approved, or closed Liquidation.' } };
   }
 
-  const { expense_date, vendor, category, amount, payment_method, business_purpose, receipt_url, attachment_type, or_number } = req.body;
-  if (!expense_date || !vendor || !category || amount === undefined || !payment_method || !business_purpose || !receipt_url) {
-    return res.status(400).json({ error: 'Missing required expense fields.' });
+  const category = body?.category;
+  const vendor = body?.vendor;
+  const amount = body?.amount;
+  const paymentMethod = body?.payment_method || body?.paymentMethod;
+  const expenseDate = body?.expense_date || body?.expenseDate;
+  const businessPurpose = body?.business_purpose || body?.businessPurpose;
+  const orNumber = body?.or_number || body?.orNumber;
+  const receiptUrl = body?.receipt_url || body?.receiptUrl;
+
+  if (!category || !vendor || amount === undefined || amount === null || !paymentMethod || !expenseDate) {
+    return { status: 400, body: { error: 'Missing required expense item fields.' } };
   }
 
   const numericAmount = Number(amount);
   if (isNaN(numericAmount) || numericAmount <= 0) {
-    return res.status(400).json({ error: 'Amount must be a valid number greater than zero.' });
+    return { status: 400, body: { error: 'Amount must be a positive number.' } };
   }
 
-  const itemId = uuidv4();
-  const newItem: LiquidationLineItem = {
-    id: itemId,
+  const normalizedCategory = normalizeExpenseCategory(category);
+  const limitWarning = checkCategoryLimits([{ category: normalizedCategory, amount: numericAmount }]);
+  if (limitWarning) {
+    return { status: 400, body: { error: limitWarning } };
+  }
+
+  const lineItem: LiquidationLineItem = {
+    id: uuidv4(),
     liquidationId: l.id,
-    expense_date,
+    category: normalizedCategory,
     vendor,
-    category: normalizeExpenseCategory(category),
     amount: numericAmount,
-    payment_method,
-    business_purpose,
-    receipt_url,
-    attachment_type: attachment_type || 'Official Receipt',
-    or_number: or_number || undefined
+    payment_method: paymentMethod,
+    expense_date: expenseDate,
+    business_purpose: businessPurpose || '',
+    or_number: orNumber,
+    receipt_url: receiptUrl
   };
 
-  state.liquidationLineItems.push(newItem);
+  state.liquidationLineItems.push(lineItem);
   await recalculateLiquidation(l.id);
+  return { status: 200, body: lineItem };
+}
 
-  res.json(newItem);
-});
+export async function updateLiquidationLineItem(userId: string | null, id: string, itemId: string, body: any) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-// 12. Update a line item in a Liquidation
-liquidationsRouter.put('/liquidations/:id/line-items/:itemId', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  const l = state.liquidations.find(liq => liq.id === id);
+  if (!l) return { status: 404, body: { error: 'Liquidation not found' } };
 
-  const l = state.liquidations.find(liq => liq.id === req.params.id);
-  if (!l) return res.status(404).json({ error: 'Liquidation not found' });
+  const item = state.liquidationLineItems.find(i => i.id === itemId && i.liquidationId === id);
+  if (!item) return { status: 404, body: { error: 'Line item not found' } };
 
-  if (l.requestorId !== user.id) {
-    return res.status(403).json({ error: 'You do not have permission to modify this Liquidation.' });
+  if (l.requestorId !== user.id && user.role !== UserRole.ADMIN) {
+    return { status: 403, body: { error: 'Forbidden' } };
   }
 
-  if (l.status !== LiquidationStatus.DRAFT && l.status !== LiquidationStatus.RETURNED_FOR_REVISION) {
-    return res.status(400).json({ error: 'This Liquidation is read-only because it has been submitted.' });
+  if ([LiquidationStatus.CLOSED, LiquidationStatus.REVIEWED].includes(l.status) && user.role !== UserRole.ADMIN) {
+    return { status: 403, body: { error: 'Cannot modify line items on closed or reviewed Liquidations.' } };
   }
 
-  const item = state.liquidationLineItems.find(i => i.id === req.params.itemId && i.liquidationId === l.id);
-  if (!item) return res.status(404).json({ error: 'Line item not found' });
+  const category = body?.category;
+  const vendor = body?.vendor;
+  const amount = body?.amount;
+  const paymentMethod = body?.payment_method || body?.paymentMethod;
+  const expenseDate = body?.expense_date || body?.expenseDate;
+  const businessPurpose = body?.business_purpose !== undefined ? body.business_purpose : body?.businessPurpose;
+  const orNumber = body?.or_number !== undefined ? body.or_number : body?.orNumber;
+  const receiptUrl = body?.receipt_url !== undefined ? body.receipt_url : body?.receiptUrl;
 
-  const { expense_date, vendor, category, amount, payment_method, business_purpose, receipt_url, attachment_type, or_number } = req.body;
-
-  if (expense_date !== undefined) item.expense_date = expense_date;
-  if (vendor !== undefined) item.vendor = vendor;
-  if (category !== undefined) item.category = normalizeExpenseCategory(category);
   if (amount !== undefined) {
     const numericAmount = Number(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      return res.status(400).json({ error: 'Amount must be a valid number greater than zero.' });
+      return { status: 400, body: { error: 'Amount must be a positive number.' } };
+    }
+    const catToCheck = category ? normalizeExpenseCategory(category) : item.category;
+    const limitWarning = checkCategoryLimits([{ category: catToCheck, amount: numericAmount }]);
+    if (limitWarning) {
+      return { status: 400, body: { error: limitWarning } };
     }
     item.amount = numericAmount;
   }
-  if (payment_method !== undefined) item.payment_method = payment_method;
-  if (business_purpose !== undefined) item.business_purpose = business_purpose;
-  if (receipt_url !== undefined) item.receipt_url = receipt_url;
-  if (attachment_type !== undefined) item.attachment_type = attachment_type;
-  if (or_number !== undefined) item.or_number = or_number;
+
+  if (category) item.category = normalizeExpenseCategory(category);
+  if (vendor) item.vendor = vendor;
+  if (paymentMethod) item.payment_method = paymentMethod;
+  if (expenseDate) item.expense_date = expenseDate;
+  if (businessPurpose !== undefined) item.business_purpose = businessPurpose;
+  if (orNumber !== undefined) item.or_number = orNumber;
+  if (receiptUrl !== undefined) item.receipt_url = receiptUrl;
 
   await recalculateLiquidation(l.id);
-  res.json(item);
-});
+  return { status: 200, body: item };
+}
 
-// 13. Delete a line item from a Liquidation
-liquidationsRouter.delete('/liquidations/:id/line-items/:itemId', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export async function deleteLiquidationLineItem(userId: string | null, id: string, itemId: string) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-  const l = state.liquidations.find(liq => liq.id === req.params.id);
-  if (!l) return res.status(404).json({ error: 'Liquidation not found' });
+  const l = state.liquidations.find(liq => liq.id === id);
+  if (!l) return { status: 404, body: { error: 'Liquidation not found' } };
 
-  if (l.requestorId !== user.id) {
-    return res.status(403).json({ error: 'You do not have permission to modify this Liquidation.' });
+  const index = state.liquidationLineItems.findIndex(i => i.id === itemId && i.liquidationId === id);
+  if (index === -1) return { status: 404, body: { error: 'Line item not found' } };
+
+  if (l.requestorId !== user.id && user.role !== UserRole.ADMIN) {
+    return { status: 403, body: { error: 'Forbidden' } };
   }
 
-  if (l.status !== LiquidationStatus.DRAFT && l.status !== LiquidationStatus.RETURNED_FOR_REVISION) {
-    return res.status(400).json({ error: 'This Liquidation is read-only because it has been submitted.' });
+  if ([LiquidationStatus.CLOSED, LiquidationStatus.REVIEWED].includes(l.status) && user.role !== UserRole.ADMIN) {
+    return { status: 403, body: { error: 'Cannot delete line items on closed or reviewed Liquidations.' } };
   }
-
-  const index = state.liquidationLineItems.findIndex(i => i.id === req.params.itemId && i.liquidationId === l.id);
-  if (index === -1) return res.status(404).json({ error: 'Line item not found' });
 
   state.liquidationLineItems.splice(index, 1);
   await recalculateLiquidation(l.id);
+  return { status: 200, body: { success: true } };
+}
 
-  res.json({ success: true });
-});
+export async function submitLiquidation(userId: string | null, id: string) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-// 14. Submit a Liquidation report
-liquidationsRouter.post('/liquidations/:id/submit', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const l = state.liquidations.find(liq => liq.id === req.params.id && liq.requestorId === user.id);
-  if (!l) return res.status(404).json({ error: 'Liquidation not found' });
+  const l = state.liquidations.find(liq => liq.id === id && liq.requestorId === user.id);
+  if (!l) return { status: 404, body: { error: 'Liquidation not found' } };
 
   if (l.status !== LiquidationStatus.DRAFT && l.status !== LiquidationStatus.RETURNED_FOR_REVISION) {
-    return res.status(400).json({ error: 'Only Liquidations in Draft or ReturnedForRevision status can be submitted.' });
+    return { status: 400, body: { error: 'Only Draft or Returned liquidations can be submitted.' } };
   }
 
-  const liqPolicyError = checkCategoryLimits(state.liquidationLineItems.filter(i => i.liquidationId === l.id));
-  if (liqPolicyError) return res.status(400).json({ error: liqPolicyError });
+  const items = state.liquidationLineItems.filter(i => i.liquidationId === l.id);
+  if (items.length === 0) {
+    return { status: 400, body: { error: 'Cannot submit an empty liquidation report. Add at least one expense line item.' } };
+  }
 
   await recalculateLiquidation(l.id);
 
-  const { refundMethod } = req.body || {};
-  if (refundMethod && l.varianceType === LiquidationVarianceType.REFUND_DUE) {
-    l.refundMethod = refundMethod;
-  }
+  const ca = state.cashAdvances.find(c => c.id === l.cashAdvanceId);
+  const approver = ca ? state.users.find(u => u.id === ca.approverId) : undefined;
 
   const oldStatus = l.status;
   l.status = LiquidationStatus.SUBMITTED;
-  addLiqHistory(l.id, oldStatus, LiquidationStatus.SUBMITTED, user.id, 'Liquidation Submitted for Review');
+  addLiqHistory(l.id, oldStatus, LiquidationStatus.SUBMITTED, user.id, 'Liquidation Submitted for Approval');
 
-  const ca = state.cashAdvances.find(c => c.id === l.cashAdvanceId);
-  if (ca) {
-    addCaHistory(ca.id, ca.status, ca.status, user.id, 'Liquidation Submitted');
+  if (approver) {
     sendEmail(
-      ca.approverId,
-      `Liquidation Submitted - LIQ-${l.id.substring(0,6)}`,
-      `A Liquidation report has been submitted by ${user.name} for Cash Advance CADV-${ca.id.substring(0,6)}.\n\nTotal Spent: PHP ${l.totalSpent}\nVariance: PHP ${l.varianceAmount} (${l.varianceType})`
+      approver.id,
+      `Liquidation Submitted for Review - LIQ-${l.id.substring(0,6)}`,
+      `A Liquidation report has been submitted by ${user.name} for Cash Advance CADV-${ca ? ca.id.substring(0,6) : ''}.\n\nTotal Spent: PHP ${l.totalSpent}\nVariance: PHP ${l.varianceAmount} (${l.varianceType})\n\nPlease review and approve.`
     );
   }
+
+  sendEmail(
+    user.id,
+    `Liquidation Submitted - LIQ-${l.id.substring(0,6)}`,
+    `Your Liquidation report has been submitted successfully${approver ? ` and routed to ${approver.name}` : ''}.\n\nTotal Spent: PHP ${l.totalSpent}\nVariance: PHP ${l.varianceAmount} (${l.varianceType})`
+  );
 
   try {
     await persistLiquidation(l);
   } catch (err) {
     console.error('[db] Could not persist liquidation submission to Postgres:', err);
   }
-  res.json(l);
-});
+  return { status: 200, body: l };
+}
 
-// 15. Approve/Reviewed or Return a Liquidation report (Approver only)
-liquidationsRouter.post('/liquidations/:id/review', async (req, res) => {
-  const user = getUser(req);
-  if (!user || user.role !== UserRole.APPROVER) return res.status(403).json({ error: 'Forbidden' });
+export async function reviewLiquidation(userId: string | null, id: string, body: any) {
+  const user = findUser(userId);
+  if (!user || user.role !== UserRole.APPROVER) return { status: 403, body: { error: 'Forbidden' } };
 
-  const l = state.liquidations.find(liq => liq.id === req.params.id);
-  if (!l) return res.status(404).json({ error: 'Liquidation not found' });
+  const l = state.liquidations.find(liq => liq.id === id);
+  if (!l) return { status: 404, body: { error: 'Liquidation not found' } };
 
   const ca = state.cashAdvances.find(c => c.id === l.cashAdvanceId);
   if (!ca || (ca.approverId !== user.id && !isActiveDelegateFor(user.id, ca.approverId))) {
-    return res.status(403).json({ error: 'You are not the designated approver/reviewer for this Liquidation.' });
+    return { status: 403, body: { error: 'You are not the designated approver/reviewer for this Liquidation.' } };
   }
 
   if (l.status !== LiquidationStatus.SUBMITTED) {
-    return res.status(400).json({ error: 'Only Submitted Liquidations can be reviewed.' });
+    return { status: 400, body: { error: 'Only Submitted Liquidations can be reviewed.' } };
   }
 
-  const { decision, comment } = req.body;
+  const { decision, comment } = body || {};
   if (!['Approved', 'Returned'].includes(decision)) {
-    return res.status(400).json({ error: 'Invalid decision. Must be Approved or Returned.' });
+    return { status: 400, body: { error: 'Invalid decision. Must be Approved or Returned.' } };
   }
 
   if (decision === 'Returned' && !comment) {
-    return res.status(400).json({ error: 'A comment is required when returning a Liquidation for revision.' });
+    return { status: 400, body: { error: 'A comment is required when returning a Liquidation for revision.' } };
   }
 
   let shortFallClaim: Claim | undefined;
@@ -447,28 +469,27 @@ liquidationsRouter.post('/liquidations/:id/review', async (req, res) => {
   } catch (err) {
     console.error('[db] Could not persist liquidation review to Postgres:', err);
   }
-  res.json(l);
-});
+  return { status: 200, body: l };
+}
 
-// 16. Collect refund and close Liquidation (Custodian only)
-liquidationsRouter.post('/liquidations/:id/collect-refund', async (req, res) => {
-  const user = getUser(req);
-  if (!user || user.role !== UserRole.CUSTODIAN) return res.status(403).json({ error: 'Forbidden: Only Custodians can collect refunds.' });
+export async function collectLiquidationRefund(userId: string | null, id: string, body: any) {
+  const user = findUser(userId);
+  if (!user || user.role !== UserRole.CUSTODIAN) return { status: 403, body: { error: 'Forbidden: Only Custodians can collect refunds.' } };
 
-  const l = state.liquidations.find(liq => liq.id === req.params.id);
-  if (!l) return res.status(404).json({ error: 'Liquidation not found' });
+  const l = state.liquidations.find(liq => liq.id === id);
+  if (!l) return { status: 404, body: { error: 'Liquidation not found' } };
 
   if (l.status !== LiquidationStatus.REVIEWED) {
-    return res.status(400).json({ error: 'Only Reviewed Liquidations with pending refunds can be marked collected.' });
+    return { status: 400, body: { error: 'Only Reviewed Liquidations with pending refunds can be marked collected.' } };
   }
 
   if (l.varianceType !== LiquidationVarianceType.REFUND_DUE) {
-    return res.status(400).json({ error: 'No refund is due for this Liquidation.' });
+    return { status: 400, body: { error: 'No refund is due for this Liquidation.' } };
   }
 
-  const { referenceNote, refundMethod } = req.body;
+  const { referenceNote, refundMethod } = body || {};
   if (!refundMethod || !state.systemSettings.paymentMethods.includes(refundMethod)) {
-    return res.status(400).json({ error: `Refund method must be one of: ${state.systemSettings.paymentMethods.join(', ')}` });
+    return { status: 400, body: { error: `Refund method must be one of: ${state.systemSettings.paymentMethods.join(', ')}` } };
   }
 
   const oldStatus = l.status;
@@ -502,5 +523,5 @@ liquidationsRouter.post('/liquidations/:id/collect-refund', async (req, res) => 
   } catch (err) {
     console.error('[db] Could not persist refund collection to Postgres:', err);
   }
-  res.json(l);
-});
+  return { status: 200, body: l };
+}

@@ -1,2 +1,2 @@
-export { cashAdvancesRouter } from '../../../server/routes/cashAdvances.routes';
-export { liquidationsRouter } from '../../../server/routes/liquidations.routes';
+export * from '../../../services/cash-advances/cashAdvances';
+export * from '../../../services/liquidations/liquidations';

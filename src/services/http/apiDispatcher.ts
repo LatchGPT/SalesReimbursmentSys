@@ -6,7 +6,6 @@ import { hydrateServerlessState } from '../../server/stateLoader';
 import { adminRouter } from '../../features/admin/server';
 import { authRouter } from '../../features/auth/server';
 import { claimsRouter } from '../../features/claims/server';
-import { cashAdvancesRouter, liquidationsRouter } from '../../features/disbursements/server';
 import { momsRouter } from '../../features/moms/server';
 import { serverEnv } from '../../config/env';
 import { listUsers, updateUser } from '../users/usersRouter';
@@ -15,6 +14,8 @@ import { addSupportMessage, createSupportRequest, getSupportRequest, listSupport
 import { confirmReviewMeeting, declineReviewMeeting, listApproverReviewMeetings, listApproverSchedule, listReviewMeetings, rescheduleReviewMeeting } from '../review-meetings/reviewMeetingsRouter';
 import { getActivityStatus, listHistory, listOutbox, listSystemActivity, markActivitySeen, markOutboxRead } from '../activity/userActivity';
 import { getAnalyticsSummary } from '../analytics/analytics';
+import { listCashAdvances, getCashAdvance, createCashAdvance, updateCashAdvance, submitCashAdvance, approveCashAdvance, releaseCashAdvance } from '../cash-advances/cashAdvances';
+import { listLiquidations, getLiquidation, createLiquidation, addLiquidationLineItem, updateLiquidationLineItem, deleteLiquidationLineItem, submitLiquidation, reviewLiquidation, collectLiquidationRefund } from '../liquidations/liquidations';
 
 type RouteLayer = {
   route?: {
@@ -28,8 +29,6 @@ const apiRouters: Router[] = [
   authRouter,
   momsRouter,
   claimsRouter,
-  cashAdvancesRouter,
-  liquidationsRouter,
   adminRouter,
 ];
 
@@ -223,6 +222,58 @@ async function dispatchApiRouteInner(request: Request, pathname: string): Promis
     if (pathname === '/approver/schedule' || pathname === '/approver/review-meetings') { if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405); const result = pathname.endsWith('/schedule') ? listApproverSchedule(request.headers.get('x-user-id')) : listApproverReviewMeetings(request.headers.get('x-user-id')); return json(result.body, result.status); }
     const reviewMatch = /^\/review-meetings\/([^/]+)\/(confirm|decline|reschedule)$/.exec(pathname);
     if (reviewMatch) { const [, rawId, action] = reviewMatch; const id = decodeURIComponent(rawId); const userId = request.headers.get('x-user-id'); if ((action === 'confirm' || action === 'decline') && request.method === 'POST') { const result = action === 'confirm' ? await confirmReviewMeeting(userId, id) : await declineReviewMeeting(userId, id, body as { reason?: string }); return json(result.body, result.status); } if (action === 'reschedule' && request.method === 'PUT') { const result = await rescheduleReviewMeeting(userId, id, body as { meeting_date?: string; meeting_time?: string }); return json(result.body, result.status); } return json({ error: 'Method not allowed' }, 405); }
+    if (pathname === '/cash-advances') {
+      if (request.method === 'GET') { const result = listCashAdvances(request.headers.get('x-user-id')); return json(result.body, result.status); }
+      if (request.method === 'POST') { const result = await createCashAdvance(request.headers.get('x-user-id'), body); return json(result.body, result.status); }
+      return json({ error: 'Method not allowed' }, 405);
+    }
+    const caActionMatch = /^\/cash-advances\/([^/]+)\/(submit|approve|release)$/.exec(pathname);
+    if (caActionMatch) {
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+      const [, rawId, action] = caActionMatch; const id = decodeURIComponent(rawId); const userId = request.headers.get('x-user-id');
+      const result = action === 'submit' ? await submitCashAdvance(userId, id) : action === 'approve' ? await approveCashAdvance(userId, id, body) : await releaseCashAdvance(userId, id, body);
+      return json(result.body, result.status);
+    }
+    const caMatch = /^\/cash-advances\/([^/]+)$/.exec(pathname);
+    if (caMatch) {
+      const id = decodeURIComponent(caMatch[1]); const userId = request.headers.get('x-user-id');
+      if (request.method === 'GET') { const result = getCashAdvance(userId, id); return json(result.body, result.status); }
+      if (request.method === 'PUT') { const result = await updateCashAdvance(userId, id, body); return json(result.body, result.status); }
+      return json({ error: 'Method not allowed' }, 405);
+    }
+    if (pathname === '/liquidations') {
+      if (request.method === 'GET') { const result = listLiquidations(request.headers.get('x-user-id')); return json(result.body, result.status); }
+      if (request.method === 'POST') { const result = await createLiquidation(request.headers.get('x-user-id'), body); return json(result.body, result.status); }
+      return json({ error: 'Method not allowed' }, 405);
+    }
+    const liqItemMatch = /^\/liquidations\/([^/]+)\/line-items\/([^/]+)$/.exec(pathname);
+    if (liqItemMatch) {
+      const [, rawId, rawItemId] = liqItemMatch; const id = decodeURIComponent(rawId); const itemId = decodeURIComponent(rawItemId); const userId = request.headers.get('x-user-id');
+      if (request.method === 'PUT') { const result = await updateLiquidationLineItem(userId, id, itemId, body); return json(result.body, result.status); }
+      if (request.method === 'DELETE') { const result = await deleteLiquidationLineItem(userId, id, itemId); return json(result.body, result.status); }
+      return json({ error: 'Method not allowed' }, 405);
+    }
+    const liqLineItemsMatch = /^\/liquidations\/([^/]+)\/line-items$/.exec(pathname);
+    if (liqLineItemsMatch) {
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+      const id = decodeURIComponent(liqLineItemsMatch[1]);
+      const result = await addLiquidationLineItem(request.headers.get('x-user-id'), id, body);
+      return json(result.body, result.status);
+    }
+    const liqActionMatch = /^\/liquidations\/([^/]+)\/(submit|review|collect-refund)$/.exec(pathname);
+    if (liqActionMatch) {
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+      const [, rawId, action] = liqActionMatch; const id = decodeURIComponent(rawId); const userId = request.headers.get('x-user-id');
+      const result = action === 'submit' ? await submitLiquidation(userId, id) : action === 'review' ? await reviewLiquidation(userId, id, body) : await collectLiquidationRefund(userId, id, body);
+      return json(result.body, result.status);
+    }
+    const liqMatch = /^\/liquidations\/([^/]+)$/.exec(pathname);
+    if (liqMatch) {
+      if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+      const id = decodeURIComponent(liqMatch[1]);
+      const result = getLiquidation(request.headers.get('x-user-id'), id);
+      return json(result.body, result.status);
+    }
     let pathExists = false;
 
     for (const router of apiRouters) {

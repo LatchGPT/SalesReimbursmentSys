@@ -1,32 +1,34 @@
-import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { CashAdvance, CashAdvanceStatus, UserRole, MomStatus } from '../../lib/db/serverTypes';
-import { state } from '../state';
-import { getUser } from '../middleware/auth';
-import { isActiveDelegateFor, getActiveDelegation } from '../services/delegations';
-import { addCaHistory } from '../services/history';
-import { sendEmail } from '../services/notifications';
-import { isFinanceVisibleFinancialRecord, LIQUIDATION_DEADLINE_DAYS } from '../constants';
-import { isClaimTypeEnabled, COMING_SOON_MESSAGE } from '../../services/featureFlags';
+import { state } from '../../server/state';
+import { isActiveDelegateFor, getActiveDelegation } from '../../server/services/delegations';
+import { addCaHistory } from '../../server/services/history';
+import { sendEmail } from '../../server/services/notifications';
+import { isFinanceVisibleFinancialRecord, LIQUIDATION_DEADLINE_DAYS } from '../../server/constants';
+import { isClaimTypeEnabled, COMING_SOON_MESSAGE } from '../featureFlags';
 import { persistCashAdvance } from '../../lib/db/cashAdvanceRepo';
 
-export const cashAdvancesRouter = Router();
+function findUser(userId: string | null) {
+  if (!userId) return null;
+  return state.users.find(u => u.id === userId || u.entra_object_id === userId || u.user_principal_name === userId) || null;
+}
 
-// 1. Get all cash advances
-cashAdvancesRouter.get('/cash-advances', (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export function listCashAdvances(userId: string | null) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
   let filtered: CashAdvance[] = [];
   if (user.role === UserRole.REQUESTOR) {
     filtered = state.cashAdvances.filter(ca => ca.requestorId === user.id);
   } else if (user.role === UserRole.APPROVER) {
     const reporteeIds = state.users.filter(u => u.reports_to === user.id).map(u => u.id);
-    filtered = state.cashAdvances.filter(ca => ca.approverId === user.id || ca.requestorId === user.id || reporteeIds.includes(ca.requestorId) || isActiveDelegateFor(user.id, ca.approverId));
+    filtered = state.cashAdvances.filter(
+      ca => ca.approverId === user.id || ca.requestorId === user.id || reporteeIds.includes(ca.requestorId) || isActiveDelegateFor(user.id, ca.approverId)
+    );
   } else if (user.role === UserRole.FINANCE) {
     filtered = state.cashAdvances.filter(ca => isFinanceVisibleFinancialRecord('Cash Advance', ca.status));
   } else {
-    filtered = state.cashAdvances; // Custodian and Admin see all
+    filtered = state.cashAdvances;
   }
 
   const enriched = filtered.map(ca => {
@@ -38,16 +40,15 @@ cashAdvancesRouter.get('/cash-advances', (req, res) => {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     return { ...ca, requestor, approver, mom, history };
   });
-  res.json(enriched);
-});
+  return { status: 200, body: enriched };
+}
 
-// 2. Get single cash advance
-cashAdvancesRouter.get('/cash-advances/:id', (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export function getCashAdvance(userId: string | null, id: string) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-  const ca = state.cashAdvances.find(c => c.id === req.params.id);
-  if (!ca) return res.status(404).json({ error: 'Cash Advance not found' });
+  const ca = state.cashAdvances.find(c => c.id === id);
+  if (!ca) return { status: 404, body: { error: 'Cash Advance not found' } };
 
   let hasAccess = false;
   if (user.role === UserRole.REQUESTOR) {
@@ -58,9 +59,9 @@ cashAdvancesRouter.get('/cash-advances/:id', (req, res) => {
   } else if (user.role === UserRole.FINANCE) {
     hasAccess = isFinanceVisibleFinancialRecord('Cash Advance', ca.status);
   } else {
-    hasAccess = true; // Custodian and Admin see all
+    hasAccess = true;
   }
-  if (!hasAccess) return res.status(403).json({ error: 'Forbidden' });
+  if (!hasAccess) return { status: 403, body: { error: 'Forbidden' } };
 
   const requestor = state.users.find(u => u.id === ca.requestorId);
   const approver = state.users.find(u => u.id === ca.approverId);
@@ -74,38 +75,37 @@ cashAdvancesRouter.get('/cash-advances/:id', (req, res) => {
     }))
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  res.json({ ...ca, requestor, approver, mom, history });
-});
+  return { status: 200, body: { ...ca, requestor, approver, mom, history } };
+}
 
-// 3. Create a cash advance request
-cashAdvancesRouter.post('/cash-advances', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-  if (!isClaimTypeEnabled('Cash Advance')) return res.status(403).json({ error: COMING_SOON_MESSAGE });
-  if (!user.reports_to) return res.status(403).json({ error: 'Forbidden: You must have a designated manager (reports_to) to submit.' });
+export async function createCashAdvance(userId: string | null, body: any) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
+  if (!isClaimTypeEnabled('Cash Advance')) return { status: 403, body: { error: COMING_SOON_MESSAGE } };
+  if (!user.reports_to) return { status: 403, body: { error: 'Forbidden: You must have a designated manager (reports_to) to submit.' } };
 
   const hasActive = state.cashAdvances.some(ca => ca.requestorId === user.id && ca.status !== CashAdvanceStatus.LIQUIDATED && ca.status !== CashAdvanceStatus.REJECTED);
   if (hasActive) {
-    return res.status(400).json({ error: 'A requestor may only have one active (unliquidated) Cash Advance at a time. Please liquidate or resolve your current open Cash Advance before requesting a new one.' });
+    return { status: 400, body: { error: 'A requestor may only have one active (unliquidated) Cash Advance at a time. Please liquidate or resolve your current open Cash Advance before requesting a new one.' } };
   }
 
-  const { amount, purpose, momId } = req.body;
+  const { amount, purpose, momId } = body || {};
   if (amount === undefined || amount === null || amount === '') {
-    return res.status(400).json({ error: 'Amount is required.' });
+    return { status: 400, body: { error: 'Amount is required.' } };
   }
   const numericAmount = Number(amount);
   if (isNaN(numericAmount) || numericAmount <= 0) {
-    return res.status(400).json({ error: 'Amount must be a valid positive number.' });
+    return { status: 400, body: { error: 'Amount must be a valid positive number.' } };
   }
   if (!purpose) {
-    return res.status(400).json({ error: 'Purpose is required.' });
+    return { status: 400, body: { error: 'Purpose is required.' } };
   }
 
   if (momId) {
     const mom = state.moms.find(m => m.id === momId);
-    if (!mom) return res.status(400).json({ error: 'Minutes of Meeting (MOM) not found.' });
+    if (!mom) return { status: 400, body: { error: 'Minutes of Meeting (MOM) not found.' } };
     if (mom.status !== MomStatus.COMPLETED) {
-      return res.status(400).json({ error: 'Cannot attach an incomplete or draft Minutes of Meeting.' });
+      return { status: 400, body: { error: 'Cannot attach an incomplete or draft Minutes of Meeting.' } };
     }
   }
 
@@ -128,44 +128,43 @@ cashAdvancesRouter.post('/cash-advances', async (req, res) => {
     console.error('[db] Could not persist new cash advance to Postgres:', err);
   }
   addCaHistory(caId, '', CashAdvanceStatus.DRAFT, user.id, 'Cash Advance Draft Created');
-  res.json(cashAdvance);
-});
+  return { status: 200, body: cashAdvance };
+}
 
-// 4. Update cash advance in Draft or Rejected status
-cashAdvancesRouter.put('/cash-advances/:id', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export async function updateCashAdvance(userId: string | null, id: string, body: any) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-  const ca = state.cashAdvances.find(c => c.id === req.params.id);
-  if (!ca) return res.status(404).json({ error: 'Cash Advance not found' });
+  const ca = state.cashAdvances.find(c => c.id === id);
+  if (!ca) return { status: 404, body: { error: 'Cash Advance not found' } };
 
-  const { amount, purpose, momId } = req.body;
+  const { amount, purpose, momId } = body || {};
 
   if ([CashAdvanceStatus.RELEASED, CashAdvanceStatus.LIQUIDATED].includes(ca.status)) {
     if (user.role !== UserRole.ADMIN) {
-      return res.status(403).json({ error: 'This Cash Advance has already been released/liquidated. Its amount, purpose, and MOM are locked and can only be modified by an Admin.' });
+      return { status: 403, body: { error: 'This Cash Advance has already been released/liquidated. Its amount, purpose, and MOM are locked and can only be modified by an Admin.' } };
     }
   }
 
   if (amount !== undefined) {
     const numericAmount = Number(amount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      return res.status(400).json({ error: 'Amount must be a valid positive number.' });
+      return { status: 400, body: { error: 'Amount must be a valid positive number.' } };
     }
     ca.amount = numericAmount;
   }
 
   if (purpose !== undefined) {
-    if (!purpose) return res.status(400).json({ error: 'Purpose cannot be empty.' });
+    if (!purpose) return { status: 400, body: { error: 'Purpose cannot be empty.' } };
     ca.purpose = purpose;
   }
 
   if (momId !== undefined) {
     if (momId) {
       const mom = state.moms.find(m => m.id === momId);
-      if (!mom) return res.status(400).json({ error: 'Minutes of Meeting (MOM) not found.' });
+      if (!mom) return { status: 400, body: { error: 'Minutes of Meeting (MOM) not found.' } };
       if (mom.status !== MomStatus.COMPLETED) {
-        return res.status(400).json({ error: 'Cannot attach an incomplete or draft Minutes of Meeting.' });
+        return { status: 400, body: { error: 'Cannot attach an incomplete or draft Minutes of Meeting.' } };
       }
     }
     ca.momId = momId || undefined;
@@ -176,19 +175,18 @@ cashAdvancesRouter.put('/cash-advances/:id', async (req, res) => {
   } catch (err) {
     console.error('[db] Could not persist cash advance changes to Postgres:', err);
   }
-  res.json(ca);
-});
+  return { status: 200, body: ca };
+}
 
-// 5. Submit Cash Advance
-cashAdvancesRouter.post('/cash-advances/:id/submit', async (req, res) => {
-  const user = getUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+export async function submitCashAdvance(userId: string | null, id: string) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
 
-  const ca = state.cashAdvances.find(c => c.id === req.params.id && c.requestorId === user.id);
-  if (!ca) return res.status(404).json({ error: 'Cash Advance not found' });
+  const ca = state.cashAdvances.find(c => c.id === id && c.requestorId === user.id);
+  if (!ca) return { status: 404, body: { error: 'Cash Advance not found' } };
 
   if (ca.status !== CashAdvanceStatus.DRAFT && ca.status !== CashAdvanceStatus.REJECTED) {
-    return res.status(400).json({ error: 'Only Cash Advances in Draft or Rejected status can be submitted.' });
+    return { status: 400, body: { error: 'Only Cash Advances in Draft or Rejected status can be submitted.' } };
   }
 
   const oldStatus = ca.status;
@@ -212,11 +210,7 @@ cashAdvancesRouter.post('/cash-advances/:id/submit', async (req, res) => {
   sendEmail(
     user.id,
     `Cash Advance Request Submitted - CADV-${ca.id.substring(0,6)}`,
-    `Your Cash Advance request for PHP ${ca.amount} has been successfully submitted${approver ? ` and routed to ${approver.name} for approval` : ''}.
-
-Purpose: ${ca.purpose}
-
-You'll receive another email as soon as a decision is made.`
+    `Your Cash Advance request for PHP ${ca.amount} has been successfully submitted${approver ? ` and routed to ${approver.name} for approval` : ''}.\n\nPurpose: ${ca.purpose}\n\nYou'll receive another email as soon as a decision is made.`
   );
 
   try {
@@ -224,32 +218,31 @@ You'll receive another email as soon as a decision is made.`
   } catch (err) {
     console.error('[db] Could not persist cash advance submission to Postgres:', err);
   }
-  res.json(ca);
-});
+  return { status: 200, body: ca };
+}
 
-// 6. Approve or Reject Cash Advance
-cashAdvancesRouter.post('/cash-advances/:id/approve', async (req, res) => {
-  const user = getUser(req);
-  if (!user || user.role !== UserRole.APPROVER) return res.status(403).json({ error: 'Forbidden' });
+export async function approveCashAdvance(userId: string | null, id: string, body: any) {
+  const user = findUser(userId);
+  if (!user || user.role !== UserRole.APPROVER) return { status: 403, body: { error: 'Forbidden' } };
 
-  const ca = state.cashAdvances.find(c => c.id === req.params.id);
-  if (!ca) return res.status(404).json({ error: 'Cash Advance not found' });
+  const ca = state.cashAdvances.find(c => c.id === id);
+  if (!ca) return { status: 404, body: { error: 'Cash Advance not found' } };
 
   if (ca.approverId !== user.id && !isActiveDelegateFor(user.id, ca.approverId)) {
-    return res.status(403).json({ error: 'You are not the designated approver for this Cash Advance.' });
+    return { status: 403, body: { error: 'You are not the designated approver for this Cash Advance.' } };
   }
 
   if (ca.status !== CashAdvanceStatus.SUBMITTED) {
-    return res.status(400).json({ error: 'Only Submitted Cash Advances can be approved or rejected.' });
+    return { status: 400, body: { error: 'Only Submitted Cash Advances can be approved or rejected.' } };
   }
 
-  const { decision, comment } = req.body;
+  const { decision, comment } = body || {};
   if (!['Approved', 'Rejected'].includes(decision)) {
-    return res.status(400).json({ error: 'Invalid decision. Must be Approved or Rejected.' });
+    return { status: 400, body: { error: 'Invalid decision. Must be Approved or Rejected.' } };
   }
 
   if (decision === 'Rejected' && !comment) {
-    return res.status(400).json({ error: 'A comment is required when rejecting a Cash Advance.' });
+    return { status: 400, body: { error: 'A comment is required when rejecting a Cash Advance.' } };
   }
 
   const oldStatus = ca.status;
@@ -274,27 +267,26 @@ cashAdvancesRouter.post('/cash-advances/:id/approve', async (req, res) => {
   } catch (err) {
     console.error('[db] Could not persist cash advance decision to Postgres:', err);
   }
-  res.json(ca);
-});
+  return { status: 200, body: ca };
+}
 
-// 7. Release Cash Advance (Custodian only)
-cashAdvancesRouter.post('/cash-advances/:id/release', async (req, res) => {
-  const user = getUser(req);
-  if (!user || user.role !== UserRole.CUSTODIAN) return res.status(403).json({ error: 'Forbidden: Only Custodians can release Cash Advances.' });
+export async function releaseCashAdvance(userId: string | null, id: string, body: any) {
+  const user = findUser(userId);
+  if (!user || user.role !== UserRole.CUSTODIAN) return { status: 403, body: { error: 'Forbidden: Only Custodians can release Cash Advances.' } };
 
-  const ca = state.cashAdvances.find(c => c.id === req.params.id);
-  if (!ca) return res.status(404).json({ error: 'Cash Advance not found' });
+  const ca = state.cashAdvances.find(c => c.id === id);
+  if (!ca) return { status: 404, body: { error: 'Cash Advance not found' } };
 
   if (ca.status !== CashAdvanceStatus.APPROVED) {
-    return res.status(400).json({ error: 'Only Approved Cash Advances can be released.' });
+    return { status: 400, body: { error: 'Only Approved Cash Advances can be released.' } };
   }
 
-  const { releaseReference, releaseMethod } = req.body;
+  const { releaseReference, releaseMethod } = body || {};
   if (!releaseReference) {
-    return res.status(400).json({ error: 'Release Reference/Voucher is required.' });
+    return { status: 400, body: { error: 'Release Reference/Voucher is required.' } };
   }
   if (!releaseMethod || !state.systemSettings.paymentMethods.includes(releaseMethod)) {
-    return res.status(400).json({ error: `Release method must be one of: ${state.systemSettings.paymentMethods.join(', ')}` });
+    return { status: 400, body: { error: `Release method must be one of: ${state.systemSettings.paymentMethods.join(', ')}` } };
   }
 
   const oldStatus = ca.status;
@@ -317,5 +309,5 @@ cashAdvancesRouter.post('/cash-advances/:id/release', async (req, res) => {
   } catch (err) {
     console.error('[db] Could not persist cash advance release to Postgres:', err);
   }
-  res.json(ca);
-});
+  return { status: 200, body: ca };
+}
