@@ -135,39 +135,11 @@ export function CreateMom() {
     customFields,
   };
 
-<<<<<<< HEAD
   const save = async (status: 'Draft' | 'Completed', leaveAfterSave = true): Promise<boolean> => {
-    if (status === 'Completed' && (!form.client.trim() || !form.purpose.trim() || !form.meetingDate)) {
-      addToast('Client, purpose, and date of meeting are required.', 'error');
-      return false;
-    }
-    // Validate the dynamic MoM fields exactly as DynamicFieldRenderer shows them
-    // (entity 'mom', active, minus the excluded legacy designation column).
-    const activeMomFields = fieldDefinitions.filter(
-      fd => fd.entity === 'mom' && fd.active && fd.key !== 'contact_person_designation',
-    );
-    const { errors: fieldErrors, firstError } = validateDynamicFields(activeMomFields, customFields);
-    if (status === 'Completed' && firstError) {
-      setMomErrors(fieldErrors);
-      addToast(firstError.message, 'error');
-      return false;
-    }
-    setMomErrors({});
-    // Fold a half-typed address in the box into the list before validating.
-    const pending = emailDraft.trim().replace(/,$/, '');
-    const emails = pending && EMAIL_RE.test(pending) && !clientEmails.includes(pending)
-      ? [...clientEmails, pending]
-      : clientEmails;
-    if (status === 'Completed' && form.ccClient && emails.length === 0) {
-      addToast('Add at least one client email before enabling client notifications.', 'error');
-      window.setTimeout(() => clientEmailInputRef.current?.focus(), 0);
-      return false;
-=======
-  const save = async (status: 'Draft' | 'Completed') => {
     if (status === 'Completed') {
       if (!form.client.trim() || !form.purpose.trim() || !form.meetingDate) {
-        addToast('Client, purpose, and date of meeting are required to finalize.', 'error');
-        return;
+        addToast('Client, purpose, and date of meeting are required.', 'error');
+        return false;
       }
       // Validate the dynamic MoM fields exactly as DynamicFieldRenderer shows them
       // (entity 'mom', active, minus the excluded legacy designation column).
@@ -178,7 +150,7 @@ export function CreateMom() {
       if (firstError) {
         setMomErrors(fieldErrors);
         addToast(firstError.message, 'error');
-        return;
+        return false;
       }
       setMomErrors({});
       // Fold a half-typed address in the box into the list before validating.
@@ -189,11 +161,10 @@ export function CreateMom() {
       if (form.ccClient && emails.length === 0) {
         addToast('Add at least one client email before enabling client notifications.', 'error');
         window.setTimeout(() => clientEmailInputRef.current?.focus(), 0);
-        return;
+        return false;
       }
     } else {
       setMomErrors({});
->>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
     }
 
     setSaving(true);

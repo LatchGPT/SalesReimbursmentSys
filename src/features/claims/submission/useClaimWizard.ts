@@ -285,13 +285,8 @@ export function useClaimWizard() {
     setStep(prevIndex >= 0 ? stepFlow[prevIndex] : 0);
   };
 
-<<<<<<< HEAD
   const send = async (isDraft: boolean, leaveAfterSave = true): Promise<boolean> => {
     if (!isDraft && isReimbursement && showReimbursementDateError()) return false;
-=======
-  const send = async (isDraft: boolean) => {
-    if (!isDraft && isReimbursement && showReimbursementDateError()) return;
->>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
     if (!isDraft && claimType === 'Reimbursement' && momCore.ccClient && joinedClientEmails().trim() === '') {
       addToast('Add at least one client email to send claim status notifications.', 'error');
       setStep(2);
@@ -336,17 +331,13 @@ export function useClaimWizard() {
           isDraft,
         });
       }
-      await refresh();
       addToast(isDraft ? 'Saved as draft.' : `${claimType} submitted successfully!`, 'success');
       if (leaveAfterSave) navigate('/claims');
+      refresh().catch((err) => console.warn('[wizard] Background refresh failed:', err));
       return true;
     } catch (err: any) {
-<<<<<<< HEAD
-      addToast(err?.message || `Could not submit the ${claimType.toLowerCase()}.`, 'error');
-      return false;
-=======
       addToast(err?.message || (isDraft ? 'Could not save draft.' : `Could not submit the ${claimType.toLowerCase()}.`), 'error');
->>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
+      return false;
     } finally {
       setLoading(false);
     }

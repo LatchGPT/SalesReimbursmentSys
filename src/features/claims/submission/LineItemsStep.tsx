@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useState } from 'react';
-=======
-import { useState, useRef, useEffect } from 'react';
->>>>>>> 1fd439da56dcf4f6aa49c5666226934e5e58d454
 import { Button, cn } from '../../../components/ui/Button';
 import { Input, Select, Label } from '../../../components/ui/Input';
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card';
