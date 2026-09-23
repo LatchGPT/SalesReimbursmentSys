@@ -240,7 +240,18 @@ export function MOMs() {
         <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
       </div>
 
+      <div className="space-y-0">
       <FilterBar
+        className="rounded-b-none"
+        title="Records"
+        titleEnd={
+          <div className="min-w-[8.5rem] border-l border-outline-variant pl-6 text-right sm:min-w-[10rem] sm:pl-8">
+            <p className="font-label-sm uppercase tracking-wider text-outline whitespace-nowrap">No. of Items</p>
+            <p className="mt-1 font-mono-data text-sm font-bold text-on-surface whitespace-nowrap">
+              {filtered.length} of {moms.length}
+            </p>
+          </div>
+        }
         searchValue={query}
         onSearchChange={setQuery}
         searchPlaceholder="Search minutes and agreements..."
@@ -283,27 +294,19 @@ export function MOMs() {
         ]}
       />
 
-      <Card>
-        <CardHeader className="bg-surface-container-low">
-          <div className="flex justify-between items-center">
-            <h3 className="font-label-md uppercase tracking-wider text-on-surface whitespace-nowrap">Records</h3>
-            <span className="font-label-sm text-outline whitespace-nowrap">{filtered.length} of {moms.length}</span>
-          </div>
-        </CardHeader>
-        {groupBy === 'none' && (
-          <>
-            {renderMomTable(paginatedMOMs, showPreparedBy)}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
-          </>
-        )}
-      </Card>
+      {groupBy === 'none' && (
+        <Card className="!mt-[-1px] rounded-t-none">
+          {renderMomTable(paginatedMOMs, showPreparedBy)}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </Card>
+      )}
 
       {groupBy !== 'none' && (
-        <div className="space-y-5">
+        <div className="!mt-[-1px] space-y-5 border-x border-b border-outline-variant bg-surface-container-lowest p-4">
           <p className="text-sm text-outline">
             {groups.length} {groupBy === 'client' ? (groups.length === 1 ? 'client' : 'clients') : (groups.length === 1 ? 'preparer' : 'preparers')}
             {' · '}{filtered.length} record{filtered.length === 1 ? '' : 's'}
@@ -328,6 +331,7 @@ export function MOMs() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

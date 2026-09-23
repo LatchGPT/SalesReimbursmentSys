@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardHeader } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input, Select, Label } from '../../../components/ui/Input';
 import { Pagination } from '../../../components/ui/Pagination';
@@ -212,7 +212,12 @@ export function UserAccounts() {
         </Button>
       </div>
 
-      <Card className="p-4">
+      <div className="space-y-0">
+      <Card className="rounded-b-none p-4 shadow-none">
+        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
+          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Registered Users</h3>
+          <span className="font-label-sm text-outline whitespace-nowrap">{filteredUsers.length} of {users.length}</span>
+        </div>
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-xl"><Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, email, department, or title..." /></div>
           <Select containerClassName="w-full sm:w-40 sm:flex-none" value={roleFilter} onChange={e => setRoleFilter(e.target.value)} aria-label="Filter users by role"><option value="">All roles</option>{Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}</Select>
@@ -231,11 +236,7 @@ export function UserAccounts() {
         </div>}
       </Card>
 
-      <Card>
-        <CardHeader className="bg-surface-container-low">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Registered Users</h3>
-          <span className="font-label-sm text-outline whitespace-nowrap">{filteredUsers.length} of {users.length}</span>
-        </CardHeader>
+      <Card className="rounded-t-none">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
@@ -308,6 +309,7 @@ export function UserAccounts() {
           onPageChange={setCurrentPage}
         />
       </Card>
+      </div>
 
       {/* Add User Modal */}
       {isAdding && (

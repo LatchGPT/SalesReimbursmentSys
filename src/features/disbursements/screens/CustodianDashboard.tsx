@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { Input, Select } from '../../../components/ui/Input';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { KPICard } from '../../../components/ui/KPICard';
 import { useAppContext } from '../../../components/AppContext';
@@ -12,6 +13,10 @@ import { claimTypeIcon, getClaimAgingInfo, isCustodianProcessingClaim } from '@/
 export function CustodianDashboard() {
   const navigate = useNavigate();
   const { claims, users } = useAppContext();
+  const [queueSearch, setQueueSearch] = useState('');
+  const [queueType, setQueueType] = useState('');
+  const [queueStatus, setQueueStatus] = useState('');
+  const [showQueueFilters, setShowQueueFilters] = useState(false);
 
   const processingClaims = useMemo(
     () => claims
@@ -23,6 +28,26 @@ export function CustodianDashboard() {
     [claims]
   );
   const readyForPickup = claims.filter(c => c.status === ClaimStatus.READY_FOR_CLAIM).length;
+  const queueTypes = useMemo(
+    () => Array.from(new Set(processingClaims.map(claim => claim.type))).sort(),
+    [processingClaims]
+  );
+  const visibleProcessingClaims = useMemo(() => {
+    const query = queueSearch.trim().toLowerCase();
+    return processingClaims.filter(claim => {
+      const requestor = users.find(user => user.id === claim.requestorId);
+      const matchesSearch = !query || [claim.ref, claim.type, claim.client, requestor?.name]
+        .some(value => value?.toLowerCase().includes(query));
+      return matchesSearch && (!queueType || claim.type === queueType) && (!queueStatus || claim.status === queueStatus);
+    });
+  }, [processingClaims, queueSearch, queueStatus, queueType, users]);
+  const hasQueueFilters = Boolean(queueType || queueStatus);
+
+  const clearQueueFilters = () => {
+    setQueueSearch('');
+    setQueueType('');
+    setQueueStatus('');
+  };
 
   const oldestItem = processingClaims[0];
   const oldestRequestor = oldestItem
@@ -106,7 +131,7 @@ export function CustodianDashboard() {
       </div>
 
       <Card>
-        <CardHeader className="bg-surface-container-low">
+        <CardHeader className="bg-surface-container-lowest">
           <div className="flex items-center gap-4">
             <h3 className="font-label-md uppercase tracking-wider text-on-surface">Claims Awaiting Processing</h3>
             {queueRequestors.length > 0 && (
@@ -129,9 +154,47 @@ export function CustodianDashboard() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-label-sm text-outline">Viewing {processingClaims.length > 0 ? `1-${processingClaims.length}` : '0'} of {processingClaims.length}</span>
+            <span className="font-label-sm text-outline">Viewing {visibleProcessingClaims.length} of {processingClaims.length}</span>
           </div>
         </CardHeader>
+        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative min-w-0 flex-1">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+              <Input
+                className="pl-10"
+                value={queueSearch}
+                onChange={event => setQueueSearch(event.target.value)}
+                placeholder="Search reference, requestor, client, or type..."
+                aria-label="Search claims awaiting processing"
+              />
+            </div>
+            <Button
+              variant="outline"
+              className="gap-2 md:flex-none"
+              onClick={() => setShowQueueFilters(open => !open)}
+              aria-expanded={showQueueFilters}
+            >
+              <span className="material-symbols-outlined text-[18px]">filter_list</span>
+              Filters{hasQueueFilters ? ' (active)' : ''}
+            </Button>
+            {(queueSearch || hasQueueFilters) && (
+              <button className="text-xs font-semibold text-primary hover:underline md:flex-none" onClick={clearQueueFilters}>Clear all</button>
+            )}
+          </div>
+          {showQueueFilters && (
+            <div className="mt-4 grid grid-cols-1 gap-3 border-t border-outline-variant pt-4 sm:grid-cols-2">
+              <Select value={queueType} onChange={event => setQueueType(event.target.value)} aria-label="Filter claims awaiting processing by type">
+                <option value="">All types</option>
+                {queueTypes.map(type => <option key={type} value={type}>{type}</option>)}
+              </Select>
+              <Select value={queueStatus} onChange={event => setQueueStatus(event.target.value)} aria-label="Filter claims awaiting processing by status">
+                <option value="">All statuses</option>
+                {Array.from(new Set(processingClaims.map(claim => claim.status))).map(status => <option key={status} value={status}>{status}</option>)}
+              </Select>
+            </div>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
@@ -145,14 +208,14 @@ export function CustodianDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {processingClaims.length === 0 ? (
+              {visibleProcessingClaims.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-outline">
                     <span className="material-symbols-outlined text-4xl mb-2 opacity-50">task_alt</span>
-                    <p className="font-label-md">Queue is empty!</p>
+                    <p className="font-label-md">{processingClaims.length === 0 ? 'Queue is empty!' : 'No claims match these filters.'}</p>
                   </td>
                 </tr>
-              ) : processingClaims.map(claim => {
+              ) : visibleProcessingClaims.map(claim => {
                 const req = users.find(u => u.id === claim.requestorId) || users[0];
                 const aging = getClaimAgingInfo(claim.approvedAt || claim.submittedAt, claim.createdAt);
                 return (

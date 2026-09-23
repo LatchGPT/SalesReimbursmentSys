@@ -69,20 +69,21 @@ export function SystemEmails() {
         </div>
       </div>
 
-      <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant max-w-lg">
-        <Input
-          type="text"
-          placeholder="Search by subject, body, recipient name or email..."
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-        />
-      </div>
-
       <Card>
-        <CardHeader className="bg-surface-container-low/50 border-b border-outline-variant flex justify-between items-center">
+        <CardHeader className="bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center">
           <h4 className="font-headline-md text-on-surface">Sent Mail Log</h4>
           <span className="font-label-sm text-outline">{total} shown</span>
         </CardHeader>
+        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
+          <div className="max-w-lg">
+            <Input
+              type="text"
+              placeholder="Search by subject, body, recipient name or email..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">

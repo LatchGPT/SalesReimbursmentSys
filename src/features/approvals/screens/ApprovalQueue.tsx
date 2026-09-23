@@ -185,19 +185,27 @@ export function ApprovalQueue() {
         </Card>
       )}
 
-      <div className="flex flex-wrap items-center gap-3 pb-2">
-        <button onClick={() => { setView('pending'); setFilter('All'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'pending' && filter === 'All' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>All Pending ({pendingClaims.length})</button>
-        <button onClick={() => { setView('history'); setFilter('All'); setSortOrder('newest'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'history' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Approval History ({approvalHistory.length})</button>
-        {view === 'pending' && <>
-          <button onClick={() => setFilter('HighPriority')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'HighPriority' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>High Priority</button>
-          <button onClick={() => setFilter('Advances')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'Advances' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Cash Advances</button>
-          {staleClaims.length > 0 && (
-            <button onClick={() => setFilter('Stale')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'Stale' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Stale ({staleClaims.length})</button>
-          )}
-        </>}
-      </div>
-
-      <Card className="p-4">
+      <Card className="rounded-b-none p-4 shadow-none">
+        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
+          <div>
+            <h4 className="font-headline-md text-on-surface">{view === 'pending' ? 'Pending Your Action' : 'Approval History'}</h4>
+            <p className="mt-1 text-xs text-outline">
+              {view === 'pending' ? 'Review the longest-waiting requests first.' : 'Your recorded approval decisions, including comments.'}
+            </p>
+          </div>
+          <span className="font-label-sm text-outline">{displayedRecords.length} records</span>
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button onClick={() => { setView('pending'); setFilter('All'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'pending' && filter === 'All' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>All Pending ({pendingClaims.length})</button>
+          <button onClick={() => { setView('history'); setFilter('All'); setSortOrder('newest'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'history' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Approval History ({approvalHistory.length})</button>
+          {view === 'pending' && <>
+            <button onClick={() => setFilter('HighPriority')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'HighPriority' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>High Priority</button>
+            <button onClick={() => setFilter('Advances')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'Advances' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Cash Advances</button>
+            {staleClaims.length > 0 && (
+              <button onClick={() => setFilter('Stale')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'Stale' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Stale ({staleClaims.length})</button>
+            )}
+          </>}
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-xl">
             <Input
@@ -252,14 +260,7 @@ export function ApprovalQueue() {
       </Card>
 
       {view === 'pending' ? (
-      <Card>
-        <CardHeader className="bg-surface-container-low/50 border-b border-outline-variant">
-          <div>
-            <h4 className="font-headline-md text-on-surface">Pending Your Action</h4>
-            <p className="text-xs text-outline mt-1">Review the longest-waiting requests first.</p>
-          </div>
-          <span className="font-label-sm text-outline">{displayedClaims.length} records</span>
-        </CardHeader>
+      <Card className="!mt-[-1px] rounded-t-none">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px] text-left">
             <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
@@ -361,14 +362,7 @@ export function ApprovalQueue() {
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </Card>
       ) : (
-        <Card>
-          <CardHeader className="bg-surface-container-low/50 border-b border-outline-variant">
-            <div>
-              <h4 className="font-headline-md text-on-surface">Approval History</h4>
-              <p className="text-xs text-outline mt-1">Your recorded approval decisions, including comments.</p>
-            </div>
-            <span className="font-label-sm text-outline">{displayedHistory.length} records</span>
-          </CardHeader>
+        <Card className="!mt-[-1px] rounded-t-none">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">

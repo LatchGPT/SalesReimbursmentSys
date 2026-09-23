@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input, Label, Select } from '../../../components/ui/Input';
 import { Pagination } from '../../../components/ui/Pagination';
@@ -180,7 +180,12 @@ export function TransactionHistory() {
         <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
       </div>
 
-      <Card className="p-4">
+      <div className={groupBy === 'none' ? 'space-y-0' : 'space-y-8'}>
+      <Card className="rounded-b-none p-4 shadow-none">
+        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
+          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Completed Disbursements</h3>
+          <span className="font-label-sm text-outline whitespace-nowrap">{filteredClaims.length} of {completedClaims.length}</span>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-xl">
             <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search reference or requestor..." />
@@ -219,11 +224,7 @@ export function TransactionHistory() {
       </Card>
 
       {groupBy === 'none' ? (
-        <Card>
-          <CardHeader className="bg-surface-container-low">
-            <h3 className="font-label-md uppercase tracking-wider text-on-surface">Completed Disbursements</h3>
-            <span className="font-label-sm text-outline whitespace-nowrap">{filteredClaims.length} of {completedClaims.length}</span>
-          </CardHeader>
+        <Card className="rounded-t-none">
           {renderTxnTable(paginatedClaims)}
           <Pagination
             currentPage={currentPage}
@@ -255,6 +256,7 @@ export function TransactionHistory() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { useClaimWizard } from './useClaimWizard';
 export function ClaimTypeStep({ wizard }: { wizard: ReturnType<typeof useClaimWizard> }) {
   const {
     navigate,
+    requestLeave,
     reimbursementIntent,
     setClaimType,
     setStep,
@@ -19,7 +20,7 @@ export function ClaimTypeStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
       <button
         type="button"
         className="inline-flex items-center gap-1 text-sm font-semibold text-on-surface-variant hover:text-primary mb-6"
-        onClick={() => navigate(-1)}
+        onClick={() => requestLeave(() => navigate(-1))}
       >
         <span className="material-symbols-outlined text-[18px]">arrow_back</span>
         Back

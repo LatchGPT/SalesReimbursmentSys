@@ -26,7 +26,19 @@ import { getDb } from './index';
 import { recordDbFailure, recordDbSuccess } from './persistenceHealth';
 import { trackPersistence } from './persistenceScope';
 
+const globalForDbHealth = globalThis as typeof globalThis & {
+  dbConnectionFailed?: boolean;
+};
+
 export const isDbConfigured = () => !!serverEnv.databaseUrl;
+
+export function isDbAvailable(): boolean {
+  if (!isDbConfigured()) return false;
+  if (!serverEnv.isProduction && globalForDbHealth.dbConnectionFailed) {
+    return false;
+  }
+  return true;
+}
 
 function claimStatusToPrisma(status: ClaimStatus | string): claim_status {
   if (status === 'Pending Approval') return 'Pending_Approval';
@@ -45,10 +57,21 @@ async function trackedWrite(
   context: string,
   operation: () => Promise<unknown>,
 ): Promise<void> {
+  if (!isDbAvailable()) return;
   try {
     await operation();
     recordDbSuccess();
   } catch (error) {
+    if (!serverEnv.isProduction) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (
+        msg.includes('timeout') ||
+        msg.includes('connect') ||
+        msg.includes('Connection terminated')
+      ) {
+        globalForDbHealth.dbConnectionFailed = true;
+      }
+    }
     recordDbFailure(context, error);
     throw error;
   }
@@ -396,7 +419,7 @@ export function persistStatusHistoryFireAndForget(
     || entry.delegation_id
     || entry.user_id
     || (entry.master_data_key && entry.master_data_id);
-  if (!isDbConfigured() || !hasScope) return;
+  if (!isDbAvailable() || !hasScope) return;
 
   const write = getDb().status_histories.createMany({
     data: [historyToRow(entry)],
@@ -404,6 +427,16 @@ export function persistStatusHistoryFireAndForget(
   })
     .then(() => recordDbSuccess())
     .catch((error: unknown) => {
+      if (!serverEnv.isProduction) {
+        const msg = error instanceof Error ? error.message : String(error);
+        if (
+          msg.includes('timeout') ||
+          msg.includes('connect') ||
+          msg.includes('Connection terminated')
+        ) {
+          globalForDbHealth.dbConnectionFailed = true;
+        }
+      }
       recordDbFailure('persistStatusHistory', error);
       console.error('[db] Could not persist status history entry:', error);
     });
