@@ -33,10 +33,14 @@ export function SubmitClaimWizard() {
     previewMom,
     previewExporting,
     setPreviewExporting,
+    unsavedChangesDialog,
   } = wizard;
 
   if (step === 0) {
-    return <ClaimTypeStep wizard={wizard} />;
+    return <>
+      <ClaimTypeStep wizard={wizard} />
+      {unsavedChangesDialog}
+    </>;
   }
 
   return (
@@ -114,7 +118,17 @@ export function SubmitClaimWizard() {
           <span className="material-symbols-outlined">arrow_back</span> Back
         </Button>
         <div className="flex gap-4">
-          {step > 0 && !liquidationBlocked && <Button variant="ghost" onClick={handleSaveDraft} className="hidden md:inline-flex">Save Draft</Button>}
+          {step > 0 && !liquidationBlocked && (
+            <Button
+              variant="outline"
+              onClick={handleSaveDraft}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 border-dashed"
+            >
+              <span className="material-symbols-outlined text-[18px]">drafts</span>
+              <span>Save Draft</span>
+            </Button>
+          )}
           {step > 0 && step < 4 && !liquidationBlocked ? (
             <Button className="gap-2 px-8" onClick={handleNext}>
               Next Step <span className="material-symbols-outlined hidden sm:inline-block">arrow_forward</span>
@@ -180,6 +194,7 @@ export function SubmitClaimWizard() {
           }
         />
       )}
+      {unsavedChangesDialog}
     </div>
   );
 }

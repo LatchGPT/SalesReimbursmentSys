@@ -152,8 +152,8 @@ export function ApproverDashboard() {
               <p className="font-label-sm text-outline uppercase mb-2">Total Team Spend</p>
               <p className="font-headline-lg text-on-surface">{formatMoney(teamSpend)}</p>
             </div>
-            <div className="flex items-center gap-1">
-              <span aria-hidden="true" className="material-symbols-outlined text-primary">groups</span>
+            <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+              <span aria-hidden="true" className="material-symbols-outlined shrink-0 text-primary">groups</span>
               <label
                 className="relative inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-outline-variant text-outline transition-colors hover:border-primary hover:text-primary focus-within:ring-2 focus-within:ring-primary/30"
                 title={`Filter month: ${formatMonthValue(teamSpendMonth)}`}
@@ -173,23 +173,8 @@ export function ApproverDashboard() {
         </div>
       </div>
 
-      {/* flex-wrap (not overflow-x-auto) so the active pill's shadow-md never
-          gets clipped: setting overflow-x forces overflow-y to auto too,
-          which crops any box-shadow that extends past the scroll box. */}
-      <div className="flex flex-wrap items-center gap-3 py-2">
-        {(['All', 'Reimbursement', 'Cash Advance', 'Liquidation'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTypeFilter(t)}
-            className={`px-5 py-2 rounded-full font-label-md transition-colors focus:ring-2 focus:ring-primary outline-none whitespace-nowrap ${typeFilter === t ? 'bg-primary text-white shadow-md' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}
-          >
-            {t === 'All' ? 'All Requests' : t === 'Reimbursement' ? 'Claims' : t === 'Cash Advance' ? 'Cash Advances' : 'Liquidations'}
-          </button>
-        ))}
-      </div>
-
       <Card>
-        <CardHeader className="bg-surface-container-low/50">
+        <CardHeader className="bg-surface-container-lowest">
           <div>
             <h4 className="font-headline-md text-on-surface">Unified Worklist</h4>
             <p className="text-xs text-outline mt-1">Oldest requests are shown first.</p>
@@ -201,6 +186,17 @@ export function ApproverDashboard() {
             </Button>
           </div>
         </CardHeader>
+        <div className="flex flex-wrap items-center gap-3 border-b border-outline-variant bg-surface-container-lowest px-6 py-3">
+          {(['All', 'Reimbursement', 'Cash Advance', 'Liquidation'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTypeFilter(t)}
+              className={`px-5 py-2 rounded-full font-label-md transition-colors focus:ring-2 focus:ring-primary outline-none whitespace-nowrap ${typeFilter === t ? 'bg-primary text-white shadow-md' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}
+            >
+              {t === 'All' ? 'All Requests' : t === 'Reimbursement' ? 'Claims' : t === 'Cash Advance' ? 'Cash Advances' : 'Liquidations'}
+            </button>
+          ))}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">

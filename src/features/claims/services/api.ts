@@ -149,6 +149,11 @@ export const confirmReceipt = (claimId: string, code: string) =>
     body: JSON.stringify({ code }),
   });
 
+export const deleteClaim = (claimId: string) =>
+  apiFetch(`/api/claims/${claimId}`, {
+    method: 'DELETE',
+  });
+
 /**
  * The server models submission as three dependent writes — receipts must exist
  * before line items can reference them, and a completed MOM must exist before a
@@ -172,8 +177,16 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
     uploaded = await Promise.all(
       lineItems.map(async (li) => {
         if (li.receiptFile) {
-          const { url } = await uploadFile(li.receiptFile);
-          return { ...li, receiptUrl: url };
+          try {
+            const { url } = await uploadFile(li.receiptFile);
+            return { ...li, receiptUrl: url };
+          } catch (uploadErr) {
+            if (isDraft) {
+              console.warn('[submitClaimFlow] Receipt upload skipped during draft save:', uploadErr);
+              return { ...li, receiptUrl: li.receiptUrl || `/uploads/draft_${encodeURIComponent(li.receiptFile.name)}` };
+            }
+            throw uploadErr;
+          }
         }
         return li;
       })
@@ -183,20 +196,18 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
   }
 
   const missing = uploaded.findIndex((li) => !li.receiptUrl);
-  if (missing !== -1) {
+  if (!isDraft && missing !== -1) {
     throw new Error(`Expense row ${missing + 1} needs a receipt attached before you can submit.`);
   }
 
-  // 2. MOM. Transport Reimbursement is deliberately lightweight and skips
-  // this write; standard Reimbursement remains anchored to template minutes.
-  let createdMom: any | undefined;
+  // 2. Atomic Claim Submission (MOM + Claim + Line Items in a single request).
+  let momPayload: any | undefined;
   if (claimType === 'Reimbursement') {
-    if (!mom) throw new Error('Minutes of Meeting details are required.');
-    createdMom = await apiFetch('/api/moms', {
-      method: 'POST',
-      body: JSON.stringify({
-        client: mom.client || '',
-        purpose: mom.purpose || '',
+    if (!mom && !isDraft) throw new Error('Minutes of Meeting details are required.');
+    if (mom && (mom.client || mom.purpose || !isDraft)) {
+      momPayload = {
+        client: mom.client || (isDraft ? 'Draft Client' : ''),
+        purpose: mom.purpose || (isDraft ? 'Draft Meeting' : ''),
         location: mom.location || '',
         contact_person: mom.contactPerson || '',
         contact_person_email: mom.contactPersonEmail || '',
@@ -209,17 +220,16 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
         document_type: mom.documentType || 'MoM',
         status: isDraft ? 'Draft' : 'Completed',
         custom_fields: customFields,
-      }),
-    });
+      };
+    }
   }
 
-  // 3. Claim.
   return apiFetch('/api/claims', {
     method: 'POST',
     body: JSON.stringify({
       claim_type: claimType,
-      mom_id: createdMom?.id,
-      remarks: remarks || mom?.purpose || (claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : ''),
+      mom: momPayload,
+      remarks: remarks || mom?.purpose || (isDraft ? 'Draft reimbursement' : (claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : '')),
       is_draft: Boolean(isDraft),
       line_items: uploaded.map((li) => ({
         category: normalizeExpenseCategory(li.category),

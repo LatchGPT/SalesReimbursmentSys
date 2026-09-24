@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
+import { Button, cn } from '../../../components/ui/Button';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { KPICard } from '../../../components/ui/KPICard';
 import { LiquidationProgressCard } from '@/features/disbursements';
@@ -21,9 +21,10 @@ const ACTIVE_STATUSES = [ClaimStatus.DRAFT, ClaimStatus.PENDING_APPROVAL, ClaimS
 export function ClaimsList() {
   const { currentUser, claims, users } = useAppContext();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [typeFilter, setTypeFilter] = useState('');
   const [clientFilter, setClientFilter] = useState('');
   const [requestorFilter, setRequestorFilter] = useState('');
@@ -63,13 +64,21 @@ export function ClaimsList() {
   // Requestor-style summary, shown to Approvers too so "My Requests" covers
   // their own submissions in one place (they don't get a separate requestor
   // dashboard, but they submit claims like anyone else).
-  const activeClaimsCount = myClaims.filter(c => ACTIVE_STATUSES.includes(c.status)).length;
+  const draftsCount = myClaims.filter(c => c.status === ClaimStatus.DRAFT).length;
+  const activeClaimsCount = myClaims.filter(c => ACTIVE_STATUSES.includes(c.status) && c.status !== ClaimStatus.DRAFT).length;
   const completedClaims = myClaims.filter(c => c.status === ClaimStatus.COMPLETED);
   const totalReimbursed = completedClaims.reduce((acc, c) => acc + c.paidAmount, 0);
   const openAdvances = myClaims.filter(c => c.type === 'Cash Advance' && c.status === ClaimStatus.RELEASED);
   const unliquidatedFloat = openAdvances.reduce((acc, c) => acc + c.total, 0);
   const readyForClaim = myClaims.filter(c => c.status === ClaimStatus.READY_FOR_CLAIM);
   const readyForClaimTotal = readyForClaim.reduce((acc, c) => acc + c.total, 0);
+
+  useEffect(() => {
+    const s = searchParams.get('status');
+    if (s && s !== statusFilter) {
+      setStatusFilter(s);
+    }
+  }, [searchParams]);
 
   // Most recently submitted (non-draft) claim, for the progress tracker.
   const mostRecentClaim = useMemo(() => {
@@ -224,8 +233,132 @@ export function ClaimsList() {
         </>
       )}
 
-      <div className="mb-5">
+      {/* Drafts Callout Banner (when drafts exist and not currently filtering to drafts) */}
+      {!isFinance && draftsCount > 0 && statusFilter !== ClaimStatus.DRAFT && (
+        <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[24px]">drafts</span>
+            </div>
+            <div>
+              <p className="font-label-md text-on-surface font-semibold">
+                You have {draftsCount} saved draft request{draftsCount === 1 ? '' : 's'}
+              </p>
+              <p className="text-body-sm text-outline">
+                You can review, edit, and submit your unfinished requests whenever you're ready.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 shrink-0 border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/15"
+            onClick={() => {
+              setStatusFilter(ClaimStatus.DRAFT);
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.set('status', ClaimStatus.DRAFT);
+                return next;
+              });
+            }}
+          >
+            <span className="material-symbols-outlined text-[16px]">folder_open</span>
+            View Drafts ({draftsCount})
+          </Button>
+        </div>
+      )}
+
+      {/* Quick Status Tabs for Requestors */}
+      {!isFinance && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter('');
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.delete('status');
+                return next;
+              });
+            }}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm",
+              !statusFilter ? "bg-primary text-white" : "bg-surface-container-high text-on-surface-variant hover:bg-outline-variant"
+            )}
+          >
+            <span>All Requests</span>
+            <span className="text-[11px] opacity-80">({myClaims.length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter(ClaimStatus.DRAFT);
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.set('status', ClaimStatus.DRAFT);
+                return next;
+              });
+            }}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm",
+              statusFilter === ClaimStatus.DRAFT
+                ? "bg-amber-600 text-white"
+                : draftsCount > 0
+                  ? "bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-200"
+                  : "bg-surface-container-high text-on-surface-variant hover:bg-outline-variant"
+            )}
+          >
+            <span className="material-symbols-outlined text-[14px]">drafts</span>
+            <span>Drafts</span>
+            <span className={cn("text-[11px] font-bold px-1.5 py-0.2 rounded-full", statusFilter === ClaimStatus.DRAFT ? "bg-white/20 text-white" : "bg-amber-200/80 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200")}>
+              {draftsCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter(ClaimStatus.PENDING_APPROVAL);
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.set('status', ClaimStatus.PENDING_APPROVAL);
+                return next;
+              });
+            }}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm",
+              statusFilter === ClaimStatus.PENDING_APPROVAL ? "bg-primary text-white" : "bg-surface-container-high text-on-surface-variant hover:bg-outline-variant"
+            )}
+          >
+            <span>Pending Approval</span>
+            <span className="text-[11px] opacity-80">
+              ({myClaims.filter(c => c.status === ClaimStatus.PENDING_APPROVAL || c.status === ClaimStatus.SUBMITTED).length})
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setStatusFilter(ClaimStatus.COMPLETED);
+              setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                next.set('status', ClaimStatus.COMPLETED);
+                return next;
+              });
+            }}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-xs font-semibold transition-colors flex items-center gap-1.5 shadow-sm",
+              statusFilter === ClaimStatus.COMPLETED ? "bg-primary text-white" : "bg-surface-container-high text-on-surface-variant hover:bg-outline-variant"
+            )}
+          >
+            <span>Completed</span>
+            <span className="text-[11px] opacity-80">({completedClaims.length})</span>
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-0">
         <FilterBar
+          className="rounded-b-none"
+          title="Claims"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search claims..."
@@ -264,9 +397,7 @@ export function ClaimsList() {
           ]}
           popoverDescription="Narrow claims by client, location, or submitted date."
         />
-      </div>
-
-      <Card>
+      <Card className="!mt-[-1px] rounded-t-none">
         {groupBy === 'none' ? (
           <>
             {renderClaimsBody(paginatedClaims)}
@@ -298,6 +429,7 @@ export function ClaimsList() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 
@@ -352,7 +484,15 @@ export function ClaimsList() {
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <StatusBadge status={claim.status} />
+                    <div className="flex items-center justify-between gap-3">
+                      <StatusBadge status={claim.status} />
+                      {claim.status === ClaimStatus.DRAFT && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
+                          <span>Continue</span>
+                          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );})}
@@ -381,7 +521,15 @@ export function ClaimsList() {
                   <span className="font-mono-data font-bold text-primary">{claim.ref}</span>
                   <span className="text-body-sm text-outline">{claim.type}</span>
                 </div>
-                <StatusBadge status={claim.status} />
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={claim.status} />
+                  {claim.status === ClaimStatus.DRAFT && (
+                    <span className="text-xs font-semibold text-primary inline-flex items-center gap-0.5">
+                      <span>Continue</span>
+                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-body-base font-semibold">{claim.purpose}</p>
               {(claim.client || claim.location) && (

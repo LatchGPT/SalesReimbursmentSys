@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader } from '../../../components/ui/Card';
+import { Card } from '../../../components/ui/Card';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { ClaimStatus } from '../../../types';
 import { formatMoney } from '../../../lib/money';
@@ -96,14 +96,21 @@ export function ProcessingQueue() {
         );
       })()}
 
-      <div className="flex flex-wrap items-center gap-3 pb-2">
-        <button onClick={() => setFilter('All')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'All' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>All Processing</button>
-        <button onClick={() => setFilter('Audit')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'Audit' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>In Audit</button>
-        <button onClick={() => setFilter('Advances')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'Advances' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Cash Advances</button>
-        <button onClick={() => setFilter('Liquidations')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'Liquidations' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Liquidations</button>
-      </div>
-
-      <Card className="p-4">
+      <div className="space-y-0">
+      <Card className="rounded-b-none p-4 shadow-none">
+        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
+          <div>
+            <h4 className="font-headline-md text-on-surface">Disbursement Worklist</h4>
+            <p className="mt-1 text-xs text-outline">Oldest approved requests are prioritized first.</p>
+          </div>
+          <span className="font-label-sm text-outline">{displayedClaims.length} records</span>
+        </div>
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button onClick={() => setFilter('All')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'All' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>All Processing</button>
+          <button onClick={() => setFilter('Audit')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'Audit' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>In Audit</button>
+          <button onClick={() => setFilter('Advances')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'Advances' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Cash Advances</button>
+          <button onClick={() => setFilter('Liquidations')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm focus:ring-2 focus:ring-primary outline-none ${filter === 'Liquidations' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Liquidations</button>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-xl">
             <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search reference, requestor, or purpose..." aria-label="Search processing queue" />
@@ -131,14 +138,7 @@ export function ProcessingQueue() {
         </div>}
       </Card>
 
-      <Card>
-        <CardHeader className="bg-surface-container-low/50 border-b border-outline-variant">
-          <div>
-            <h4 className="font-headline-md text-on-surface">Disbursement Worklist</h4>
-            <p className="text-xs text-outline mt-1">Oldest approved requests are prioritized first.</p>
-          </div>
-          <span className="font-label-sm text-outline">{displayedClaims.length} records</span>
-        </CardHeader>
+      <Card className="rounded-t-none">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
@@ -218,6 +218,7 @@ export function ProcessingQueue() {
         </div>
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </Card>
+      </div>
     </div>
   );
 }

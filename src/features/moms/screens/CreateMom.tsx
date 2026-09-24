@@ -8,6 +8,7 @@ import { MomClientPreviewModal } from '../components/MomClientPreviewModal';
 import { ContactPersonsField } from '../components/ContactPersonsField';
 import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
+import { useUnsavedChangesPrompt } from '../../../components/shared/UnsavedChangesPrompt';
 import { createMom, updateMom } from '../../../lib/api';
 import { validateDynamicFields } from '../../../shared/validation/dynamicFieldValidation';
 import { MomContact, contactsFromMom, exportMomPdf, exportMomWord, joinDesignations, serializeContacts } from '../index';
@@ -19,6 +20,17 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // as a comma-separated list in the single contact_person_email column.
 function splitEmails(value?: string): string[] {
   return (value || '').split(',').map(e => e.trim()).filter(Boolean);
+}
+
+function formSnapshot(
+  documentType: MomDocumentType,
+  form: Record<string, unknown>,
+  contacts: MomContact[],
+  clientEmails: string[],
+  emailDraft: string,
+  customFields: Record<string, string>,
+) {
+  return JSON.stringify({ documentType, form, contacts, clientEmails, emailDraft, customFields });
 }
 
 export function CreateMom() {
@@ -53,6 +65,11 @@ export function CreateMom() {
     actionItems: editing?.actionItems || '',
     ccClient: editing?.ccClient ?? false,
   });
+  const [initialFormSnapshot] = useState(() => formSnapshot(documentType, form, contacts, clientEmails, emailDraft, customFields));
+  const hasUnsavedChanges = useMemo(
+    () => formSnapshot(documentType, form, contacts, clientEmails, emailDraft, customFields) !== initialFormSnapshot,
+    [clientEmails, contacts, customFields, documentType, emailDraft, form, initialFormSnapshot],
+  );
 
   // Guard the edit route: only render the form once we've matched the record.
   const notFound = isEdit && !editing;
@@ -118,40 +135,52 @@ export function CreateMom() {
     customFields,
   };
 
-  const save = async (status: 'Draft' | 'Completed') => {
-    if (!form.client.trim() || !form.purpose.trim() || !form.meetingDate) {
-      addToast('Client, purpose, and date of meeting are required.', 'error');
-      return;
+  const save = async (status: 'Draft' | 'Completed', leaveAfterSave = true): Promise<boolean> => {
+    if (status === 'Completed') {
+      if (!form.client.trim() || !form.purpose.trim() || !form.meetingDate) {
+        addToast('Client, purpose, and date of meeting are required.', 'error');
+        return false;
+      }
+      // Validate the dynamic MoM fields exactly as DynamicFieldRenderer shows them
+      // (entity 'mom', active, minus the excluded legacy designation column).
+      const activeMomFields = fieldDefinitions.filter(
+        fd => fd.entity === 'mom' && fd.active && fd.key !== 'contact_person_designation',
+      );
+      const { errors: fieldErrors, firstError } = validateDynamicFields(activeMomFields, customFields);
+      if (firstError) {
+        setMomErrors(fieldErrors);
+        addToast(firstError.message, 'error');
+        return false;
+      }
+      setMomErrors({});
+      // Fold a half-typed address in the box into the list before validating.
+      const pending = emailDraft.trim().replace(/,$/, '');
+      const emails = pending && EMAIL_RE.test(pending) && !clientEmails.includes(pending)
+        ? [...clientEmails, pending]
+        : clientEmails;
+      if (form.ccClient && emails.length === 0) {
+        addToast('Add at least one client email before enabling client notifications.', 'error');
+        window.setTimeout(() => clientEmailInputRef.current?.focus(), 0);
+        return false;
+      }
+    } else {
+      setMomErrors({});
     }
-    // Validate the dynamic MoM fields exactly as DynamicFieldRenderer shows them
-    // (entity 'mom', active, minus the excluded legacy designation column).
-    const activeMomFields = fieldDefinitions.filter(
-      fd => fd.entity === 'mom' && fd.active && fd.key !== 'contact_person_designation',
-    );
-    const { errors: fieldErrors, firstError } = validateDynamicFields(activeMomFields, customFields);
-    if (firstError) {
-      setMomErrors(fieldErrors);
-      addToast(firstError.message, 'error');
-      return;
-    }
-    setMomErrors({});
-    // Fold a half-typed address in the box into the list before validating.
-    const pending = emailDraft.trim().replace(/,$/, '');
-    const emails = pending && EMAIL_RE.test(pending) && !clientEmails.includes(pending)
-      ? [...clientEmails, pending]
-      : clientEmails;
-    if (form.ccClient && emails.length === 0) {
-      addToast('Add at least one client email before enabling client notifications.', 'error');
-      window.setTimeout(() => clientEmailInputRef.current?.focus(), 0);
-      return;
-    }
+
     setSaving(true);
     try {
+      const pending = emailDraft.trim().replace(/,$/, '');
+      const emails = pending && EMAIL_RE.test(pending) && !clientEmails.includes(pending)
+        ? [...clientEmails, pending]
+        : clientEmails;
       // contact_person_designation stays in sync as a comma-joined legacy
       // field for any consumer still reading the old single-designation shape.
       const mergedCustomFields = { ...customFields, contact_person_designation: joinDesignations(contacts) };
       const payload = {
         ...form,
+        client: form.client.trim() || 'Untitled Meeting Draft',
+        purpose: form.purpose.trim() || (status === 'Draft' ? 'Draft Purpose' : ''),
+        meetingDate: form.meetingDate || new Date().toISOString().split('T')[0],
         contactPerson: serializeContacts(contacts),
         contactPersonEmail: emails.join(', '),
         documentType,
@@ -174,13 +203,21 @@ export function CreateMom() {
             : `${DOCUMENT_TYPE_LABEL[documentType]} finalized.`,
         'success',
       );
-      navigate(isEdit && id ? `/moms/${id}` : '/moms');
+      if (leaveAfterSave) navigate(isEdit && id ? `/moms/${id}` : '/moms');
+      return true;
     } catch (error: any) {
       addToast(error?.message || 'Could not save the meeting record.', 'error');
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  const { requestLeave, unsavedChangesDialog } = useUnsavedChangesPrompt({
+    isDirty: !isEdit && hasUnsavedChanges,
+    onSaveDraft: () => save('Draft', false),
+    formName: 'this MOM',
+  });
 
   if (notFound) {
     return (
@@ -214,7 +251,7 @@ export function CreateMom() {
             <span className="material-symbols-outlined text-[18px]">visibility</span>
             Preview client copy
           </Button>
-          <Button variant="outline" onClick={() => navigate(isEdit && id ? `/moms/${id}` : '/moms')}>Cancel</Button>
+          <Button variant="outline" onClick={() => requestLeave(() => navigate(isEdit && id ? `/moms/${id}` : '/moms'))}>Cancel</Button>
         </div>
       </div>
 
@@ -372,9 +409,16 @@ export function CreateMom() {
           </section>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant">
-            {!isEdit && <Button variant="outline" onClick={() => save('Draft')} disabled={saving}>Save Draft</Button>}
-            <Button onClick={() => save(isEdit ? (editing?.status === 'Completed' ? 'Completed' : 'Draft') : 'Completed')} disabled={saving}>
-              {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Finalize Record'}
+            {(!isEdit || editing?.status === 'Draft') && (
+              <Button variant="outline" onClick={() => save('Draft')} disabled={saving}>
+                {saving ? 'Saving…' : 'Save Draft'}
+              </Button>
+            )}
+            <Button
+              onClick={() => save(isEdit && editing?.status !== 'Draft' ? 'Completed' : 'Completed')}
+              disabled={saving}
+            >
+              {saving ? 'Saving…' : isEdit && editing?.status !== 'Draft' ? 'Save Changes' : 'Finalize Record'}
             </Button>
           </div>
         </CardContent>
@@ -414,6 +458,7 @@ export function CreateMom() {
           }
         />
       )}
+      {unsavedChangesDialog}
     </div>
   );
 }

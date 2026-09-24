@@ -1,17 +1,205 @@
+import { v4 as uuidv4 } from 'uuid';
 import { ClaimStatus, type Claim, UserRole, type User } from '../../lib/db/serverTypes';
 import { persistClaim } from '../../lib/db/coreLoopRepo';
-import { syncUsersToDb } from '../../lib/db/usersRepo';
+import { syncUsersToDb, deleteUserFromDb } from '../../lib/db/usersRepo';
 import { state } from '../../server/state';
 import { addUserHistory } from '../../server/services/history';
 import { detectStaleApprovers, recalcApprovalAuthority } from '../../server/services/hierarchy';
 
 type ErrorBody = { error: string };
 type Result<T> = { status: number; body: T };
+export type CreateUserBody = {
+  name: string;
+  email: string;
+  role: UserRole;
+  department: string;
+  job_title?: string;
+  reports_to?: string | null;
+  employment_status?: 'Active' | 'Inactive';
+};
 type UpdateUserBody = Partial<Pick<User, 'role' | 'department' | 'job_title' | 'reports_to' | 'employment_status' | 'can_approve_reimbursements'>> & { confirmOrphan?: boolean };
 function userFor(id: string | null) { return state.users.find((user) => user.id === id || user.entra_object_id === id || user.user_principal_name === id); }
 
 export const wouldCreateCycle = (userId: string, candidateManagerId: string): boolean => { if (candidateManagerId === userId) return true; let currentId: string | null = candidateManagerId; const visited = new Set<string>(); while (currentId) { if (currentId === userId) return true; if (visited.has(currentId)) return false; visited.add(currentId); currentId = state.users.find((user) => user.id === currentId)?.reports_to ?? null; } return false; };
 export function listUsers(userId: string | null): Result<User[] | ErrorBody> { return userFor(userId) ? { status: 200, body: state.users } : { status: 401, body: { error: 'Unauthorized' } }; }
+
+export async function createUser(
+  userId: string | null,
+  body: CreateUserBody
+): Promise<Result<{ user: User } | ErrorBody>> {
+  const admin = userFor(userId);
+  if (!admin || admin.role !== UserRole.ADMIN) {
+    return { status: 403, body: { error: 'Forbidden' } };
+  }
+
+  const { name, email, role, department, job_title, reports_to, employment_status } = body || {};
+
+  if (!name || typeof name !== 'string' || !name.trim()) {
+    return { status: 400, body: { error: 'Name is required.' } };
+  }
+  if (!email || typeof email !== 'string' || !email.trim()) {
+    return { status: 400, body: { error: 'Email is required.' } };
+  }
+
+  const trimmedEmail = email.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    return { status: 400, body: { error: 'Please enter a valid email address.' } };
+  }
+
+  const emailExists = state.users.some(
+    (u) => (u.email || '').toLowerCase() === trimmedEmail
+  );
+  if (emailExists) {
+    return { status: 400, body: { error: 'A user with this email already exists.' } };
+  }
+
+  if (!role || !Object.values(UserRole).includes(role)) {
+    return { status: 400, body: { error: 'Invalid user role.' } };
+  }
+
+  if (!department || typeof department !== 'string' || !department.trim()) {
+    return { status: 400, body: { error: 'Department is required.' } };
+  }
+
+  let managerId: string | null = null;
+  if (reports_to) {
+    const manager = state.users.find((u) => u.id === reports_to);
+    if (!manager) {
+      return { status: 400, body: { error: 'Reporting manager not found.' } };
+    }
+    managerId = reports_to;
+  }
+
+  const newId = `u_${uuidv4().replace(/-/g, '').slice(0, 10)}`;
+  const isApprover = role === UserRole.APPROVER;
+
+  const newUser: User = {
+    id: newId,
+    name: name.trim(),
+    email: trimmedEmail,
+    role,
+    department: department.trim(),
+    job_title: job_title?.trim() || undefined,
+    reports_to: managerId,
+    employment_status: employment_status === 'Inactive' ? 'Inactive' : 'Active',
+    can_approve_reimbursements: isApprover,
+    entra_object_id: `fake-oid-${newId}`,
+    user_principal_name: trimmedEmail,
+    notification_prefs: {
+      claimUpdates: { inApp: true, email: true },
+      delegations: { inApp: true, email: true },
+    },
+  };
+
+  state.users.push(newUser);
+
+  if (managerId) {
+    recalcApprovalAuthority(managerId);
+  }
+
+  addUserHistory(
+    newUser.id,
+    '(none)',
+    newUser.employment_status || 'Active',
+    admin.id,
+    `Admin created user account for ${newUser.name} (${newUser.role})`
+  );
+
+  try {
+    await syncUsersToDb(state.users);
+  } catch (error) {
+    console.error('[db] Could not persist new user to Postgres:', error);
+  }
+
+  return { status: 201, body: { user: newUser } };
+}
+
+export async function deleteUser(
+  userId: string | null,
+  targetId: string
+): Promise<Result<{ success: boolean; message: string } | ErrorBody>> {
+  const admin = userFor(userId);
+  if (!admin || admin.role !== UserRole.ADMIN) {
+    return { status: 403, body: { error: 'Forbidden' } };
+  }
+
+  const target = state.users.find((u) => u.id === targetId);
+  if (!target) {
+    return { status: 404, body: { error: 'User not found' } };
+  }
+
+  if (target.id === admin.id) {
+    return { status: 400, body: { error: 'You cannot delete your own account.' } };
+  }
+
+  const directReports = state.users.filter((u) => u.reports_to === target.id);
+  if (directReports.length > 0) {
+    const names = directReports.map((u) => u.name).join(', ');
+    return {
+      status: 400,
+      body: {
+        error: `Cannot delete ${target.name}: this user has ${directReports.length} direct report${directReports.length > 1 ? 's' : ''} (${names}). Please reassign them before deleting.`,
+      },
+    };
+  }
+
+  const hasClaims = state.claims.some(
+    (c) =>
+      c.requestor_id === target.id ||
+      c.current_approver_id === target.id ||
+      c.original_approver_id === target.id
+  );
+  const hasApprovals = state.approvals.some((a) => a.approver_id === target.id);
+  const hasCashAdvances = state.cashAdvances?.some(
+    (ca) =>
+      ca.requestorId === target.id ||
+      ca.approverId === target.id ||
+      ca.releasedBy === target.id
+  );
+  const hasReviewMeetings = state.reviewMeetings?.some(
+    (rm) => rm.requestor_id === target.id || rm.approver_id === target.id
+  );
+
+  if (hasClaims || hasApprovals || hasCashAdvances || hasReviewMeetings) {
+    return {
+      status: 400,
+      body: {
+        error: `Cannot delete ${target.name}: this user is associated with existing reimbursement claims or transactions. Set their employment status to Inactive instead to preserve audit integrity.`,
+      },
+    };
+  }
+
+  const managerId = target.reports_to;
+
+  const userIndex = state.users.findIndex((u) => u.id === target.id);
+  if (userIndex !== -1) {
+    state.users.splice(userIndex, 1);
+  }
+
+  state.delegations = (state.delegations || []).filter(
+    (d) => d.approver_id !== target.id && d.delegate_id !== target.id
+  );
+  state.statusHistories = state.statusHistories.filter(
+    (sh) => sh.user_id !== target.id
+  );
+
+  if (managerId) {
+    recalcApprovalAuthority(managerId);
+  }
+
+  try {
+    await deleteUserFromDb(target.id);
+    await syncUsersToDb(state.users);
+  } catch (error) {
+    console.error('[db] Could not delete user from Postgres:', error);
+  }
+
+  return {
+    status: 200,
+    body: { success: true, message: `User ${target.name} deleted successfully.` },
+  };
+}
 
 export async function updateUser(userId: string | null, targetId: string, body: UpdateUserBody): Promise<Result<{ user: User; changed: string[] } | ErrorBody | { error: string; message: string; reportees: Array<{ id: string; name: string }> }>> {
   const admin = userFor(userId); if (!admin || admin.role !== UserRole.ADMIN) return { status: 403, body: { error: 'Forbidden' } };

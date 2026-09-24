@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Button, cn } from '../../../components/ui/Button';
 import { Input, Select, Label } from '../../../components/ui/Input';
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card';
@@ -9,8 +10,10 @@ import {
   validateReimbursementPurchaseDate,
 } from '../domain/reimbursementPolicy';
 import { useClaimWizard } from './useClaimWizard';
+import { ReceiptAttachmentPreviewModal } from '../detail/ReceiptAttachmentPreviewModal';
 
 export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWizard> }) {
+  const [previewReceipt, setPreviewReceipt] = useState<{ url: string; fileName?: string; fileType?: string } | null>(null);
   const {
     claimType,
     lineItemsLocal,
@@ -41,6 +44,59 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
     paymentMethods,
     totalAmount,
   } = wizard;
+
+  const [openMenuIdx, setOpenMenuIdx] = useState<number | null>(null);
+  const menuContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+        setOpenMenuIdx(null);
+      }
+    };
+    if (openMenuIdx !== null) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [openMenuIdx]);
+
+  const handleClearRowData = (targetIdx: number) => {
+    setLineItemsLocal(p => p.map((li, i) => i === targetIdx ? {
+      expenseDate: '',
+      amount: 0,
+      paymentMethod: 'Personal Card',
+      vendor: '',
+      businessPurpose: '',
+      orNumber: '',
+      receiptFile: undefined,
+      receiptUrl: undefined,
+      category: claimType === 'Transport Reimbursement' ? 'Transportation' : 'Meals',
+    } : li));
+    setOpenMenuIdx(null);
+  };
+
+  const handleDeleteRow = (targetIdx: number) => {
+    setLineItemsLocal(p => {
+      if (p.length <= 1) {
+        // If this is the only row, keep the single row but clear its data
+        return [{
+          expenseDate: '',
+          amount: 0,
+          paymentMethod: 'Personal Card',
+          vendor: '',
+          businessPurpose: '',
+          orNumber: '',
+          receiptFile: undefined,
+          receiptUrl: undefined,
+          category: claimType === 'Transport Reimbursement' ? 'Transportation' : 'Meals',
+        }];
+      }
+      return p.filter((_, i) => i !== targetIdx);
+    });
+    setOpenMenuIdx(null);
+  };
 
   return (
     <Card>
@@ -218,15 +274,34 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         {item.receiptFile ? (
-                          <div className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded text-xs">
-                            <span className="material-symbols-outlined text-[14px] text-primary">description</span>
-                            <span className="truncate max-w-[100px]">{item.receiptFile.name}</span>
-                            <button type="button" onClick={() => setLineItemsLocal(prev => prev.map((li, i) =>
-                              i === idx ? { ...li, receiptFile: undefined, receiptUrl: undefined } : li
-                            ))} className="text-error hover:opacity-80">
-                              <span className="material-symbols-outlined text-[14px]">close</span>
-                            </button>
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 bg-surface-container px-2 py-1 rounded text-xs">
+                              <span className="material-symbols-outlined text-[14px] text-primary">description</span>
+                              <span className="truncate max-w-[100px]">{item.receiptFile.name}</span>
+                              <button type="button" aria-label={`Remove ${item.receiptFile.name}`} onClick={() => setLineItemsLocal(prev => prev.map((li, i) =>
+                                i === idx ? { ...li, receiptFile: undefined, receiptUrl: undefined } : li
+                              ))} className="text-error hover:opacity-80">
+                                <span className="material-symbols-outlined text-[14px]">close</span>
+                              </button>
+                            </div>
+                            {item.receiptUrl && (
+                              <button
+                                type="button"
+                                className="text-xs font-semibold text-primary hover:underline"
+                                onClick={() => setPreviewReceipt({ url: item.receiptUrl!, fileName: item.receiptFile?.name, fileType: item.receiptFile?.type })}
+                              >
+                                View Receipt
+                              </button>
+                            )}
                           </div>
+                        ) : item.receiptUrl ? (
+                          <button
+                            type="button"
+                            className="text-xs font-semibold text-primary hover:underline"
+                            onClick={() => setPreviewReceipt({ url: item.receiptUrl! })}
+                          >
+                            View Receipt
+                          </button>
                         ) : (
                           <label className="cursor-pointer inline-flex items-center gap-1 text-xs text-primary font-semibold hover:underline">
                             <span className="material-symbols-outlined text-[16px]">upload_file</span> Attach OR/Receipt
@@ -235,8 +310,52 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                         )}
                       </div>
                     </td>
-                    <td className="px-3 py-3">
-                      <button onClick={() => setLineItemsLocal(p => p.filter((_, i) => i !== idx))} className="text-error hover:opacity-70"><span className="material-symbols-outlined">delete_outline</span></button>
+                    <td className="px-3 py-3 relative">
+                      <div className="relative inline-block text-left" ref={openMenuIdx === idx ? menuContainerRef : undefined}>
+                        <button
+                          type="button"
+                          onClick={() => setOpenMenuIdx(prev => prev === idx ? null : idx)}
+                          className={cn(
+                            "p-1 rounded text-error hover:bg-error-container/20 hover:opacity-100 transition-colors flex items-center justify-center",
+                            openMenuIdx === idx && "bg-error-container/30"
+                          )}
+                          title="Row actions"
+                          aria-label={`Row actions for line ${idx + 1}`}
+                          aria-expanded={openMenuIdx === idx}
+                        >
+                          <span className="material-symbols-outlined text-[20px]">delete_outline</span>
+                        </button>
+
+                        {openMenuIdx === idx && (
+                          <div className="absolute right-0 bottom-full mb-1 z-30 w-52 rounded-lg bg-surface-container-high border border-outline-variant shadow-lg py-1 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="px-3 py-1.5 border-b border-outline-variant/50">
+                              <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">Line Item {idx + 1}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleClearRowData(idx)}
+                              className="w-full text-left px-3 py-2 text-xs text-on-surface hover:bg-surface-container-highest flex items-center gap-2 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[16px] text-outline">backspace</span>
+                              <div>
+                                <span className="font-medium block">Clear inputs only</span>
+                                <span className="text-[10px] text-on-surface-variant block">Reset fields, keep row intact</span>
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRow(idx)}
+                              className="w-full text-left px-3 py-2 text-xs text-error hover:bg-error-container/20 flex items-center gap-2 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[16px] text-error">delete</span>
+                              <div>
+                                <span className="font-medium block">Delete row</span>
+                                <span className="text-[10px] text-error/80 block">Remove this row from table</span>
+                              </div>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -289,6 +408,12 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
           </div>
         )}
       </CardContent>
+      <ReceiptAttachmentPreviewModal
+        url={previewReceipt?.url || null}
+        fileName={previewReceipt?.fileName}
+        fileType={previewReceipt?.fileType}
+        onClose={() => setPreviewReceipt(null)}
+      />
     </Card>
   );
 }

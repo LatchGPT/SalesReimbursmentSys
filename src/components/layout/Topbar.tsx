@@ -5,6 +5,7 @@ import { logout } from '../../lib/api';
 import { formatDateTime } from '../../lib/date';
 import { GlobalSearch } from './GlobalSearch';
 import { NotificationsModal } from '../shared/NotificationsModal';
+import { getIconForSubject } from '../shared/NotificationsView';
 
 interface TopbarProps {
   onMenuClick: () => void;
@@ -66,7 +67,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
   };
 
   return (
-    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-4 sm:px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
+    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-4 sm:px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
       <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
         <button 
           aria-label="Toggle sidebar"
@@ -142,21 +143,49 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                   {userNotifications.length === 0 ? (
                     <p className="p-4 text-center text-sm text-on-surface-variant">No notifications.</p>
                   ) : (
-                    userNotifications.map(notif => (
-                      <div
-                        key={notif.id}
-                        className={`p-3 text-sm rounded cursor-pointer ${notif.read ? 'bg-transparent hover:bg-surface-container' : 'bg-primary-container/20 font-medium'}`}
-                        onClick={() => {
-                          if (!notif.read) markEmailsRead([notif.id]);
-                          setShowNotifications(false);
-                          setSelectedModalNotificationId(notif.id);
-                          setShowNotificationsModal(true);
-                        }}
-                      >
-                        <p className="text-on-surface">{notif.subject || notif.body}</p>
-                        <p className="text-xs text-on-surface-variant mt-1">{formatDateTime(notif.timestamp)}</p>
-                      </div>
-                    ))
+                    userNotifications.map(notif => {
+                      const iconConfig = getIconForSubject(notif.subject);
+                      const bodySnippet = notif.body
+                        ? notif.body.replace(/\s+/g, ' ').trim()
+                        : '';
+
+                      return (
+                        <div
+                          key={notif.id}
+                          className={`p-3 text-sm rounded-lg cursor-pointer transition-colors flex gap-3 ${
+                            notif.read
+                              ? 'bg-transparent hover:bg-surface-container'
+                              : 'bg-primary-container/20 hover:bg-primary-container/30'
+                          }`}
+                          onClick={() => {
+                            if (!notif.read) markEmailsRead([notif.id]);
+                            setShowNotifications(false);
+                            setSelectedModalNotificationId(notif.id);
+                            setShowNotificationsModal(true);
+                          }}
+                        >
+                          <div className={`mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${iconConfig.bg} ${iconConfig.color}`}>
+                            <span className="material-symbols-outlined text-[18px]">{iconConfig.icon}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-baseline gap-2 mb-0.5">
+                              <p className={`truncate text-xs sm:text-sm ${notif.read ? 'text-on-surface font-medium' : 'font-semibold text-on-surface'}`}>
+                                {notif.subject || 'Notification'}
+                              </p>
+                              {!notif.read && (
+                                <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                              )}
+                            </div>
+                            {bodySnippet && (
+                              <p className="text-xs text-on-surface-variant line-clamp-1 mb-1">
+                                {bodySnippet}
+                              </p>
+                            )}
+                            <p className="text-[11px] text-outline">{formatDateTime(notif.timestamp)}</p>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
                 <div className="p-2 border-t border-outline-variant bg-surface-container-lowest text-center">

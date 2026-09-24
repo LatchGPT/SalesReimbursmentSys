@@ -20,7 +20,8 @@ export function RequestorDashboard() {
   const navigate = useNavigate();
 
   const myClaims = claims.filter(c => c.requestorId === currentUser.id);
-  const activeClaimsCount = myClaims.filter(c => ACTIVE_STATUSES.includes(c.status)).length;
+  const draftsCount = myClaims.filter(c => c.status === ClaimStatus.DRAFT).length;
+  const activeClaimsCount = myClaims.filter(c => ACTIVE_STATUSES.includes(c.status) && c.status !== ClaimStatus.DRAFT).length;
   const completedClaims = myClaims.filter(c => c.status === ClaimStatus.COMPLETED);
   const totalReimbursed = completedClaims.reduce((acc, c) => acc + c.paidAmount, 0);
 
@@ -62,6 +63,31 @@ export function RequestorDashboard() {
           </Button>
         </div>
       </div>
+
+      {draftsCount > 0 && (
+        <Card className="border-amber-400/50 bg-amber-500/10">
+          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-amber-600 text-[28px]">drafts</span>
+              <div>
+                <p className="font-label-md text-on-surface font-semibold">
+                  You have {draftsCount} saved draft request{draftsCount === 1 ? '' : 's'}
+                </p>
+                <p className="text-body-sm text-outline">Continue editing where you left off and submit when ready.</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 shrink-0 border-amber-500/40 text-amber-800 dark:text-amber-300 hover:bg-amber-500/15"
+              onClick={() => navigate('/claims?status=Draft')}
+            >
+              <span className="material-symbols-outlined text-[18px]">folder_open</span>
+              View Drafts ({draftsCount})
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {readyForClaim.length > 0 && (
         <Card className="border-primary/30 bg-primary-container/20">

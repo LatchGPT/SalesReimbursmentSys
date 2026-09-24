@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
+import { useUnsavedChangesPrompt } from '../../../components/shared/UnsavedChangesPrompt';
 import { ClaimStatus, ClaimType, MOM, MomDocumentType, DOCUMENT_TYPE_LABEL, FieldDefinition, FieldDefinitionEntity } from '../../../types';
 import { MomContact, serializeContacts, joinDesignations } from '@/features/moms';
 import { submitClaimFlow, submitCashAdvanceFlow, submitLiquidationFlow, DraftLineItem } from '../../../lib/api';
@@ -24,6 +25,10 @@ export const TYPE_PARAM_MAP: Record<string, ClaimType> = {
 
 export const REIMBURSEMENT_CAP = 1000;
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function claimFormSnapshot(values: Record<string, unknown>) {
+  return JSON.stringify(values);
+}
 
 export function useClaimWizard() {
   const navigate = useNavigate();
@@ -75,6 +80,23 @@ export function useClaimWizard() {
   const [claimCustomFields, setClaimCustomFields] = useState<Record<string, string>>({});
   const [claimErrors, setClaimErrors] = useState<Record<string, string>>({});
   const [autofilling, setAutofilling] = useState(false);
+  const currentFormSnapshot = claimFormSnapshot({
+    claimType,
+    lineItems: lineItemsLocal.map(item => ({ ...item, receiptFile: item.receiptFile?.name })),
+    momCore,
+    contacts,
+    clientEmails,
+    emailDraft,
+    cashAdvanceId,
+    cashAdvanceAmount,
+    cashAdvancePurpose,
+    refundMethod,
+    documentType,
+    momData,
+    claimCustomFields,
+  });
+  const [initialFormSnapshot] = useState(currentFormSnapshot);
+  const hasUnsavedChanges = currentFormSnapshot !== initialFormSnapshot;
 
   const steps = [
     { num: 2, title: DOCUMENT_TYPE_LABEL[documentType] },
@@ -263,34 +285,40 @@ export function useClaimWizard() {
     setStep(prevIndex >= 0 ? stepFlow[prevIndex] : 0);
   };
 
-  const send = async (isDraft: boolean) => {
-    if (!isDraft && isReimbursement && showReimbursementDateError()) return;
-    if (claimType === 'Reimbursement' && momCore.ccClient && joinedClientEmails().trim() === '') {
+  const send = async (isDraft: boolean, leaveAfterSave = true): Promise<boolean> => {
+    if (!isDraft && isReimbursement && showReimbursementDateError()) return false;
+    if (!isDraft && claimType === 'Reimbursement' && momCore.ccClient && joinedClientEmails().trim() === '') {
       addToast('Add at least one client email to send claim status notifications.', 'error');
       setStep(2);
       window.setTimeout(() => clientEmailInputRef.current?.focus(), 0);
-      return;
+      return false;
     }
     setLoading(true);
     try {
       if (claimType === 'Cash Advance') {
         await submitCashAdvanceFlow({
-          amount: cashAdvanceAmount,
-          purpose: cashAdvancePurpose,
+          amount: Number(cashAdvanceAmount) || 0,
+          purpose: cashAdvancePurpose || 'Draft Cash Advance',
           isDraft,
         });
       } else if (claimType === 'Liquidation') {
+        if (!isDraft && !cashAdvanceId) {
+          addToast('Please select the Cash Advance to liquidate.', 'error');
+          setLoading(false);
+          return false;
+        }
         await submitLiquidationFlow({
-          cashAdvanceId,
+          cashAdvanceId: cashAdvanceId || (myCashAdvances[0]?.id || ''),
           lineItems: lineItemsLocal,
           refundMethod: varianceType === 'RefundDue' ? refundMethod : undefined,
           isDraft,
         });
       } else {
+        const hasMomData = Boolean(momCore.client || momCore.purpose);
         await submitClaimFlow({
           claimType,
           lineItems: lineItemsLocal,
-          mom: claimType === 'Reimbursement' ? {
+          mom: (claimType === 'Reimbursement' && (!isDraft || hasMomData)) ? {
             ...momCore,
             contactPerson: serializeContacts(contacts),
             contactPersonEmail: joinedClientEmails(),
@@ -299,15 +327,17 @@ export function useClaimWizard() {
           customFields: claimType === 'Reimbursement'
             ? { ...momData, contact_person_designation: joinDesignations(contacts), ...claimCustomFields }
             : { ...momData, ...claimCustomFields },
-          remarks: claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : momCore.purpose,
+          remarks: claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : (momCore.purpose || (isDraft ? 'Draft reimbursement' : '')),
           isDraft,
         });
       }
-      await refresh();
       addToast(isDraft ? 'Saved as draft.' : `${claimType} submitted successfully!`, 'success');
-      navigate('/claims');
+      if (leaveAfterSave) navigate('/claims');
+      refresh().catch((err) => console.warn('[wizard] Background refresh failed:', err));
+      return true;
     } catch (err: any) {
-      addToast(err?.message || `Could not submit the ${claimType.toLowerCase()}.`, 'error');
+      addToast(err?.message || (isDraft ? 'Could not save draft.' : `Could not submit the ${claimType.toLowerCase()}.`), 'error');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -445,6 +475,12 @@ export function useClaimWizard() {
     customFields: momData,
   };
 
+  const { requestLeave, unsavedChangesDialog } = useUnsavedChangesPrompt({
+    isDirty: hasUnsavedChanges,
+    onSaveDraft: () => send(true, false),
+    formName: 'this reimbursement',
+  });
+
   return {
     claimType, setClaimType,
     step, setStep,
@@ -496,6 +532,8 @@ export function useClaimWizard() {
     handleFileUploadForLineItem,
     applyCompanyDefaults,
     navigate,
+    requestLeave,
+    unsavedChangesDialog,
     companies,
     claims,
     setEmailError,

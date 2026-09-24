@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Input, Label, Select } from '../ui/Input';
-import { Button } from '../ui/Button';
+import { Button, cn } from '../ui/Button';
 
 export interface FilterOption {
   value: string;
@@ -48,6 +48,11 @@ export interface NumberRangeFilterSpec {
 export type FilterSpec = SelectFilterSpec | DateRangeFilterSpec | NumberRangeFilterSpec;
 
 interface FilterBarProps {
+  /** Allows the owning table section to visually join the toolbar to its results. */
+  className?: string;
+  /** Optional caption rendered above the controls in the same table section. */
+  title?: string;
+  titleEnd?: React.ReactNode;
   searchValue: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder: string;
@@ -77,6 +82,9 @@ interface FilterBarProps {
  * rendering, and "Clear all".
  */
 export function FilterBar({
+  className,
+  title,
+  titleEnd,
   searchValue,
   onSearchChange,
   searchPlaceholder,
@@ -117,7 +125,13 @@ export function FilterBar({
   };
 
   return (
-    <div className="relative rounded-xl border border-outline-variant bg-white p-4">
+    <div className={cn("relative rounded-xl border border-outline-variant bg-white p-4", className)}>
+      {title && (
+        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
+          <h2 className="font-headline-md text-on-surface">{title}</h2>
+          {titleEnd}
+        </div>
+      )}
       <div className="flex flex-col lg:flex-row gap-3">
         <div className="relative flex-1 min-w-0">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>

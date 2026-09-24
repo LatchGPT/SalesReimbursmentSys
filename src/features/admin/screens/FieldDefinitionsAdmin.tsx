@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
+import { Modal } from '../../../components/shared/Modal';
 import { createFieldDefinition, updateFieldDefinition } from '../../../lib/api';
 import { FieldDefinition, FIELD_ENTITIES, FieldDefinitionEntity, ClaimType } from '../../../types';
 import { Pagination } from '../../../components/ui/Pagination';
@@ -230,25 +231,25 @@ export function FieldDefinitionsAdmin() {
               under the default auto layout, a wide input's intrinsic content
               width (e.g. the disabled Key field) overrides percentage hints
               and starves Settings regardless of what's requested here. */}
-          <table className="w-full table-fixed text-left min-w-[900px]">
+          <table className="w-full text-left min-w-[960px]">
             <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
               <tr>
-                <th className="px-6 py-4 w-[16%]">Label</th>
-                <th className="px-6 py-4 w-[14%]">Key</th>
-                <th className="px-6 py-4 w-[12%]">Input Type</th>
+                <th className="px-6 py-4">Label</th>
+                <th className="px-6 py-4 whitespace-nowrap">Key</th>
+                <th className="px-6 py-4 whitespace-nowrap">Input Type</th>
                 {/* Settings holds the richest content per row — checkboxes plus,
                     for dropdowns, the full add/rename/remove options editor —
                     so it gets the largest fixed share instead of the auto
                     table layout starving it in favor of Key/Actions. */}
-                <th className="px-6 py-4 w-[38%] text-center">Settings</th>
-                <th className="px-6 py-4 w-[8%] text-center">Active</th>
-                <th className="px-6 py-4 w-[12%] text-right">Actions</th>
+                <th className="px-6 py-4">Settings</th>
+                <th className="px-6 py-4 text-center whitespace-nowrap">Active</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
               {paginatedFields.map(fd => (
                 <tr key={fd.id} className="hover:bg-primary-fixed/5 transition-colors">
-                  {editingId === fd.id ? (
+                  {editingId === fd.id && false ? (
                     <>
                       <td className="px-6 py-3"><Input value={editForm.label || ''} onChange={e => setEditForm(p => ({...p, label: e.target.value}))} /></td>
                       <td className="px-6 py-3">
@@ -291,8 +292,8 @@ export function FieldDefinitionsAdmin() {
                   ) : (
                     <>
                       <td className="px-6 py-4 font-label-md text-on-surface">{fd.label}</td>
-                      <td className="px-6 py-4 font-mono-data text-outline">{fd.key}</td>
-                      <td className="px-6 py-4 text-on-surface capitalize">{fd.input_type}</td>
+                      <td className="px-6 py-4 font-mono-data text-outline whitespace-nowrap">{fd.key}</td>
+                      <td className="px-6 py-4 text-on-surface capitalize whitespace-nowrap">{fd.input_type}</td>
                       <td className="px-6 py-4 text-on-surface text-sm">
                         {fd.required && <span className="block text-error">Required</span>}
                         {fd.allow_other && <span className="block text-primary">Allows "Other"</span>}
@@ -310,12 +311,12 @@ export function FieldDefinitionsAdmin() {
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center whitespace-nowrap">
                          <span className={`px-2 py-1 rounded-full text-xs font-bold ${fd.active ? 'bg-green-100 text-green-800' : 'bg-surface-container-high text-on-surface-variant'}`}>
                             {fd.active ? 'Active' : 'Inactive'}
                          </span>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-4 text-right whitespace-nowrap">
                          <Button size="sm" variant="outline" onClick={() => { setEditingId(fd.id); setEditForm(fd); }}>Edit</Button>
                       </td>
                     </>
@@ -398,6 +399,72 @@ export function FieldDefinitionsAdmin() {
         </div>
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </Card>
+      {editingId && editingId !== 'new' && (
+        <Modal
+          isOpen
+          onClose={() => {
+            if (!saving) {
+              setEditingId(null);
+              setEditForm({});
+            }
+          }}
+          titleId="edit-field-title"
+          className="max-w-2xl bg-surface-container-lowest p-6 shadow-xl"
+        >
+          <form onSubmit={event => { event.preventDefault(); void handleSave(); }}>
+            <div className="flex items-start justify-between gap-4 border-b border-outline-variant pb-4">
+              <div>
+                <h2 id="edit-field-title" className="font-headline-md text-on-surface">Edit field</h2>
+                <p className="mt-1 text-sm text-outline">Update the field settings. Changes take effect after saving.</p>
+              </div>
+              <button
+                type="button"
+                aria-label="Close edit field dialog"
+                onClick={() => { if (!saving) { setEditingId(null); setEditForm({}); } }}
+                className="text-outline hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-sm font-semibold text-on-surface">Label</span>
+                <Input value={editForm.label || ''} onChange={event => setEditForm(form => ({ ...form, label: event.target.value }))} />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-semibold text-on-surface">Key</span>
+                <Input value={editForm.key || ''} readOnly disabled title="Field keys cannot be changed after creation" className="bg-surface-container-highest text-outline-variant" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-semibold text-on-surface">Input type</span>
+                <select className="w-full rounded border border-outline-variant bg-white p-2" value={editForm.input_type || 'text'} onChange={event => setEditForm(form => ({ ...form, input_type: event.target.value as FieldDefinition['input_type'] }))}>
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="date">Date</option>
+                  <option value="dropdown">Dropdown</option>
+                  <option value="textarea">Textarea</option>
+                </select>
+              </label>
+              <div className="flex flex-col justify-end gap-3 pb-1 sm:flex-row sm:items-center sm:justify-start">
+                <label className="flex items-center gap-2 text-sm text-on-surface"><input type="checkbox" checked={editForm.required || false} onChange={event => setEditForm(form => ({ ...form, required: event.target.checked }))} /> Required</label>
+                <label className="flex items-center gap-2 text-sm text-on-surface"><input type="checkbox" checked={editForm.active !== false} onChange={event => setEditForm(form => ({ ...form, active: event.target.checked }))} /> Active</label>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              {editForm.input_type === 'dropdown' && <label className="flex items-center gap-2 text-sm text-on-surface"><input type="checkbox" checked={editForm.allow_other || false} onChange={event => setEditForm(form => ({ ...form, allow_other: event.target.checked }))} /> Allow “Other”</label>}
+              {editForm.input_type === 'dropdown' && <OptionsEditor editForm={editForm} setEditForm={setEditForm} />}
+              {selectedEntity === 'claim' && <ClaimTypeCheckboxes editForm={editForm} setEditForm={setEditForm} />}
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-outline-variant pt-4 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" onClick={() => { setEditingId(null); setEditForm({}); }} disabled={saving}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save changes'}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

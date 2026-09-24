@@ -56,7 +56,7 @@ export function NotificationsModal({ isOpen, onClose, initialSelectedId }: Notif
 
       {/* Modal Body with Notifications List & Reader */}
       <div className="flex-1 min-h-0 relative flex flex-col">
-        <NotificationsView initialSelectedId={initialSelectedId} isModal={true} />
+        <NotificationsView initialSelectedId={initialSelectedId} isModal={true} onCloseModal={onClose} />
       </div>
     </Modal>
   );

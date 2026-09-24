@@ -1,8 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
   Claim, ClaimStatus, Approval, Mom, MomStatus, UserRole,
-  CashAdvanceStatus, LiquidationStatus, ReviewMeeting, ReviewMeetingStatus
+  CashAdvanceStatus, LiquidationStatus, ReviewMeeting, ReviewMeetingStatus,
+  MinutesSource
 } from '../../lib/db/serverTypes';
+import { getOrCreateCompany } from '../../server/services/companyService';
 import { state, checkCategoryLimits } from '../../server/state';
 import { canAccessClaim } from '../../server/services/authorization';
 import { isActiveDelegateFor, getActiveDelegation } from '../../server/services/delegations';
@@ -132,21 +134,60 @@ export async function createClaim(userId: string | null, body: any) {
     return { status: 403, body: { error: 'Forbidden: You must have a designated manager (reports_to) to submit.' } };
   }
 
-  const { claim_type, mom_id, expense_category, total_amount, receipt_url, or_number, expense_date, remarks, supporting_documents, line_items, is_draft } = body || {};
+  const { claim_type, mom_id, mom: momPayload, expense_category, total_amount, receipt_url, or_number, expense_date, remarks, supporting_documents, line_items, is_draft } = body || {};
   const claimType = claim_type === 'Transport Reimbursement' ? 'Transport Reimbursement' : 'Reimbursement';
   const isTransportReimbursement = claimType === 'Transport Reimbursement';
 
-  if (!isTransportReimbursement && !mom_id) {
+  let mom: Mom | undefined;
+  if (momPayload && typeof momPayload === 'object') {
+    if (!is_draft && (!momPayload.client || !momPayload.purpose)) {
+      return { status: 400, body: { error: 'Client and Purpose are required for Minutes of Meeting.' } };
+    }
+    const newMomId = uuidv4();
+    mom = {
+      id: newMomId,
+      claim_id: undefined,
+      requestor_id: user.id,
+      document_type: momPayload.document_type === 'LOA' || momPayload.documentType === 'LOA' ? 'LOA' : 'MoM',
+      client: momPayload.client || (is_draft ? 'Draft Client' : ''),
+      contact_person: momPayload.contact_person || momPayload.contactPerson || '',
+      contact_person_email: momPayload.contact_person_email || momPayload.contactPersonEmail || '',
+      cc_client: Boolean(momPayload.cc_client ?? momPayload.ccClient),
+      meeting_date: momPayload.meeting_date || momPayload.meetingDate || new Date().toISOString().split('T')[0],
+      meeting_time: momPayload.meeting_time || momPayload.meetingTime || '',
+      location: momPayload.location || '',
+      purpose: momPayload.purpose || (is_draft ? 'Draft Meeting' : ''),
+      discussion: momPayload.discussion || '',
+      agreements: momPayload.agreements || '',
+      action_items: momPayload.action_items || momPayload.actionItems || '',
+      prepared_by: user.name,
+      prepared_by_department: user.department,
+      prepared_by_job_title: user.job_title,
+      file_url: momPayload.file_url,
+      file_name: momPayload.file_name,
+      status: is_draft ? MomStatus.DRAFT : MomStatus.COMPLETED,
+      created_at: new Date().toISOString(),
+      minutes_source: momPayload.minutes_source || MinutesSource.TEMPLATE,
+      meeting_type: momPayload.meeting_type || '',
+      participants_internal: momPayload.participants_internal || '',
+      participants_external: momPayload.participants_external || '',
+      custom_fields: momPayload.custom_fields || undefined,
+    };
+    if (mom.client) {
+      await getOrCreateCompany(mom.client, user.id);
+    }
+    state.moms.push(mom);
+  } else if (mom_id) {
+    mom = state.moms.find(m => m.id === mom_id);
+    if (!mom) return { status: 400, body: { error: 'Minutes of Meeting (MOM) not found.' } };
+    if (!is_draft && mom.status !== MomStatus.COMPLETED) {
+      return { status: 400, body: { error: 'Cannot attach an incomplete or draft Minutes of Meeting.' } };
+    }
+    if (mom.claim_id) {
+      return { status: 400, body: { error: 'This Minutes of Meeting is already linked to another claim and cannot be reused.' } };
+    }
+  } else if (!is_draft && !isTransportReimbursement) {
     return { status: 400, body: { error: 'Minutes of Meeting (MOM) is required.' } };
-  }
-  const mom = mom_id ? state.moms.find(m => m.id === mom_id) : undefined;
-  if (mom_id && !mom) return { status: 400, body: { error: 'Minutes of Meeting (MOM) not found.' } };
-
-  if (!is_draft && mom && mom.status !== MomStatus.COMPLETED) {
-    return { status: 400, body: { error: 'Cannot attach an incomplete or draft Minutes of Meeting.' } };
-  }
-  if (mom?.claim_id) {
-    return { status: 400, body: { error: 'This Minutes of Meeting is already linked to another claim and cannot be reused.' } };
   }
 
   let itemsToCreate: any[] = [];
@@ -158,58 +199,85 @@ export async function createClaim(userId: string | null, body: any) {
     for (const [index, item] of line_items.entries()) {
       if (!is_draft && !item.category) return { status: 400, body: { error: 'Each expense must have a category.' } };
       const numericAmount = Number(item.amount);
-      if (isNaN(numericAmount) || numericAmount <= 0) return { status: 400, body: { error: 'Each expense amount must be a valid number greater than zero.' } };
-      if (!item.receipt_url) return { status: 400, body: { error: 'Each expense must have a receipt.' } };
       if (!is_draft) {
+        if (isNaN(numericAmount) || numericAmount <= 0) return { status: 400, body: { error: 'Each expense amount must be a valid number greater than zero.' } };
+        if (!item.receipt_url) return { status: 400, body: { error: 'Each expense must have a receipt.' } };
         const dateError = getReimbursementDateError(item.expense_date, getTodayIsoDate());
         if (dateError) return { status: 400, body: { error: `Expense row ${index + 1}: ${dateError}` } };
       }
 
+      const validAmount = isNaN(numericAmount) || numericAmount < 0 ? 0 : numericAmount;
       itemsToCreate.push({
-        category: normalizeExpenseCategory(item.category),
-        amount: numericAmount,
-        receipt_url: item.receipt_url,
-        or_number: item.or_number,
-        vendor: item.vendor,
-        expense_date: item.expense_date,
-        payment_method: item.payment_method,
+        category: normalizeExpenseCategory(item.category || 'Other'),
+        amount: validAmount,
+        receipt_url: item.receipt_url || '',
+        or_number: item.or_number || '',
+        vendor: item.vendor || '',
+        expense_date: item.expense_date || getTodayIsoDate(),
+        payment_method: item.payment_method || '',
         business_purpose: item.business_purpose || remarks ||
           (isTransportReimbursement ? 'Business transport reimbursement' : `Sales reimbursement for meeting with ${mom?.client || 'client'}`)
       });
-      claimTotal += numericAmount;
+      claimTotal += validAmount;
     }
     mainCategory = itemsToCreate.length === 1 ? itemsToCreate[0].category : 'Multiple Categories';
-    mainReceipt = itemsToCreate[0].receipt_url;
+    mainReceipt = itemsToCreate[0]?.receipt_url || '';
   } else {
     if (!is_draft) {
       const dateError = getReimbursementDateError(expense_date, getTodayIsoDate());
       if (dateError) return { status: 400, body: { error: dateError } };
-    }
-    if (!expense_category) return { status: 400, body: { error: 'Expense Category is required.' } };
-    if (total_amount === undefined || total_amount === null || total_amount === '') {
-      return { status: 400, body: { error: 'Expense amount is required.' } };
-    }
-    const numericAmount = Number(total_amount);
-    if (isNaN(numericAmount)) {
-      return { status: 400, body: { error: 'Expense amount must be a valid number.' } };
-    }
-    if (numericAmount <= 0) {
-      return { status: 400, body: { error: 'Expense amount must be greater than zero.' } };
-    }
-    if (!receipt_url) return { status: 400, body: { error: 'Receipt image or PDF is required.' } };
+      if (!expense_category) return { status: 400, body: { error: 'Expense Category is required.' } };
+      if (total_amount === undefined || total_amount === null || total_amount === '') {
+        return { status: 400, body: { error: 'Expense amount is required.' } };
+      }
+      const numericAmount = Number(total_amount);
+      if (isNaN(numericAmount)) {
+        return { status: 400, body: { error: 'Expense amount must be a valid number.' } };
+      }
+      if (numericAmount <= 0) {
+        return { status: 400, body: { error: 'Expense amount must be greater than zero.' } };
+      }
+      if (!receipt_url) return { status: 400, body: { error: 'Receipt image or PDF is required.' } };
 
+      itemsToCreate.push({
+        category: normalizeExpenseCategory(expense_category),
+        amount: numericAmount,
+        receipt_url: receipt_url,
+        or_number: or_number,
+        expense_date,
+        business_purpose: remarks ||
+          (isTransportReimbursement ? 'Business transport reimbursement' : `Sales reimbursement for meeting with ${mom?.client || 'client'}`)
+      });
+      claimTotal = numericAmount;
+      mainCategory = normalizeExpenseCategory(expense_category);
+      mainReceipt = receipt_url;
+    } else {
+      const numericAmount = Number(total_amount) || 0;
+      itemsToCreate.push({
+        category: normalizeExpenseCategory(expense_category || 'Other'),
+        amount: numericAmount,
+        receipt_url: receipt_url || '',
+        or_number: or_number || '',
+        expense_date: expense_date || getTodayIsoDate(),
+        business_purpose: remarks || (isTransportReimbursement ? 'Business transport reimbursement' : 'Draft reimbursement')
+      });
+      claimTotal = numericAmount;
+      mainCategory = normalizeExpenseCategory(expense_category || 'Other');
+      mainReceipt = receipt_url || '';
+    }
+  }
+
+  if (itemsToCreate.length === 0 && is_draft) {
     itemsToCreate.push({
-      category: normalizeExpenseCategory(expense_category),
-      amount: numericAmount,
-      receipt_url: receipt_url,
-      or_number: or_number,
-      expense_date,
-      business_purpose: remarks ||
-        (isTransportReimbursement ? 'Business transport reimbursement' : `Sales reimbursement for meeting with ${mom?.client || 'client'}`)
+      category: 'Other',
+      amount: 0,
+      receipt_url: '',
+      or_number: '',
+      expense_date: getTodayIsoDate(),
+      business_purpose: remarks || (isTransportReimbursement ? 'Business transport reimbursement' : 'Draft reimbursement')
     });
-    claimTotal = numericAmount;
-    mainCategory = normalizeExpenseCategory(expense_category);
-    mainReceipt = receipt_url;
+    mainCategory = 'Other';
+    mainReceipt = '';
   }
 
   if (!is_draft) {
@@ -252,7 +320,7 @@ export async function createClaim(userId: string | null, body: any) {
     requestor_id: user.id,
     current_approver_id: currentApproverId,
     original_approver_id: originalApproverId,
-    mom_id: mom_id || undefined,
+    mom_id: mom?.id || mom_id || undefined,
     claim_type: claimType,
     status: is_draft ? ClaimStatus.DRAFT : ClaimStatus.PENDING_APPROVAL,
     total_amount: claimTotal,
@@ -343,7 +411,7 @@ You'll receive another email as soon as ${approverName} makes a decision.`,
     }
   }
 
-  return { status: 200, body: claim };
+  return { status: 200, body: { ...claim, mom } };
 }
 
 export async function resubmitClaim(userId: string | null, id: string, body: any) {
@@ -352,8 +420,8 @@ export async function resubmitClaim(userId: string | null, id: string, body: any
 
   const claim = state.claims.find(c => c.id === id && c.requestor_id === user.id);
   if (!claim) return { status: 404, body: { error: 'Claim not found' } };
-  if (claim.status !== ClaimStatus.RETURNED) {
-    return { status: 400, body: { error: 'Only a claim that has been Returned can be revised and resubmitted.' } };
+  if (claim.status !== ClaimStatus.RETURNED && claim.status !== ClaimStatus.DRAFT) {
+    return { status: 400, body: { error: 'Only a claim that has been Returned or is a Draft can be revised and submitted.' } };
   }
 
   const { mom_id, claim_type, expense_category, total_amount, receipt_url, or_number, expense_date, remarks, supporting_documents, line_items } = body || {};
@@ -479,15 +547,28 @@ export async function resubmitClaim(userId: string | null, id: string, body: any
   claim.updated_at = new Date().toISOString();
   claim.flagged_high_value = itemsToCreate.some(item => item.amount > state.systemSettings.highValueThreshold);
 
-  addHistory(claim.id, oldStatus, ClaimStatus.PENDING_APPROVAL, user.id, 'Revised and resubmitted by requestor after being returned');
+  const actionDescription = oldStatus === ClaimStatus.DRAFT
+    ? 'Completed and submitted by requestor from draft'
+    : 'Revised and resubmitted by requestor after being returned';
+  addHistory(claim.id, oldStatus, ClaimStatus.PENDING_APPROVAL, user.id, actionDescription);
 
   const claimNumber = claim.claim_number || `REIM-${claim.id.substring(0, 6)}`;
 
   if (claim.current_approver_id) {
     const approverName = state.users.find(u => u.id === claim.current_approver_id)?.name || 'Approver';
 
-    const emailSubject = `Reimbursement Resubmitted - ${claimNumber}`;
-    const emailBody = `A previously returned reimbursement request ${claimNumber} by ${user.name} has been revised and resubmitted, and is awaiting your review and approval.
+    const emailSubject = oldStatus === ClaimStatus.DRAFT
+      ? `Reimbursement Submitted - ${claimNumber}`
+      : `Reimbursement Resubmitted - ${claimNumber}`;
+    const emailBody = oldStatus === ClaimStatus.DRAFT
+      ? `A reimbursement request ${claimNumber} by ${user.name} has been submitted and is awaiting your review and approval.
+
+Reference:
+${claimNumber}
+
+Required Action:
+Please log in to the system and navigate to the Approval Queue to approve or reject this claim.`
+      : `A previously returned reimbursement request ${claimNumber} by ${user.name} has been revised and resubmitted, and is awaiting your review and approval.
 
 Reference:
 ${claimNumber}
@@ -498,8 +579,15 @@ Please log in to the system and navigate to the Approval Queue to approve or rej
 
     sendEmail(
       user.id,
-      `Reimbursement Resubmitted - ${claimNumber}`,
-      `Your revised reimbursement claim ${claimNumber} has been successfully resubmitted and routed to ${approverName} for review.
+      emailSubject,
+      oldStatus === ClaimStatus.DRAFT
+        ? `Your reimbursement claim ${claimNumber} for ${formatPHP(claimTotal)} has been successfully submitted and routed to ${approverName} for review.
+
+Reference:
+${claimNumber}
+
+You'll receive another email as soon as ${approverName} makes a decision.`
+        : `Your revised reimbursement claim ${claimNumber} has been successfully resubmitted and routed to ${approverName} for review.
 
 Reference:
 ${claimNumber}
@@ -518,6 +606,46 @@ You'll receive another email as soon as ${approverName} makes a decision.`,
   }
 
   return { status: 200, body: claim };
+}
+
+export async function deleteDraftClaim(userId: string | null, claimId: string) {
+  const user = findUser(userId);
+  if (!user) return { status: 401, body: { error: 'Unauthorized' } };
+
+  const claimIndex = state.claims.findIndex(c => c.id === claimId);
+  if (claimIndex === -1) return { status: 404, body: { error: 'Claim not found' } };
+
+  const claim = state.claims[claimIndex];
+  if (claim.requestor_id !== user.id && user.role !== UserRole.ADMIN) {
+    return { status: 403, body: { error: 'Forbidden' } };
+  }
+
+  if (claim.status !== ClaimStatus.DRAFT) {
+    return { status: 400, body: { error: 'Only draft claims can be deleted.' } };
+  }
+
+  if (claim.mom_id) {
+    const mom = state.moms.find(m => m.id === claim.mom_id);
+    if (mom && mom.claim_id === claim.id) {
+      mom.claim_id = undefined;
+    }
+  }
+
+  for (let i = state.expenses.length - 1; i >= 0; i--) {
+    if (state.expenses[i].claim_id === claim.id) {
+      state.expenses.splice(i, 1);
+    }
+  }
+
+  for (let i = state.statusHistories.length - 1; i >= 0; i--) {
+    if (state.statusHistories[i].claim_id === claim.id) {
+      state.statusHistories.splice(i, 1);
+    }
+  }
+
+  state.claims.splice(claimIndex, 1);
+
+  return { status: 200, body: { message: 'Draft deleted successfully.' } };
 }
 
 export async function approveClaim(userId: string | null, id: string, body: any) {
