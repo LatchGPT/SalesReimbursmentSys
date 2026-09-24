@@ -103,6 +103,8 @@
 
   --shadow-sm: 0px 1px 3px rgba(15, 23, 42, 0.08);
   --shadow-md: 0px 10px 15px -3px rgba(15, 23, 42, 0.10);
+
+  --ease-sidebar: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @layer base {
@@ -175,6 +177,16 @@
   .login-orb-drift-b,
   .login-orb-drift-c {
     animation: none;
+  }
+
+  aside,
+  main,
+  header,
+  aside *,
+  main *,
+  header * {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
   }
 }
 
