@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { NavLink } from 'react-router-dom';
 import { cn } from '../ui/Button';
 import { useAppContext } from '../AppContext';
@@ -113,78 +114,53 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
       )}
       
       <aside className={cn(
-        "flex flex-col h-screen py-6 bg-primary fixed left-0 top-0 z-30 transition-all duration-300 shadow-xl",
+        "flex flex-col h-screen pb-6 bg-primary fixed left-0 top-0 z-30 transition-all duration-300 shadow-xl",
         isCollapsed ? "w-[220px] lg:w-[80px]" : "w-[220px] lg:w-[220px]",
         isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         {/* Header with Logo and Mobile Close control */}
         <div className={cn(
-          "mb-8 flex items-center transition-all duration-300 relative",
-          isCollapsed ? "px-3 lg:px-2 justify-center" : "px-4 justify-center"
+          "h-[64px] shrink-0 flex items-center justify-center relative mb-4 transition-all duration-300",
+          isCollapsed ? "px-2" : "px-4"
         )}>
-          <div className={cn(
-            "flex items-center justify-center w-full",
-            isCollapsed ? "h-8" : "h-12"
-          )}>
-            <img 
-              key={isCollapsed ? 'collapsed-logo' : 'full-logo'}
-              src={isCollapsed ? '/logo/logo-icon.png' : '/logo/logo.png'}
-              alt="Company Logo" 
-              fetchPriority="high"
-              width={isCollapsed ? 32 : 180}
-              height={isCollapsed ? 32 : 48}
-              className={cn(
-                "block w-auto object-contain transition-all duration-300",
-                isCollapsed ? "max-w-8 max-h-8 lg:max-h-8" : "max-w-[172px] max-h-11"
-              )}
-              onError={(e) => {
-                const target = e.currentTarget;
-                const currentSrc = target.src;
-                if (isCollapsed) {
-                  if (currentSrc.endsWith('/logo-icon.png')) {
-                    target.src = '/logo/logo-icon.png';
-                  } else if (currentSrc.endsWith('/logo/logo-icon.png')) {
-                    target.src = '/logo/icon.png';
-                  } else if (currentSrc.endsWith('/logo/icon.png')) {
-                    target.src = '/logo-icon.svg';
-                  } else if (currentSrc.endsWith('/logo-icon.svg')) {
-                    target.src = '/logo/logo-icon.svg';
-                  } else if (currentSrc.endsWith('/logo/logo-icon.svg')) {
-                    target.src = '/logo.png';
-                  } else {
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent && !parent.querySelector('.logo-fallback')) {
-                      const fallback = document.createElement('div');
-                      fallback.className = 'logo-fallback font-bold text-white text-lg font-sans tracking-wide';
-                      fallback.innerText = 'M';
-                      parent.appendChild(fallback);
-                    }
-                  }
-                } else {
-                  if (currentSrc.endsWith('/logo.png')) {
-                    target.src = '/logo/logo.png';
-                  } else if (currentSrc.endsWith('/logo/logo.png')) {
-                    target.src = '/logo.svg';
-                  } else if (currentSrc.endsWith('/logo.svg')) {
-                    target.src = '/logo/logo.svg';
-                  } else {
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent && !parent.querySelector('.logo-fallback')) {
-                      const fallback = document.createElement('div');
-                      fallback.className = 'logo-fallback font-bold text-white text-lg font-sans tracking-wide';
-                      fallback.innerText = 'MICROGENESIS';
-                      parent.appendChild(fallback);
-                    }
-                  }
-                }
-              }} 
-            />
+          <div className="relative flex items-center justify-center w-full h-12">
+            {/* Collapsed Saturn icon */}
+            <div className={cn(
+              "transition-opacity duration-300 flex items-center justify-center",
+              isCollapsed ? "opacity-100" : "opacity-0 pointer-events-none absolute"
+            )}>
+              <Image 
+                src="/logo-icon.png"
+                alt="Microgenesis" 
+                priority
+                width={48}
+                height={48}
+                className="w-12 h-12 object-contain"
+              />
+            </div>
+
+            {/* Expanded Full Logo */}
+            <div className={cn(
+              "transition-opacity duration-300 flex items-center justify-center",
+              isCollapsed ? "opacity-0 pointer-events-none absolute" : "opacity-100"
+            )}>
+              <Image 
+                src="/logo/logo.png"
+                alt="Microgenesis" 
+                priority
+                width={160}
+                height={42}
+                className="h-10 w-auto max-w-[172px] object-contain"
+              />
+            </div>
           </div>
 
           {/* Mobile Close Button */}
-          <button aria-label="Close sidebar" className="lg:hidden absolute right-4 text-white/90 hover:text-white focus:ring-2 focus:ring-white focus-visible:outline-none rounded p-1" onClick={onClose}>
+          <button 
+            aria-label="Close sidebar" 
+            className="lg:hidden absolute right-4 text-white/90 hover:text-white focus:ring-2 focus:ring-white focus-visible:outline-none rounded p-1" 
+            onClick={onClose}
+          >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
