@@ -108,26 +108,32 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
       {/* Mobile overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-inverse-surface/50 z-20 lg:hidden transition-opacity" 
+          className="fixed inset-0 bg-inverse-surface/50 z-20 lg:hidden transition-opacity duration-300" 
           onClick={onClose}
         />
       )}
       
-      <aside className={cn(
-        "flex flex-col h-screen pb-6 bg-primary fixed left-0 top-0 z-30 transition-all duration-300 shadow-xl",
-        isCollapsed ? "w-[220px] lg:w-[80px]" : "w-[220px] lg:w-[220px]",
-        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
+      <aside 
+        id="sidebar-navigation"
+        aria-label="Main Navigation"
+        className={cn(
+          "flex flex-col h-screen pb-6 bg-primary fixed left-0 top-0 z-30 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] shadow-xl",
+          isCollapsed ? "w-[220px] lg:w-[80px]" : "w-[220px] lg:w-[220px]",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
         {/* Header with Logo and Mobile Close control */}
         <div className={cn(
-          "h-[64px] shrink-0 flex items-center justify-center relative mb-4 transition-all duration-300",
+          "h-[64px] shrink-0 flex items-center justify-center relative mb-4 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
           isCollapsed ? "px-2" : "px-4"
         )}>
           <div className="relative flex items-center justify-center w-full h-12">
             {/* Collapsed Saturn icon */}
             <div className={cn(
-              "transition-opacity duration-300 flex items-center justify-center",
-              isCollapsed ? "opacity-100" : "opacity-0 pointer-events-none absolute"
+              "transition-opacity duration-300 ease-[cubic-bezier(0.2,0,0,1)] flex items-center justify-center absolute",
+              isCollapsed 
+                ? "opacity-0 lg:opacity-100 pointer-events-none lg:pointer-events-auto" 
+                : "opacity-0 pointer-events-none"
             )}>
               <Image 
                 src="/logo-icon.png"
@@ -141,8 +147,10 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
 
             {/* Expanded Full Logo */}
             <div className={cn(
-              "transition-opacity duration-300 flex items-center justify-center",
-              isCollapsed ? "opacity-0 pointer-events-none absolute" : "opacity-100"
+              "transition-opacity duration-300 ease-[cubic-bezier(0.2,0,0,1)] flex items-center justify-center absolute",
+              isCollapsed 
+                ? "opacity-100 lg:opacity-0 pointer-events-auto lg:pointer-events-none" 
+                : "opacity-100 pointer-events-auto"
             )}>
               <Image 
                 src="/logo/logo.png"
@@ -157,8 +165,9 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
 
           {/* Mobile Close Button */}
           <button 
+            type="button"
             aria-label="Close sidebar" 
-            className="lg:hidden absolute right-4 text-white/90 hover:text-white focus:ring-2 focus:ring-white focus-visible:outline-none rounded p-1" 
+            className="lg:hidden absolute right-4 text-white/90 hover:text-white focus:ring-2 focus:ring-white focus-visible:outline-none rounded p-1 cursor-pointer" 
             onClick={onClose}
           >
             <span className="material-symbols-outlined">close</span>
@@ -168,13 +177,19 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
         {/* Desktop Circular Collapse Toggle Button on Sidebar Right Edge */}
         {onToggleCollapse && (
           <button 
+            type="button"
             onClick={onToggleCollapse}
+            aria-expanded={!isCollapsed}
+            aria-controls="sidebar-navigation"
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white text-primary shadow-lg hover:bg-slate-50 hover:scale-110 active:scale-95 border border-blue-200 transition-all absolute -right-4 top-1/2 -translate-y-1/2 z-40 focus-visible:outline-none focus:ring-2 focus:ring-primary"
+            className="hidden lg:flex items-center justify-center w-8 h-8 rounded-full bg-white text-primary shadow-lg hover:bg-slate-50 hover:scale-110 active:scale-95 border border-blue-200 transition-all duration-200 absolute -right-4 top-1/2 -translate-y-1/2 z-40 focus-visible:outline-none focus:ring-2 focus:ring-primary cursor-pointer select-none"
             title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <span className="material-symbols-outlined text-[20px] font-bold">
-              {isCollapsed ? 'chevron_right' : 'chevron_left'}
+            <span className={cn(
+              "material-symbols-outlined text-[20px] font-bold transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)] select-none",
+              isCollapsed ? "rotate-180" : "rotate-0"
+            )}>
+              chevron_left
             </span>
           </button>
         )}
@@ -191,47 +206,58 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
                 className={cn(startsSection && index > 0 ? "mt-3 pt-3 border-t border-white/15" : "")}
               >
               {startsSection && (
-                <p className={cn(
-                  "px-5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55",
-                  isCollapsed ? "lg:hidden" : ""
+                <div className={cn(
+                  "overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  isCollapsed ? "lg:max-h-0 lg:opacity-0" : "max-h-8 opacity-100"
                 )}>
-                  {item.section}
-                </p>
+                  <p className="px-5 pb-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/55 whitespace-nowrap">
+                    {item.section}
+                  </p>
+                </div>
               )}
               <NavLink
                 to={to}
                 onClick={() => onClose()}
                 title={count > 0 ? `${item.label} (${count})` : item.label}
                 className={({ isActive }) => cn(
-                  "flex items-center py-3 pr-4 group transition-all duration-200 ease-in-out focus:ring-2 focus:ring-white focus:ring-inset outline-none",
-                  isCollapsed ? "lg:justify-center lg:px-0" : "",
+                  "flex items-center h-12 group transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-inset outline-none relative overflow-hidden",
                   isActive
-                    ? "text-white font-bold border-l-4 border-white bg-black/15 shadow-inner" + (isCollapsed ? " pl-4 lg:pl-0" : " pl-4")
-                    : "text-white/90 font-medium hover:bg-white/15 hover:text-white" + (isCollapsed ? " pl-5 lg:pl-0" : " pl-5")
+                    ? "text-white font-bold border-l-4 border-white bg-black/15 shadow-inner"
+                    : "text-white/90 font-medium hover:bg-white/15 hover:text-white border-l-4 border-transparent"
                 )}
               >
-                <span className="relative flex-shrink-0">
-                  <span className={cn(
-                    "material-symbols-outlined transition-all",
-                    isCollapsed ? "lg:mr-0 text-[22px]" : "mr-3 text-[24px]"
-                  )}>
-                    {item.icon}
-                  </span>
-                  {count > 0 && isCollapsed && (
-                    <span className="hidden lg:flex absolute -top-1 -right-0.5 min-w-[8px] h-2 w-2 rounded-full bg-error" />
-                  )}
-                </span>
-                <span className={cn(
-                  "font-body-base text-body-base whitespace-nowrap transition-all duration-200 flex-1 min-w-0",
-                  isCollapsed ? "lg:hidden" : "flex items-center gap-2"
+                {/* Icon wrapper - centered in collapsed rail */}
+                <div className={cn(
+                  "shrink-0 flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                  isCollapsed ? "w-[56px] lg:w-[76px]" : "w-[56px]"
                 )}>
-                  <span className="truncate min-w-0 flex-1">{item.label}</span>
+                  <span className="relative flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[24px]">
+                      {item.icon}
+                    </span>
+                    {count > 0 && (
+                      <span className={cn(
+                        "hidden lg:flex absolute -top-1 -right-1 min-w-[8px] h-2 w-2 rounded-full bg-error ring-2 ring-primary transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]",
+                        isCollapsed ? "scale-100 opacity-100" : "scale-0 opacity-0 pointer-events-none"
+                      )} />
+                    )}
+                  </span>
+                </div>
+
+                {/* Text Label & Badge */}
+                <div className={cn(
+                  "flex items-center gap-2 flex-1 min-w-0 pr-3 overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] whitespace-nowrap",
+                  isCollapsed 
+                    ? "lg:max-w-0 lg:opacity-0 lg:-translate-x-2 lg:pointer-events-none max-w-[155px] opacity-100 translate-x-0" 
+                    : "max-w-[155px] opacity-100 translate-x-0"
+                )}>
+                  <span className="truncate min-w-0 flex-1 font-body-base text-body-base">{item.label}</span>
                   {count > 0 && (
-                    <span className="shrink-0 min-w-[24px] h-5 px-1.5 rounded-full bg-white/90 text-primary text-[12px] font-bold flex items-center justify-center">
+                    <span className="shrink-0 min-w-[22px] h-5 px-1.5 rounded-full bg-white/90 text-primary text-[11px] font-bold flex items-center justify-center shadow-sm">
                       {count > 99 ? '99+' : count}
                     </span>
                   )}
-                </span>
+                </div>
               </NavLink>
               </div>
             );
