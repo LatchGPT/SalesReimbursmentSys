@@ -80,12 +80,12 @@ export function FinanceDashboard() {
         <KPICard title="Closed This Month" value={completedThisMonth.length.toString()} icon="task_alt" iconColorClass="bg-primary-container text-on-primary-container" />
       </div>
 
-      <Card>
-        <CardHeader className="bg-surface-container-lowest">
-          <h2 className="font-headline-md text-on-surface">Recent Financial Records</h2>
+      <Card className="bg-white">
+        <CardHeader className="bg-white">
+          <h2 className="font-headline-md text-slate-900 font-bold">Recent Financial Records</h2>
           <Button size="sm" variant="ghost" onClick={() => navigate('/claims')}>View all</Button>
         </CardHeader>
-        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
+        <div className="border-b border-outline-variant bg-white p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <div className="relative min-w-0 flex-1">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
@@ -125,7 +125,7 @@ export function FinanceDashboard() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Reference</th>
                 <th className="px-6 py-4">Requestor</th>
@@ -135,7 +135,7 @@ export function FinanceDashboard() {
                 <th className="px-6 py-4 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {recent.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-outline">
@@ -146,7 +146,7 @@ export function FinanceDashboard() {
               ) : recent.map(claim => {
                 const requestor = users.find(u => u.id === claim.requestorId);
                 return (
-                  <tr key={claim.id} className="hover:bg-primary-container/5 cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+                  <tr key={claim.id} className="hover:bg-slate-50 cursor-pointer bg-white" onClick={() => navigate(`/claims/${claim.id}`)}>
                     <td className="px-6 py-4 font-mono-data font-bold text-primary">{claim.ref}</td>
                     <td className="px-6 py-4 text-sm text-on-surface">{requestor?.name || 'Unknown'}</td>
                     <td className="px-6 py-4">

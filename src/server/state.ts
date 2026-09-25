@@ -110,28 +110,11 @@ export const withEntraFields = (u: User): User => ({
 });
 
 export const buildDefaultUsers = (): User[] => [
-  { id: 'u13', name: 'Mia Fernandez', email: 'mia@mgenesis.com', role: UserRole.REQUESTOR, department: 'Marketing', job_title: 'Marketing Specialist', reports_to: 'u14', avatar_url: '/avatars/corp_female_1.jpg' },
-  { id: 'u14', name: 'Noah Villanueva', email: 'noah@mgenesis.com', role: UserRole.APPROVER, department: 'Marketing', job_title: 'Marketing Director', reports_to: 'u19', avatar_url: '/avatars/corp_male_1.jpg' },
-  { id: 'u15', name: 'Olivia Cruz', email: 'olivia@mgenesis.com', role: UserRole.REQUESTOR, department: 'Engineering', job_title: 'Software Engineer', reports_to: 'u16', avatar_url: '/avatars/corp_female_2.jpg' },
-  { id: 'u16', name: 'Peter Aquino', email: 'peter@mgenesis.com', role: UserRole.APPROVER, department: 'Engineering', job_title: 'Engineering Manager', reports_to: 'u19', avatar_url: '/avatars/corp_male_2.jpg' },
-  { id: 'u17', name: 'Quinn Domingo', email: 'quinn@mgenesis.com', role: UserRole.REQUESTOR, department: 'Operations', job_title: 'Operations Coordinator', reports_to: 'u18', avatar_url: '/avatars/corp_female_3.jpg' },
-  { id: 'u18', name: 'Ryan Torres', email: 'ryan@mgenesis.com', role: UserRole.APPROVER, department: 'Operations', job_title: 'Operations Manager', reports_to: 'u19', avatar_url: '/avatars/corp_male_3.jpg' },
-  { id: 'u19', name: 'Sarah Bautista', email: 'sarah@mgenesis.com', role: UserRole.APPROVER, department: 'Executive', job_title: 'VP of Operations', reports_to: null, avatar_url: '/avatars/corp_female_4.jpg' },
-  { id: 'u1', name: 'Alice Reyes', email: 'alice@mgenesis.com', role: UserRole.REQUESTOR, department: 'Sales', job_title: 'Sales Executive', reports_to: 'u2', avatar_url: '/avatars/corp_female_1.jpg' },
-  { id: 'u2', name: 'Bob Santos', email: 'bob@mgenesis.com', role: UserRole.APPROVER, department: 'Sales', job_title: 'Sales Director', reports_to: 'u9', avatar_url: '/avatars/corp_male_4.jpg' },
+  { id: 'u1', name: 'Mia Fernandez', email: 'mia@mgenesis.com', role: UserRole.REQUESTOR, department: 'Marketing', job_title: 'Marketing Specialist', reports_to: 'u2', avatar_url: '/avatars/corp_female_1.jpg' },
+  { id: 'u2', name: 'Noah Villanueva', email: 'noah@mgenesis.com', role: UserRole.APPROVER, department: 'Marketing', job_title: 'Marketing Director', reports_to: null, avatar_url: '/avatars/corp_male_1.jpg' },
   { id: 'u3', name: 'Carol Ramos', email: 'carol@mgenesis.com', role: UserRole.CUSTODIAN, department: 'Finance', job_title: 'Reimbursement Processor', reports_to: null, avatar_url: '/avatars/corp_female_2.jpg' },
   { id: 'u4', name: 'Dave Lopez', email: 'dave@mgenesis.com', role: UserRole.ADMIN, department: 'IT', job_title: 'System Admin', reports_to: null, avatar_url: '/avatars/corp_male_1.jpg' },
   { id: 'u22', name: 'Sofia Lim', email: 'sofia@mgenesis.com', role: UserRole.FINANCE, department: 'Finance', job_title: 'Finance Analyst', reports_to: null, avatar_url: '/avatars/corp_female_4.jpg' },
-  { id: 'u5', name: 'Eve Garcia', email: 'eve@mgenesis.com', role: UserRole.REQUESTOR, department: 'Sales', job_title: 'Sales Executive', reports_to: 'u2', avatar_url: '/avatars/corp_female_3.jpg' },
-  { id: 'u6', name: 'Frank Mendoza', email: 'frank@mgenesis.com', role: UserRole.REQUESTOR, department: 'Sales', job_title: 'Sales Executive', reports_to: 'u2', avatar_url: '/avatars/corp_male_2.jpg' },
-  { id: 'u7', name: 'Grace Navarro', email: 'grace@mgenesis.com', role: UserRole.APPROVER, department: 'Sales', job_title: 'Sales Director', reports_to: 'u9', avatar_url: '/avatars/corp_female_4.jpg' },
-  { id: 'u8', name: 'Henry Castillo', email: 'henry@mgenesis.com', role: UserRole.APPROVER, department: 'Sales', job_title: 'Sales Director', reports_to: 'u9', avatar_url: '/avatars/corp_male_3.jpg' },
-  { id: 'u9', name: 'Ivy Salazar', email: 'ivy@mgenesis.com', role: UserRole.APPROVER, department: 'Sales', job_title: 'VP of Sales', reports_to: null, avatar_url: '/avatars/corp_female_1.jpg' },
-  { id: 'u10', name: 'Jack Herrera', email: 'jack@mgenesis.com', role: UserRole.APPROVER, department: 'Sales', job_title: 'Regional Sales Manager', reports_to: 'u9', avatar_url: '/avatars/corp_male_4.jpg' },
-  { id: 'u11', name: 'Kyle Ocampo', email: 'kyle@mgenesis.com', role: UserRole.REQUESTOR, department: 'Sales', job_title: 'Sales Executive', reports_to: 'u10', avatar_url: '/avatars/corp_male_1.jpg' },
-  { id: 'u12', name: 'Liam Villareal', email: 'liam@mgenesis.com', role: UserRole.REQUESTOR, department: 'Sales', job_title: 'Sales Executive', reports_to: 'u10', avatar_url: '/avatars/corp_male_2.jpg' },
-  { id: 'u20', name: 'Ella Flores', email: 'ella@mgenesis.com', role: UserRole.REQUESTOR, department: 'Marketing', job_title: 'Marketing Coordinator', reports_to: 'u14', avatar_url: '/avatars/corp_female_2.jpg' },
-  { id: 'u21', name: 'Marco Bernardo', email: 'marco@mgenesis.com', role: UserRole.REQUESTOR, department: 'Marketing', job_title: 'Content Strategist', reports_to: 'u14', avatar_url: '/avatars/corp_male_3.jpg' }
 ].map(withEntraFields);
 
 export const applyHierarchySyncDefaults = (userList: User[]) => {

@@ -146,16 +146,18 @@ export function ApproverDashboard() {
           <p className="font-headline-lg text-on-surface">{oldestPendingAging?.text || '—'}</p>
           <p className="text-[12px] text-outline mt-1">{oldestPending?.ref || 'Queue is clear'}</p>
         </div>
-        <div className="bg-surface-container-lowest p-5 border border-outline-variant rounded-card shadow-sm">
+        <div className="bg-white p-6 border border-outline-variant rounded-card shadow-sm">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="font-label-sm text-outline uppercase mb-2">Total Team Spend</p>
-              <p className="font-headline-lg text-on-surface">{formatMoney(teamSpend)}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-label-sm text-outline uppercase tracking-wider mb-2">Total Team Spend</p>
+              <p className="font-headline-lg text-on-surface truncate">{formatMoney(teamSpend)}</p>
             </div>
-            <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-              <span aria-hidden="true" className="material-symbols-outlined shrink-0 text-primary">groups</span>
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100/80 shadow-xs" title="Team members">
+                <span aria-hidden="true" className="material-symbols-outlined text-[20px]">groups</span>
+              </div>
               <label
-                className="relative inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-outline-variant text-outline transition-colors hover:border-primary hover:text-primary focus-within:ring-2 focus-within:ring-primary/30"
+                className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-outline-variant bg-white text-outline shadow-xs transition-all hover:border-primary hover:text-primary hover:bg-slate-50 focus-within:ring-2 focus-within:ring-primary/30"
                 title={`Filter month: ${formatMonthValue(teamSpendMonth)}`}
               >
                 <span aria-hidden="true" className="material-symbols-outlined text-[19px]">calendar_month</span>
@@ -169,14 +171,14 @@ export function ApproverDashboard() {
               </label>
             </div>
           </div>
-          <p className="text-[11px] text-outline mt-2">Approved, released, or completed direct-report requests.</p>
+          <p className="text-[11px] text-outline mt-3">Approved, released, or completed direct-report requests.</p>
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="bg-surface-container-lowest">
+      <Card className="bg-white">
+        <CardHeader className="bg-white border-b border-outline-variant">
           <div>
-            <h4 className="font-headline-md text-on-surface">Unified Worklist</h4>
+            <h4 className="font-headline-md text-slate-900">Unified Worklist</h4>
             <p className="text-xs text-outline mt-1">Oldest requests are shown first.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -186,7 +188,7 @@ export function ApproverDashboard() {
             </Button>
           </div>
         </CardHeader>
-        <div className="flex flex-wrap items-center gap-3 border-b border-outline-variant bg-surface-container-lowest px-6 py-3">
+        <div className="flex flex-wrap items-center gap-3 border-b border-outline-variant bg-white px-6 py-3">
           {(['All', 'Reimbursement', 'Cash Advance', 'Liquidation'] as const).map(t => (
             <button
               key={t}
@@ -199,7 +201,7 @@ export function ApproverDashboard() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Requestor</th>
                 <th className="px-6 py-4">Ref &amp; Type</th>
@@ -210,7 +212,7 @@ export function ApproverDashboard() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {displayedClaims.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-outline">

@@ -29,6 +29,22 @@ const ROLE_META: Record<string, { label: string; icon: string }> = {
   admin: { label: 'Administrator', icon: 'admin_panel_settings' },
 };
 
+const ROLE_BADGES: Record<string, string> = {
+  requestor: 'bg-blue-100 text-blue-800',
+  approver: 'bg-indigo-100 text-indigo-800',
+  custodian: 'bg-emerald-100 text-emerald-800',
+  finance: 'bg-amber-100 text-amber-800',
+  admin: 'bg-purple-100 text-purple-800',
+};
+
+const PRIMARY_DEMO_USER_IDS: Record<string, string> = {
+  requestor: 'u1',  // Mia Fernandez
+  approver: 'u2',   // Noah Villanueva
+  custodian: 'u3',  // Carol Ramos
+  finance: 'u22',   // Sofia Lim
+  admin: 'u4',      // Dave Lopez
+};
+
 const MicrosoftMark = () => (
   <span className="grid h-[18px] w-[18px] grid-cols-2 gap-[2px]" aria-hidden="true">
     <span className="bg-[#f25022]" />
@@ -65,8 +81,13 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
           const nextUsers = await usersResponse.json() as DemoUser[];
           if (!active) return;
           setUsers(nextUsers);
-          const requestor = nextUsers.find(user => user.role.toLowerCase() === 'requestor');
-          setSelectedUserId(requestor?.id || nextUsers[0]?.id || '');
+          const defaultUser = nextUsers.find(u => u.id === PRIMARY_DEMO_USER_IDS.requestor)
+            || nextUsers.find(user => user.role.toLowerCase() === 'requestor')
+            || nextUsers[0];
+          if (defaultUser) {
+            setSelectedRole(defaultUser.role.toLowerCase());
+            setSelectedUserId(defaultUser.id);
+          }
         }
       } catch (loadError) {
         if (active) setError(loadError instanceof Error ? loadError.message : 'Could not load sign-in.');
@@ -79,22 +100,21 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
     return () => { active = false; };
   }, []);
 
-  const roles = useMemo(() => {
-    const available = Array.from(new Set(users.map(user => user.role.toLowerCase())));
-    return Object.keys(ROLE_META).filter(role => available.includes(role));
+  const demoPersonas = useMemo(() => {
+    const availableRoles = new Set(users.map(u => u.role.toLowerCase()));
+    return Object.keys(ROLE_META)
+      .filter(role => availableRoles.has(role))
+      .map(roleKey => {
+        const preferredId = PRIMARY_DEMO_USER_IDS[roleKey];
+        const user = users.find(u => u.id === preferredId) || users.find(u => u.role.toLowerCase() === roleKey);
+        return {
+          roleKey,
+          meta: ROLE_META[roleKey],
+          user,
+        };
+      })
+      .filter((p): p is { roleKey: string; meta: { label: string; icon: string }; user: DemoUser } => Boolean(p.user));
   }, [users]);
-
-  const roleUsers = useMemo(
-    () => users.filter(user => user.role.toLowerCase() === selectedRole),
-    [selectedRole, users],
-  );
-
-  const selectedUser = users.find(user => user.id === selectedUserId);
-
-  const chooseRole = (role: string) => {
-    setSelectedRole(role);
-    setSelectedUserId(users.find(user => user.role.toLowerCase() === role)?.id || '');
-  };
 
   const startMicrosoftSignIn = () => {
     if (config?.microsoft.configured) {
@@ -221,48 +241,67 @@ export function Login({ onLoggedIn }: { onLoggedIn: () => void }) {
                       <span className="material-symbols-outlined text-[20px] text-outline">{demoOpen ? 'expand_less' : 'expand_more'}</span>
                     </button>
 
-                    {demoOpen && <div id="demo-access-panel" className="mt-4 rounded-lg border border-[#e1e6ee] bg-[#f8fafc] p-4">
-                    <label className="block text-xs font-semibold text-on-surface-variant" htmlFor="demo-role">Role</label>
-                    <div className="relative mt-2">
-                      <select
-                        id="demo-role"
-                        value={selectedRole}
-                        onChange={event => chooseRole(event.target.value)}
-                        className="h-11 w-full appearance-none rounded-lg border border-[#cbd2dc] bg-white pl-4 pr-10 text-sm font-medium text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      >
-                        {roles.map(role => <option key={role} value={role}>{ROLE_META[role]?.label || role}</option>)}
-                      </select>
-                      <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-outline">expand_more</span>
-                    </div>
+                    {demoOpen && (
+                      <div id="demo-access-panel" className="mt-4 rounded-lg border border-[#e1e6ee] bg-[#f8fafc] p-3.5">
+                        <p className="mb-2.5 text-xs font-semibold text-on-surface-variant">Select demo persona</p>
+                        <div className="flex flex-col gap-2">
+                          {demoPersonas.map(({ roleKey, meta, user }) => {
+                            const isSelected = selectedUserId === user.id;
+                            return (
+                              <button
+                                key={user.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedRole(roleKey);
+                                  setSelectedUserId(user.id);
+                                }}
+                                onDoubleClick={continueAsDemo}
+                                className={`flex w-full items-center gap-3 rounded-lg border p-2.5 text-left transition focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 ${
+                                  isSelected
+                                    ? 'border-primary bg-blue-50/70 shadow-xs ring-1 ring-primary/20'
+                                    : 'border-[#cbd2dc]/80 bg-white hover:border-[#cbd2dc] hover:bg-slate-50'
+                                }`}
+                              >
+                                <span
+                                  className={`material-symbols-outlined shrink-0 text-[20px] transition ${
+                                    isSelected ? 'text-primary' : 'text-slate-400'
+                                  }`}
+                                >
+                                  {isSelected ? 'radio_button_checked' : 'radio_button_unchecked'}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="truncate text-sm font-semibold text-on-surface">
+                                      {user.name}
+                                    </span>
+                                    <span
+                                      className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                                        ROLE_BADGES[roleKey] || 'bg-slate-100 text-slate-700'
+                                      }`}
+                                    >
+                                      {meta.label}
+                                    </span>
+                                  </div>
+                                  <p className="mt-0.5 truncate text-xs text-outline">
+                                    {user.job_title} · {user.department}
+                                  </p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
 
-                    <label className="mt-4 block text-xs font-semibold text-on-surface-variant" htmlFor="demo-account">Demo account</label>
-                    <div className="relative mt-2">
-                      <select
-                        id="demo-account"
-                        value={selectedUserId}
-                        onChange={event => setSelectedUserId(event.target.value)}
-                        className="h-12 w-full appearance-none rounded-lg border border-[#cbd2dc] bg-white pl-12 pr-10 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      >
-                        {roleUsers.map(user => <option key={user.id} value={user.id}>{user.name} — {user.job_title}</option>)}
-                      </select>
-                      <span className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-outline">badge</span>
-                      <span className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-outline">expand_more</span>
-                    </div>
-
-                    {selectedUser && (
-                      <p className="mt-2 truncate text-xs text-outline">{selectedUser.department} · {selectedUser.email}</p>
+                        <button
+                          type="button"
+                          onClick={continueAsDemo}
+                          disabled={!selectedUserId}
+                          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-white px-4 text-sm font-semibold text-primary transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Launch demo as {ROLE_META[selectedRole]?.label || selectedRole}
+                          <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                        </button>
+                      </div>
                     )}
-
-                    <button
-                      type="button"
-                      onClick={continueAsDemo}
-                      disabled={!selectedUserId}
-                      className="mt-5 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-white px-4 text-sm font-semibold text-primary transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Launch demo as {ROLE_META[selectedRole]?.label || selectedRole}
-                      <span className="material-symbols-outlined text-[18px]">open_in_new</span>
-                    </button>
-                    </div>}
                   </div>
                 )}
               </>

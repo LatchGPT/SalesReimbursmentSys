@@ -71,22 +71,22 @@ export function CompanyPolicy() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader className="bg-surface-container-lowest">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Per-Category Spending Limits</h3>
+      <Card className="bg-white">
+        <CardHeader className="bg-white border-b border-outline-variant">
+          <h3 className="font-label-md uppercase tracking-wider text-slate-900 font-bold">Per-Category Spending Limits</h3>
         </CardHeader>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Category</th>
                 <th className="px-6 py-4">Max per line item (₱)</th>
                 <th className="px-6 py-4">Current policy</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {EXPENSE_CATEGORIES.map(cat => (
-                <tr key={cat} className="hover:bg-primary-container/5 transition-colors">
+                <tr key={cat} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 font-label-md text-on-surface">{cat}</td>
                   <td className="px-6 py-4">
                     <div className="relative max-w-[200px]">

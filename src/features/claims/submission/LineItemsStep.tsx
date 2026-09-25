@@ -194,9 +194,9 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
               </div>
             )}
             <table className="w-full text-left min-w-[1080px]">
-              <thead className="bg-brand-table-header text-on-surface-variant font-label-sm uppercase tracking-wider">
+              <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
                 <tr>
-                  <th className="px-3 py-3 sticky left-0 bg-brand-table-header z-20 shadow-[1px_0_0_var(--color-brand-border)]">Date of Purchase</th>
+                  <th className="px-3 py-3 sticky left-0 bg-slate-100 z-20 shadow-[1px_0_0_var(--color-brand-border)]">Date of Purchase</th>
                   <th className="px-3 py-3">Category</th>
                   <th className="px-3 py-3">Vendor / Supplier</th>
                   <th className="px-3 py-3">Payment Method</th>
@@ -207,10 +207,10 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                   <th className="px-3 py-3 w-10"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-brand-border">
+              <tbody className="bg-white divide-y divide-outline-variant">
                 {lineItemsLocal.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-brand-row-hover transition-colors group">
-                    <td className="px-3 py-3 sticky left-0 bg-white z-10 shadow-[1px_0_0_var(--color-brand-border)] group-hover:bg-brand-row-hover">
+                  <tr key={idx} className="hover:bg-slate-50 transition-colors group bg-white">
+                    <td className="px-3 py-3 sticky left-0 bg-white z-10 shadow-[1px_0_0_var(--color-brand-border)] group-hover:bg-slate-50">
                       <Input
                         ref={element => { invalidDateInputRefs.current[idx] = element; }}
                         id={`expense-date-${idx}`}

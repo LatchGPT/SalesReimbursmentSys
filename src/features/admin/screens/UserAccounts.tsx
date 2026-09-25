@@ -213,9 +213,9 @@ export function UserAccounts() {
       </div>
 
       <div className="space-y-0">
-      <Card className="rounded-b-none p-4 shadow-none">
+      <Card className="rounded-b-none p-4 shadow-none bg-white">
         <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Registered Users</h3>
+          <h3 className="font-label-md uppercase tracking-wider text-slate-900 font-bold">Registered Users</h3>
           <span className="font-label-sm text-outline whitespace-nowrap">{filteredUsers.length} of {users.length}</span>
         </div>
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
@@ -236,10 +236,10 @@ export function UserAccounts() {
         </div>}
       </Card>
 
-      <Card className="rounded-t-none">
+      <Card className="rounded-t-none bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Email</th>
@@ -250,7 +250,7 @@ export function UserAccounts() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {paginatedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-outline">
@@ -261,7 +261,7 @@ export function UserAccounts() {
               ) : paginatedUsers.map(user => {
                 const manager = users.find(u => u.id === user.reportsTo);
                 return (
-                  <tr key={user.id} className="hover:bg-primary-container/5 transition-colors">
+                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
                         {user.avatarUrl ? (

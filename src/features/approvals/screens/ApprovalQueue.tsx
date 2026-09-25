@@ -171,24 +171,25 @@ export function ApprovalQueue() {
       </div>
 
       {staleClaims.length > 0 && (
-        <Card className="border-tertiary bg-tertiary-container/30">
+        <Card className="border-amber-300 bg-amber-50/80">
           <CardContent className="p-4 flex items-start gap-4">
-            <span className="material-symbols-outlined text-tertiary text-[24px]">warning</span>
+            <span className="material-symbols-outlined text-amber-600 text-[24px]">warning</span>
             <div>
-              <h4 className="font-headline-sm text-on-surface mb-1">Stale Approvals Detected</h4>
-              <p className="text-on-surface-variant text-sm mb-2">You have {staleClaims.length} claims that are routed to you, but the requestor's manager has recently changed. Please review or transfer them.</p>
+              <h4 className="font-headline-sm text-amber-950 mb-1">Stale Approvals Detected</h4>
+              <p className="text-amber-900 text-sm mb-2">You have {staleClaims.length} claims that are routed to you, but the requestor's manager has recently changed. Please review or transfer them.</p>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="border-tertiary text-tertiary" onClick={() => setFilter('Stale')}>Review Stale Claims</Button>
+                <Button size="sm" variant="outline" className="border-amber-400 text-amber-800 hover:bg-amber-100" onClick={() => setFilter('Stale')}>Review Stale Claims</Button>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Card className="rounded-b-none p-4 shadow-none">
+      <div className="space-y-0">
+      <Card className="rounded-b-none p-4 shadow-none bg-white">
         <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
           <div>
-            <h4 className="font-headline-md text-on-surface">{view === 'pending' ? 'Pending Your Action' : 'Approval History'}</h4>
+            <h4 className="font-headline-md text-slate-900">{view === 'pending' ? 'Pending Your Action' : 'Approval History'}</h4>
             <p className="mt-1 text-xs text-outline">
               {view === 'pending' ? 'Review the longest-waiting requests first.' : 'Your recorded approval decisions, including comments.'}
             </p>
@@ -260,10 +261,10 @@ export function ApprovalQueue() {
       </Card>
 
       {view === 'pending' ? (
-      <Card className="!mt-[-1px] rounded-t-none">
+      <Card className="!mt-[-1px] rounded-t-none bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px] text-left">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-4 py-3 2xl:px-6 2xl:py-4">Requestor</th>
                 <th className="px-4 py-3 2xl:px-6 2xl:py-4">Ref & Type</th>
@@ -274,7 +275,7 @@ export function ApprovalQueue() {
                 <th className="px-4 py-3 text-right 2xl:px-6 2xl:py-4">Quick Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {displayedClaims.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-outline">
@@ -362,10 +363,10 @@ export function ApprovalQueue() {
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </Card>
       ) : (
-        <Card className="!mt-[-1px] rounded-t-none">
+        <Card className="!mt-[-1px] rounded-t-none bg-white">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+              <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
                 <tr>
                   <th className="px-6 py-4">Requestor</th>
                   <th className="px-6 py-4">Ref &amp; Type</th>
@@ -375,7 +376,7 @@ export function ApprovalQueue() {
                   <th className="px-6 py-4 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant">
+              <tbody className="bg-white divide-y divide-outline-variant">
                 {displayedHistory.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center text-outline">
@@ -386,7 +387,7 @@ export function ApprovalQueue() {
                 ) : paginatedHistory.map(({ entry, claim }) => {
                   const requestor = users.find(user => user.id === claim.requestorId);
                   return (
-                    <tr key={entry.id} className="hover:bg-primary/5 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+                    <tr key={entry.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
                       <td className="px-6 py-4">
                         <p className="font-label-md text-on-surface">{requestor?.name || 'Unknown requestor'}</p>
                         <p className="text-body-sm text-outline">{requestor?.department || '—'}</p>
@@ -410,6 +411,7 @@ export function ApprovalQueue() {
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </Card>
       )}
+      </div>
     </div>
   );
 }

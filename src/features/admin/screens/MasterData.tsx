@@ -88,10 +88,10 @@ export function MasterData() {
         ))}
       </div>
 
-      <Card>
+      <Card className="bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Name</th>
                 <th className="px-6 py-4">Code</th>
@@ -100,7 +100,7 @@ export function MasterData() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {displayedData.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-outline">
@@ -108,7 +108,7 @@ export function MasterData() {
                   </td>
                 </tr>
               ) : paginatedData.map(item => (
-                <tr key={item.id} className="hover:bg-primary-fixed/5 transition-colors">
+                <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                   {editingId === item.id ? (
                     <>
                       <td className="px-6 py-3"><Input value={editForm.name || ''} onChange={e => setEditForm(p => ({...p, name: e.target.value}))} /></td>

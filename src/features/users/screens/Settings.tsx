@@ -291,12 +291,12 @@ function DemoDataPanel() {
     <div className="space-y-8">
       <div>
         <h4 className="font-headline-sm text-on-surface mb-1">Generate demo data</h4>
-        <div className="mb-4 flex items-start gap-3 rounded-lg border border-tertiary/40 bg-tertiary-container/15 p-4 text-on-surface">
-          <span aria-hidden="true" className="material-symbols-outlined mt-0.5 shrink-0 text-[22px] text-tertiary">warning_amber</span>
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-950 shadow-xs">
+          <span aria-hidden="true" className="material-symbols-outlined mt-0.5 shrink-0 text-[24px] text-red-600">warning</span>
           <div>
-            <p className="font-label-md text-on-surface">Regenerating demo data replaces current transactional data.</p>
-            <p className="mt-1 text-body-sm text-on-surface-variant">
-              Select the categories to create before continuing. Unselected categories will be empty; users and master data are retained.
+            <p className="font-bold text-red-900 text-sm">Warning: Regenerating demo data will replace all active transactional records</p>
+            <p className="mt-1 text-xs text-red-800 leading-relaxed">
+              Please choose the categories you want to generate. Any unselected categories will be cleared. User accounts, roles, and master data catalogs will remain intact.
             </p>
           </div>
         </div>
@@ -337,15 +337,20 @@ function DemoDataPanel() {
       </div>
 
       <div className="border-t border-outline-variant pt-6">
-        <h4 className="font-headline-sm text-error mb-1">Danger zone</h4>
-        <p className="text-body-sm text-outline mb-4">
-          Empty every claim, Minutes of Meeting record, cash advance, liquidation, history entry, email
-          and support ticket without reseeding — ideal for presenting a workflow from the very first
-          step.
-        </p>
+        <h4 className="font-headline-sm text-error mb-2">Danger zone</h4>
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-950 shadow-xs">
+          <span aria-hidden="true" className="material-symbols-outlined mt-0.5 shrink-0 text-[24px] text-red-600">error</span>
+          <div>
+            <p className="font-bold text-red-900 text-sm">Critical Warning: Irreversible Data Reset</p>
+            <p className="mt-1 text-xs text-red-800 leading-relaxed">
+              Empty every claim, Minutes of Meeting record, cash advance, liquidation, history entry, email,
+              and support ticket without reseeding — ideal for testing or demonstrating a workflow from the very first step.
+            </p>
+          </div>
+        </div>
         <Button
           variant="outline"
-          className="gap-2 text-error border-error/40 hover:bg-error/5"
+          className="gap-2 text-error border-red-300 hover:bg-red-100 hover:border-red-500 font-semibold"
           onClick={() => setConfirmAction('clear')}
           disabled={busy}
         >
@@ -534,16 +539,16 @@ export function Settings() {
 
               {activeTab === 'notifications' && (
                 <div className="space-y-6">
-                  <div className="overflow-x-auto rounded-lg border border-brand-border bg-surface-container-lowest">
-                    <table className="min-w-full divide-y divide-brand-border">
-                      <thead className="bg-surface-container-low">
+                  <div className="overflow-x-auto rounded-lg border border-outline-variant bg-white">
+                    <table className="min-w-full divide-y divide-outline-variant">
+                      <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
                         <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-outline uppercase tracking-wider">Event Type</th>
-                          <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-outline uppercase tracking-wider">In-App</th>
-                          <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-outline uppercase tracking-wider">Email</th>
+                          <th scope="col" className="px-6 py-3 text-left font-semibold">Event Type</th>
+                          <th scope="col" className="px-6 py-3 text-center font-semibold">In-App</th>
+                          <th scope="col" className="px-6 py-3 text-center font-semibold">Email</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-brand-border bg-surface-container-lowest">
+                      <tbody className="divide-y divide-outline-variant bg-white">
                         {[
                           { id: 'submitted', label: 'Claim Submitted' },
                           { id: 'approved', label: 'Claim Approved' },
@@ -551,7 +556,7 @@ export function Settings() {
                           { id: 'ready', label: 'Ready for Claim' },
                           { id: 'delegation', label: 'Delegation Updates' },
                         ].map((event) => (
-                          <tr key={event.id}>
+                          <tr key={event.id} className="hover:bg-slate-50 transition-colors bg-white">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-brand-slate">{event.label}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <Toggle 

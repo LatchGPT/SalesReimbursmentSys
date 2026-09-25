@@ -36,8 +36,8 @@ export const logout = () => {
  * account picker. These ids match buildDefaultUsers() in server.ts.
  */
 const ROLE_DEEP_LINK: Record<string, string> = {
-  requestor: 'u1', // Alice Reyes
-  approver: 'u2',  // Bob Santos (Alice's manager)
+  requestor: 'u1', // Mia Fernandez
+  approver: 'u2',  // Noah Villanueva (Mia's manager)
   custodian: 'u3', // Carol Ramos
   finance: 'u22',  // Sofia Lim
   admin: 'u4',     // Dave Lopez

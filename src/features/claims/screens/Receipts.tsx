@@ -283,7 +283,7 @@ export function Receipts() {
   ) => (
     <div className="overflow-x-auto">
       <table className="w-full text-left min-w-[980px]">
-        <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+        <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
           <tr>
             <th className="px-5 py-3">Expense</th>
             {showRequestor && <th className="px-5 py-3">Requestor</th>}
@@ -296,12 +296,12 @@ export function Receipts() {
             <th className="px-5 py-3 text-right whitespace-nowrap">Attachment</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-outline-variant">
+        <tbody className="bg-white divide-y divide-outline-variant">
           {items.map(receipt => (
             <tr
               key={receipt.id}
               onClick={() => setSelectedReceipt(receipt)}
-              className="hover:bg-primary/5 cursor-pointer transition-colors"
+              className="hover:bg-slate-50 cursor-pointer transition-colors"
             >
               <td className="px-5 py-4">
                 <div className="flex items-center gap-3">
