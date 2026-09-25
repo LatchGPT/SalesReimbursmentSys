@@ -1,0 +1,11 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Enforce LF for Docker, shell scripts, and configs to avoid Windows CRLF issues in Linux containers
+*.sh text eol=lf
+Dockerfile* text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.env* text eol=lf
+*.prisma text eol=lf
+*.json text eol=lf

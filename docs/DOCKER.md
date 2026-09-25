@@ -87,21 +87,16 @@ docker compose down
 
 ## 4. Database Setup & Migrations
 
-When you launch Docker with a fresh PostgreSQL container for the first time, the `sales_reimbursement` database is initialized empty.
+When you launch Docker with a fresh PostgreSQL container, the system automatically checks the database connection:
+- **Zero-config auto-migration:** When the container detects it is connected to the local `@db:` container, it automatically applies any pending Prisma migrations on startup.
+- **Manual migration (if needed):**
+  ```bash
+  # In development:
+  docker compose -f docker-compose.dev.yml exec app npm run db:migrate
 
-### Applying Prisma Migrations
-
-Run the baseline migration against the database container:
-
-**If running development:**
-```bash
-docker compose -f docker-compose.dev.yml exec app npm run db:migrate
-```
-
-**If running production:**
-```bash
-docker compose exec app npm run db:migrate
-```
+  # In production:
+  docker compose exec app npm run db:migrate
+  ```
 
 **From the host machine (with port 5432 exposed):**
 ```powershell
@@ -126,15 +121,16 @@ docker compose exec app npm run db:studio
 
 | Task | Command |
 |---|---|
-| Start Dev (hot-reload) | `docker compose -f docker-compose.dev.yml up` |
+| Start Dev (hot-reload) | `npm run docker:dev` *(or `docker compose -f docker-compose.dev.yml up`)* |
 | Start Dev in background | `docker compose -f docker-compose.dev.yml up -d` |
-| Start Prod locally | `docker compose up --build -d` |
+| Start Prod locally | `npm run docker:prod` *(or `docker compose up --build -d`)* |
 | View active containers | `docker ps` |
-| Stream live logs | `docker compose logs -f` |
-| Stop all containers | `docker compose down` |
-| Reset database (wipe volume) | `docker compose down -v` |
+| Stream live logs | `docker compose logs -f` *(or `docker compose -f docker-compose.dev.yml logs -f`)* |
+| Stop all containers | `npm run docker:down` *(or `docker compose -f docker-compose.yml -f docker-compose.dev.yml down`)* |
+| Reset database & wipe volumes | `npm run docker:clean` |
 | Open shell inside Next.js app | `docker compose exec app sh` |
 | Open PostgreSQL terminal | `docker compose exec db psql -U postgres -d sales_reimbursement` |
+
 
 ---
 
@@ -195,3 +191,26 @@ If you don't want cloud hosting and all developers are on the same local network
    docker compose -f docker-compose.dev.yml up app
    ```
    Both developers will now see and write the exact same data in real time.
+
+---
+
+## 8. Docker Overrides with `.env.docker`
+
+If your main `.env` contains cloud database credentials (such as Supabase) for host-side development, but you want Docker containers to use local PostgreSQL without changing your `.env`:
+
+1. Copy the example override file:
+   ```bash
+   cp .env.docker.example .env.docker
+   # Or in PowerShell:
+   copy .env.docker.example .env.docker
+   ```
+2. Docker Compose automatically merges `.env.docker` on top of `.env`.
+
+---
+
+## 9. Windows Host Setup Tips
+
+- **Docker Desktop**: Ensure Docker Desktop is installed with the WSL 2 backend enabled.
+- **Hot-Reloading**: `docker-compose.dev.yml` includes `WATCHPACK_POLLING=true` by default, ensuring Next.js detects changes across Windows NTFS volume mounts.
+- **Line Endings**: `.gitattributes` enforces LF line endings across Dockerfiles, shell scripts, and compose YAML to prevent CRLF execution errors in Linux containers.
+
