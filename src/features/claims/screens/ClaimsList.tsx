@@ -355,8 +355,10 @@ export function ClaimsList() {
         </div>
       )}
 
-      <div className="mb-5">
+      <div className="space-y-0">
         <FilterBar
+          className="rounded-b-none"
+          title="Claims"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search claims..."
@@ -395,9 +397,7 @@ export function ClaimsList() {
           ]}
           popoverDescription="Narrow claims by client, location, or submitted date."
         />
-      </div>
-
-      <Card>
+      <Card className="!mt-[-1px] rounded-t-none">
         {groupBy === 'none' ? (
           <>
             {renderClaimsBody(paginatedClaims)}
@@ -429,6 +429,7 @@ export function ClaimsList() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 

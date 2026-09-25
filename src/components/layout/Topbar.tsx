@@ -67,7 +67,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
   };
 
   return (
-    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-4 sm:px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
+    <header className={`h-[64px] fixed top-0 right-0 left-0 flex justify-between items-center px-4 sm:px-6 bg-surface border-b border-outline-variant shadow-sm z-10 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${isCollapsed ? 'lg:left-[80px]' : 'lg:left-[220px]'}`}>
       <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
         <button 
           aria-label="Toggle sidebar"

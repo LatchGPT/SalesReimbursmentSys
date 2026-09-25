@@ -182,4 +182,81 @@ describe('Draft Requests and Submission', () => {
     expect(ca.status).toBe('Draft');
     expect(ca.amount).toBe(0);
   });
+
+  it('submits a reimbursement claim with an embedded MOM in a single atomic POST /api/claims request', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await callApi('/api/claims', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': aliceId,
+      },
+      body: JSON.stringify({
+        claim_type: 'Reimbursement',
+        remarks: 'Atomic submission meeting',
+        mom: {
+          client: 'Apex Holdings Inc',
+          purpose: 'Quarterly Vendor Review',
+          meeting_date: today,
+          contact_person: 'John Doe',
+          contact_person_email: 'johndoe@apex.com',
+        },
+        line_items: [
+          {
+            category: 'Meals',
+            amount: 450,
+            receipt_url: '/uploads/lunch_receipt.png',
+            vendor: 'Bistro Manila',
+            expense_date: today,
+            business_purpose: 'Client review lunch',
+          },
+        ],
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    const claim = await res.json();
+    expect(claim.id).toBeDefined();
+    expect(claim.claim_number).toBeDefined();
+    expect(claim.status).toBe(ClaimStatus.PENDING_APPROVAL);
+    expect(claim.mom_id).toBeDefined();
+
+    // Verify the MOM was created in state and properly linked
+    const createdMom = state.moms.find(m => m.id === claim.mom_id);
+    expect(createdMom).toBeDefined();
+    expect(createdMom?.client).toBe('Apex Holdings Inc');
+    expect(createdMom?.purpose).toBe('Quarterly Vendor Review');
+    expect(createdMom?.claim_id).toBe(claim.id);
+    expect(createdMom?.status).toBe(MomStatus.COMPLETED);
+  });
+
+  it('rejects atomic reimbursement submission if MOM client or purpose is missing', async () => {
+    const today = new Date().toISOString().split('T')[0];
+    const res = await callApi('/api/claims', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': aliceId,
+      },
+      body: JSON.stringify({
+        claim_type: 'Reimbursement',
+        mom: {
+          client: '',
+          purpose: '',
+        },
+        line_items: [
+          {
+            category: 'Meals',
+            amount: 250,
+            receipt_url: '/uploads/receipt.png',
+            expense_date: today,
+          },
+        ],
+      }),
+    });
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('Client and Purpose are required');
+  });
 });

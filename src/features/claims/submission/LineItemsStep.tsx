@@ -10,8 +10,10 @@ import {
   validateReimbursementPurchaseDate,
 } from '../domain/reimbursementPolicy';
 import { useClaimWizard } from './useClaimWizard';
+import { ReceiptAttachmentPreviewModal } from '../detail/ReceiptAttachmentPreviewModal';
 
 export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWizard> }) {
+  const [previewReceipt, setPreviewReceipt] = useState<{ url: string; fileName?: string; fileType?: string } | null>(null);
   const {
     claimType,
     lineItemsLocal,
@@ -191,6 +193,7 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                 </div>
               </div>
             )}
+
 
             {/* List of Line Item Cards */}
             <div className="space-y-5">
@@ -402,6 +405,15 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
+                            {item.receiptUrl && (
+                              <button
+                                type="button"
+                                className="text-xs font-semibold text-primary hover:underline px-2 py-1"
+                                onClick={() => setPreviewReceipt({ url: item.receiptUrl!, fileName: item.receiptFile?.name, fileType: item.receiptFile?.type })}
+                              >
+                                View Receipt
+                              </button>
+                            )}
                             <label className="cursor-pointer text-xs font-semibold text-primary hover:underline px-2 py-1">
                               Replace
                               <input
@@ -433,15 +445,24 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                               <p className="text-[11px] text-on-surface-variant">Saved with this claim</p>
                             </div>
                           </div>
-                          <label className="cursor-pointer text-xs font-semibold text-primary hover:underline px-2 py-1">
-                            Replace
-                            <input
-                              type="file"
-                              accept="image/*,.pdf"
-                              className="hidden"
-                              onChange={e => handleFileUploadForLineItem(idx, e)}
-                            />
-                          </label>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              className="text-xs font-semibold text-primary hover:underline px-2 py-1"
+                              onClick={() => setPreviewReceipt({ url: item.receiptUrl! })}
+                            >
+                              View Receipt
+                            </button>
+                            <label className="cursor-pointer text-xs font-semibold text-primary hover:underline px-2 py-1">
+                              Replace
+                              <input
+                                type="file"
+                                accept="image/*,.pdf"
+                                className="hidden"
+                                onChange={e => handleFileUploadForLineItem(idx, e)}
+                              />
+                            </label>
+                          </div>
                         </div>
                       ) : (
                         <label className="group flex items-center justify-center gap-2 w-full p-3.5 border-2 border-dashed border-outline-variant/80 hover:border-primary/60 bg-surface-container-low/30 hover:bg-primary/[0.03] rounded-lg cursor-pointer transition-all duration-150 select-none">
@@ -525,6 +546,12 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
           </div>
         )}
       </CardContent>
+      <ReceiptAttachmentPreviewModal
+        url={previewReceipt?.url || null}
+        fileName={previewReceipt?.fileName}
+        fileType={previewReceipt?.fileType}
+        onClose={() => setPreviewReceipt(null)}
+      />
     </Card>
   );
 }

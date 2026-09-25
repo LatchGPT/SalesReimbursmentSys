@@ -17,9 +17,13 @@ services:
       - AUTO_SEED=true
       - NEXT_PUBLIC_ENABLE_DEMO_LOGIN=true
       - NEXT_PUBLIC_ENABLE_ALL_CLAIM_TYPES=false
+      - WATCHPACK_POLLING=true
     env_file:
       - path: .env
         required: false
+      - path: .env.docker
+        required: false
+    command: sh -c "npm run db:generate && if echo \"$$DATABASE_URL\" | grep -q '@db:'; then npm run db:migrate; fi && npm run dev"
     volumes:
       - .:/app
       - /app/node_modules

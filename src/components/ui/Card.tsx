@@ -11,7 +11,7 @@ export function Card({ children, className, ...props }: HTMLAttributes<HTMLDivEl
 
 export function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("px-6 py-4 border-b border-brand-border bg-surface-container-low flex justify-between items-center", className)}>
+    <div className={cn("table-section-title px-6 py-4 border-b border-brand-border bg-surface-container-lowest flex justify-between items-center", className)}>
       {children}
     </div>
   );

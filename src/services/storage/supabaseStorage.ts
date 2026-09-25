@@ -20,8 +20,8 @@ const MIME_BY_EXT: Record<string, string> = {
 
 function getLocalStorageDir(): string {
   const uploadDir = serverEnv.uploadDir || path.join(process.cwd(), 'uploads');
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
+  if (!fs.existsSync(/*turbopackIgnore: true*/ uploadDir)) {
+    fs.mkdirSync(/*turbopackIgnore: true*/ uploadDir, { recursive: true });
   }
   return uploadDir;
 }
@@ -175,7 +175,7 @@ export async function uploadToSupabase(request: Request): Promise<Response> {
         const uploadDir = getLocalStorageDir();
         const filename = `${randomUUID()}${extension(file.name)}`;
         const buffer = Buffer.from(await file.arrayBuffer());
-        fs.writeFileSync(path.join(uploadDir, filename), buffer);
+        fs.writeFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ uploadDir, filename), buffer);
         return json({ url: `/uploads/${filename}` });
       }
       return json({ error: 'Upload storage is not configured.' }, 503);
@@ -224,11 +224,11 @@ export async function downloadFromSupabase(request: Request, filename: string): 
     if (!config) {
       if (!serverEnv.isProduction || serverEnv.demoMode) {
         const uploadDir = getLocalStorageDir();
-        const filePath = path.join(uploadDir, filename);
-        if (!fs.existsSync(filePath)) {
+        const filePath = path.join(/*turbopackIgnore: true*/ uploadDir, filename);
+        if (!fs.existsSync(/*turbopackIgnore: true*/ filePath)) {
           return json({ error: 'File not found' }, 404);
         }
-        const fileBuffer = fs.readFileSync(filePath);
+        const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ filePath);
         const ext = extension(filename);
         const contentType = MIME_BY_EXT[ext] || 'application/octet-stream';
         return new Response(fileBuffer, {
