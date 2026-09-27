@@ -15,6 +15,9 @@ interface ConfirmModalProps {
   disabled?: boolean;
   showCancel?: boolean;
   closeOnBackdrop?: boolean;
+  closeOnEscape?: boolean;
+  trapFocus?: boolean;
+  modalClassName?: string;
 }
 
 export function ConfirmModal({
@@ -29,6 +32,9 @@ export function ConfirmModal({
   disabled = false,
   showCancel = true,
   closeOnBackdrop = false,
+  closeOnEscape = true,
+  trapFocus = true,
+  modalClassName,
 }: ConfirmModalProps) {
   const titleId = useId();
   const descriptionId = useId();
@@ -46,6 +52,9 @@ export function ConfirmModal({
       titleId={titleId}
       descriptionId={descriptionId}
       closeOnBackdrop={closeOnBackdrop}
+      closeOnEscape={closeOnEscape}
+      trapFocus={trapFocus}
+      className={modalClassName}
     >
       <Card className="shadow-lg">
         <div className="p-6">

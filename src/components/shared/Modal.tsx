@@ -21,6 +21,7 @@ interface ModalProps {
   initialFocusRef?: RefObject<HTMLElement | null>;
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;
+  trapFocus?: boolean;
 }
 
 export function Modal({
@@ -33,6 +34,7 @@ export function Modal({
   initialFocusRef,
   closeOnBackdrop = true,
   closeOnEscape = true,
+  trapFocus = true,
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -41,6 +43,8 @@ export function Modal({
   initialFocusRefRef.current = initialFocusRef;
   const closeOnEscapeRef = useRef(closeOnEscape);
   closeOnEscapeRef.current = closeOnEscape;
+  const trapFocusRef = useRef(trapFocus);
+  trapFocusRef.current = trapFocus;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -66,7 +70,7 @@ export function Modal({
         return;
       }
 
-      if (event.key !== 'Tab' || !dialogRef.current) return;
+      if (event.key !== 'Tab' || !trapFocusRef.current || !dialogRef.current) return;
       const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE))
         .filter(element => !element.hasAttribute('disabled') && element.getAttribute('aria-hidden') !== 'true');
 

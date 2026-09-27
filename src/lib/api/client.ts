@@ -11,8 +11,10 @@ export const CURRENT_USER_KEY = 'mockUserId';
  * longer clobbers the others. sessionStorage survives an in-tab reload but is
  * scoped to the tab, which is exactly the demo behaviour we want.
  */
-export const getCurrentUserId = () => sessionStorage.getItem(CURRENT_USER_KEY) || '';
-export const setCurrentUserId = (id: string) => sessionStorage.setItem(CURRENT_USER_KEY, id);
+export const getCurrentUserId = () => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(CURRENT_USER_KEY) || '' : '');
+export const setCurrentUserId = (id: string) => {
+  if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(CURRENT_USER_KEY, id);
+};
 
 /**
  * Distinct from CURRENT_USER_KEY (which always has a default so the API
@@ -20,14 +22,19 @@ export const setCurrentUserId = (id: string) => sessionStorage.setItem(CURRENT_U
  * went through the explicit Login screen — see App.tsx's login gate.
  */
 const SESSION_KEY = 'hasLoggedIn';
-export const isLoggedIn = () => sessionStorage.getItem(SESSION_KEY) === 'true';
-export const login = (userId: string, storage: Storage = sessionStorage) => {
-  storage.setItem(CURRENT_USER_KEY, userId);
-  storage.setItem(SESSION_KEY, 'true');
+export const isLoggedIn = () => (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(SESSION_KEY) === 'true' : false);
+export const login = (userId: string, storage?: Storage) => {
+  const targetStorage = storage || (typeof sessionStorage !== 'undefined' ? sessionStorage : undefined);
+  if (targetStorage) {
+    targetStorage.setItem(CURRENT_USER_KEY, userId);
+    targetStorage.setItem(SESSION_KEY, 'true');
+  }
 };
 export const logout = () => {
-  sessionStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(CURRENT_USER_KEY);
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(CURRENT_USER_KEY);
+  }
 };
 
 /**

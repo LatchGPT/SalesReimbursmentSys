@@ -449,7 +449,10 @@ export function LineItemsStep({ wizard }: { wizard: ReturnType<typeof useClaimWi
                             <button
                               type="button"
                               className="text-xs font-semibold text-primary hover:underline px-2 py-1"
-                              onClick={() => setPreviewReceipt({ url: item.receiptUrl! })}
+                              onClick={() => setPreviewReceipt({
+                                url: item.receiptUrl!,
+                                fileName: item.vendor ? `Receipt - ${item.vendor}` : 'Existing Receipt',
+                              })}
                             >
                               View Receipt
                             </button>

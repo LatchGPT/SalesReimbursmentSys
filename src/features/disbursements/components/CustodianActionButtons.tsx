@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Input, Select } from '../../../components/ui/Input';
-import { ClaimStatus, Claim } from '../../../types';
+import { ClaimStatus, Claim, ExpenseLineItem } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 import { useAppContext } from '../../../components/AppContext';
 import { useToast } from '../../../components/shared/ToastContext';
 import { decideAsCustodian, generateClaimCode } from '../../../lib/api';
+import { ReceiptAttachmentPreviewModal } from '../../claims/detail/ReceiptAttachmentPreviewModal';
 
 export interface CustodianActionButtonsProps {
   claim: Claim;
@@ -26,6 +27,7 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
   const [error, setError] = useState('');
   const [correctionComment, setCorrectionComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewingReceipt, setPreviewingReceipt] = useState<ExpenseLineItem | null>(null);
   const isReimbursement = claim.type === 'Reimbursement' || claim.type === 'Transport Reimbursement';
 
   const handleAction = (action: 'markReady' | 'release' | 'closeLiq' | 'return' | 'reject') => {
@@ -225,11 +227,14 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
 
       <ConfirmModal
         isOpen={activeModal === 'markReady'}
-        onClose={() => setActiveModal(null)}
+        onClose={() => { setActiveModal(null); setPreviewingReceipt(null); }}
         onConfirm={handleConfirm}
         title="Review & Mark Ready"
         confirmLabel={isSubmitting ? "Marking ready..." : "Mark Ready for Claim"}
         disabled={isSubmitting}
+        closeOnEscape={!previewingReceipt}
+        trapFocus={!previewingReceipt}
+        modalClassName="max-w-2xl"
       >
         {(() => {
           const items = lineItems.filter(li => li.claimId === claim.id);
@@ -242,36 +247,40 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
               {items.length === 0 ? (
                 <p className="text-body-sm text-outline italic">No expense line items found for this claim.</p>
               ) : (
-                <div className="border border-outline-variant rounded-lg overflow-hidden max-h-56 overflow-y-auto">
-                  <table className="w-full text-left text-sm">
+                <div className="border border-outline-variant rounded-lg overflow-x-auto max-h-56 overflow-y-auto">
+                  <table className="w-full min-w-[560px] text-left text-sm">
+                    <colgroup>
+                      <col className="w-[96px]" />
+                      <col />
+                      <col className="w-[112px]" />
+                      <col className="w-[88px]" />
+                    </colgroup>
                     <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant sticky top-0">
                       <tr>
-                        <th className="px-3 py-2">Date</th>
-                        <th className="px-3 py-2">Category / Vendor</th>
-                        <th className="px-3 py-2 text-right">Amount</th>
-                        <th className="px-3 py-2 text-center">Receipt</th>
+                        <th className="px-3 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-3 py-2 whitespace-nowrap">Category / Vendor</th>
+                        <th className="px-3 py-2 text-right whitespace-nowrap">Amount</th>
+                        <th className="px-3 py-2 text-center whitespace-nowrap">Receipt</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-outline-variant">
                       {items.map(item => (
                         <tr key={item.id} className="hover:bg-slate-50 transition-colors bg-white">
                           <td className="px-3 py-2 whitespace-nowrap">{item.expenseDate}</td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 break-words">
                             <div className="font-medium text-on-surface">{item.category}</div>
                             <div className="text-outline text-xs">{item.vendor}</div>
                           </td>
-                          <td className="px-3 py-2 text-right font-mono-data">{formatMoney(item.amount)}</td>
-                          <td className="px-3 py-2 text-center">
+                          <td className="px-3 py-2 text-right font-mono-data whitespace-nowrap">{formatMoney(item.amount)}</td>
+                          <td className="px-3 py-2 text-center whitespace-nowrap">
                             {item.receiptUrl ? (
-                              <a
-                                href={item.receiptUrl}
-                                target="_blank"
-                                rel="noreferrer"
+                              <button
+                                type="button"
                                 className="text-primary hover:underline"
-                                onClick={e => e.stopPropagation()}
+                                onClick={e => { e.stopPropagation(); setPreviewingReceipt(item); }}
                               >
                                 View
-                              </a>
+                              </button>
                             ) : (
                               <span className="text-error text-xs">Missing</span>
                             )}
@@ -341,6 +350,13 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
           );
         })()}
       </ConfirmModal>
+
+      <ReceiptAttachmentPreviewModal
+        url={previewingReceipt?.receiptUrl ?? null}
+        fileName={previewingReceipt?.receiptFileName}
+        pdfOnly
+        onClose={() => setPreviewingReceipt(null)}
+      />
 
       <ConfirmModal
         isOpen={activeModal === 'release'}
