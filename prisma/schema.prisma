@@ -17,6 +17,8 @@ model approvals {
   timestamp   DateTime          @default(now()) @db.Timestamptz(6)
   users       users             @relation(fields: [approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approvals_approver_id_users_id_fk")
   claims      claims            @relation(fields: [claim_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approvals_claim_id_claims_id_fk")
+
+  @@index([claim_id], map: "workflow_approvals_claim_id_idx")
 }
 
 model approver_delegations {
@@ -34,6 +36,9 @@ model approver_delegations {
   users_approver_delegations_created_byTousers  users              @relation("approver_delegations_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approver_delegations_created_by_users_id_fk")
   users_approver_delegations_delegate_idTousers users              @relation("approver_delegations_delegate_idTousers", fields: [delegate_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "approver_delegations_delegate_id_users_id_fk")
   status_histories                              status_histories[]
+
+  @@index([approver_id, status])
+  @@index([delegate_id, status])
 }
 
 model branches {
@@ -128,6 +133,9 @@ model claims {
   expense_line_items                       expense_line_items[]
   moms_moms_claim_idToclaims               moms[]               @relation("moms_claim_idToclaims")
   status_histories                         status_histories[]
+
+  @@index([current_approver_id, status, created_at])
+  @@index([requestor_id, created_at])
 }
 
 model companies {
@@ -199,6 +207,8 @@ model expense_line_items {
   receipt_url      String?
   or_number        String?
   claims           claims  @relation(fields: [claim_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "expense_line_items_claim_id_claims_id_fk")
+
+  @@index([claim_id], map: "workflow_expense_line_items_claim_id_idx")
 }
 
 model field_definitions {
@@ -328,6 +338,8 @@ model review_meetings {
   created_at                                DateTime              @default(now()) @db.Timestamptz(6)
   users_review_meetings_approver_idTousers  users                 @relation("review_meetings_approver_idTousers", fields: [approver_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "review_meetings_approver_id_users_id_fk")
   users_review_meetings_requestor_idTousers users                 @relation("review_meetings_requestor_idTousers", fields: [requestor_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "review_meetings_requestor_id_users_id_fk")
+
+  @@index([approver_id, meeting_date, meeting_time, status])
 }
 
 model status_histories {
@@ -349,6 +361,8 @@ model status_histories {
   approver_delegations approver_delegations? @relation(fields: [delegation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_delegation_id_approver_delegations_id_fk")
   liquidations         liquidations?         @relation(fields: [liquidation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_liquidation_id_liquidations_id_fk")
   users                users?                @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "status_histories_user_id_users_id_fk")
+
+  @@index([claim_id, timestamp])
 }
 
 model support_request_messages {

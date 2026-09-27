@@ -49,9 +49,6 @@ export const serverEnv = {
   get enableDemoLogin() { return booleanValue('ENABLE_DEMO_LOGIN', process.env.ENABLE_DEMO_LOGIN, true); },
   get autoSeed() { return booleanValue('AUTO_SEED', process.env.AUTO_SEED, true); },
   get enableAllClaimTypes() { return booleanValue('ENABLE_ALL_CLAIM_TYPES', process.env.ENABLE_ALL_CLAIM_TYPES, false); },
-  get allowedOrigins() {
-    return optional(process.env.ALLOWED_ORIGINS).split(',').map((origin) => origin.trim()).filter(Boolean);
-  },
   get uploadDir() { return optional(process.env.UPLOAD_DIR); },
   get cronSecret() { return optional(process.env.CRON_SECRET); },
   get upstashRedisUrl() { return optionalUrl('UPSTASH_REDIS_REST_URL', process.env.UPSTASH_REDIS_REST_URL); },

@@ -20,6 +20,8 @@ import { state } from './state';
 
 let activeHydration: Promise<void> | undefined;
 
+export type StateHydrationProfile = 'full' | 'claim-approval';
+
 /**
  * Refreshes production state from PostgreSQL for a serverless request.
  *
@@ -34,7 +36,9 @@ const globalForStateLoader = globalThis as typeof globalThis & {
   dbConnectionFailed?: boolean;
 };
 
-export async function hydrateServerlessState(): Promise<void> {
+export async function hydrateServerlessState(
+  profile: StateHydrationProfile = 'full',
+): Promise<void> {
   if (!isDbConfigured()) {
     if (!config.demoMode) {
       throw new Error('DATABASE_URL is required when DEMO_MODE=false');
@@ -73,23 +77,23 @@ export async function hydrateServerlessState(): Promise<void> {
         support,
       ] = await Promise.all([
         loadUsersFromDb(),
-        loadUserHistoryFromDb(),
+        profile === 'full' ? loadUserHistoryFromDb() : Promise.resolve([]),
         loadCoreLoopFromDb(),
-        loadCashAdvanceLoopFromDb(),
-        loadCompaniesFromDb(),
-        loadMasterDataTable('departments'),
-        loadMasterDataTable('cost-centers'),
-        loadMasterDataTable('business-units'),
-        loadMasterDataTable('branches'),
-        loadMasterDataTable('project-codes'),
-        loadMasterDataTable('vendors'),
-        loadFieldDefinitionsFromDb(),
-        loadSystemSettingsFromDb(),
-        loadMasterDataHistoryFromDb(),
+        profile === 'full' ? loadCashAdvanceLoopFromDb() : Promise.resolve({ cashAdvances: [], liquidations: [], liquidationLineItems: [], statusHistories: [] }),
+        profile === 'full' ? loadCompaniesFromDb() : Promise.resolve([]),
+        profile === 'full' ? loadMasterDataTable('departments') : Promise.resolve([]),
+        profile === 'full' ? loadMasterDataTable('cost-centers') : Promise.resolve([]),
+        profile === 'full' ? loadMasterDataTable('business-units') : Promise.resolve([]),
+        profile === 'full' ? loadMasterDataTable('branches') : Promise.resolve([]),
+        profile === 'full' ? loadMasterDataTable('project-codes') : Promise.resolve([]),
+        profile === 'full' ? loadMasterDataTable('vendors') : Promise.resolve([]),
+        profile === 'full' ? loadFieldDefinitionsFromDb() : Promise.resolve([]),
+        profile === 'full' ? loadSystemSettingsFromDb() : Promise.resolve(undefined),
+        profile === 'full' ? loadMasterDataHistoryFromDb() : Promise.resolve([]),
         loadDelegationsFromDb(),
-        loadDelegationHistoryFromDb(),
+        profile === 'full' ? loadDelegationHistoryFromDb() : Promise.resolve([]),
         loadReviewMeetingsFromDb(),
-        loadSupportRequestsFromDb(),
+        profile === 'full' ? loadSupportRequestsFromDb() : Promise.resolve({ requests: [], messages: [] }),
       ]);
 
       if (users.length > 0) state.users = users;
@@ -97,9 +101,11 @@ export async function hydrateServerlessState(): Promise<void> {
       state.claims = core.claims;
       state.expenses = core.expenses;
       state.approvals = core.approvals;
-      state.cashAdvances = advances.cashAdvances;
-      state.liquidations = advances.liquidations;
-      state.liquidationLineItems = advances.liquidationLineItems;
+      if (profile === 'full') {
+        state.cashAdvances = advances.cashAdvances;
+        state.liquidations = advances.liquidations;
+        state.liquidationLineItems = advances.liquidationLineItems;
+      }
       if (companies.length > 0) state.companies = companies;
       if (departments.length > 0) state.departments = departments;
       if (costCenters.length > 0) state.costCenters = costCenters;
@@ -111,8 +117,10 @@ export async function hydrateServerlessState(): Promise<void> {
       if (systemSettings) state.systemSettings = systemSettings;
       state.delegations = delegations;
       state.reviewMeetings = reviewMeetings;
-      state.supportRequests = support.requests;
-      state.supportMessages = support.messages;
+      if (profile === 'full') {
+        state.supportRequests = support.requests;
+        state.supportMessages = support.messages;
+      }
       state.statusHistories = [
         ...userHistory,
         ...core.statusHistories,
