@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { UserRole } from '../../lib/db/serverTypes';
 import { state } from '../../server/state';
-import { hydrateServerlessState } from '../../server/stateLoader';
+import { hydrateServerlessState, hydrateUsersForRequest } from '../../server/stateLoader';
 import { findUploadAccessCheck } from '../../server/services/authorization';
 import { serverEnv } from '../../config/env';
 
@@ -83,7 +83,7 @@ function extension(filename: string): string {
 }
 
 async function authorizedUploader(request: Request): Promise<Response | null> {
-  await hydrateServerlessState();
+  await hydrateUsersForRequest();
   const userId = request.headers.get('x-user-id');
   const user = state.users.find((candidate) =>
     candidate.id === userId
