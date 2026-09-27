@@ -21,7 +21,11 @@ import { state } from './state';
 let activeHydration: Promise<void> | undefined;
 let activeUserHydration: Promise<void> | undefined;
 
-export type StateHydrationProfile = 'full' | 'claim-approval' | 'claim-submission';
+export type StateHydrationProfile =
+  | 'full'
+  | 'claim-approval'
+  | 'claim-submission'
+  | 'claim-transition';
 
 /**
  * Refreshes production state from PostgreSQL for a serverless request.
@@ -97,7 +101,7 @@ export async function hydrateServerlessState(
         profile === 'full' ? loadMasterDataHistoryFromDb() : Promise.resolve([]),
         loadDelegationsFromDb(),
         profile === 'full' ? loadDelegationHistoryFromDb() : Promise.resolve([]),
-        profile === 'full' || profile === 'claim-approval'
+        profile === 'full' || profile === 'claim-approval' || profile === 'claim-transition'
           ? loadReviewMeetingsFromDb()
           : Promise.resolve([]),
         profile === 'full' ? loadSupportRequestsFromDb() : Promise.resolve({ requests: [], messages: [] }),
