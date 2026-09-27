@@ -25,7 +25,7 @@ export function ClaimDetailView() {
   const { addToast } = useToast();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentUser, claims, lineItems, moms, users, statusHistory, fieldDefinitions, refresh } = useAppContext();
+  const { currentUser, claims, lineItems, moms, users, statusHistory, fieldDefinitions, refresh, applyClaimUpdate } = useAppContext();
   const [activeReceipt, setActiveReceipt] = useState<ExpenseLineItem | null>(null);
   const [confirmingReceipt, setConfirmingReceipt] = useState(false);
   const [receiptCode, setReceiptCode] = useState('');
@@ -98,7 +98,8 @@ export function ClaimDetailView() {
     setSubmittingRevision(true);
     try {
       await apiFetch(`/api/cash-advances/${claim.id}/submit`, { method: 'POST' });
-      await refresh();
+      applyClaimUpdate(claim.id, { status: ClaimStatus.SUBMITTED });
+      void refresh();
       addToast('Cash advance submitted for approval.', 'success');
     } catch (err: any) {
       addToast(err?.message || 'Could not submit cash advance.', 'error');
@@ -111,7 +112,8 @@ export function ClaimDetailView() {
     setSubmittingRevision(true);
     try {
       await apiFetch(`/api/liquidations/${claim.id}/submit`, { method: 'POST' });
-      await refresh();
+      applyClaimUpdate(claim.id, { status: ClaimStatus.SUBMITTED });
+      void refresh();
       addToast('Liquidation report submitted for review.', 'success');
     } catch (err: any) {
       addToast(err?.message || 'Could not submit liquidation.', 'error');
@@ -166,7 +168,8 @@ export function ClaimDetailView() {
         lineItems: reviseLineItems,
         remarks: claim.purpose,
       });
-      await refresh();
+      applyClaimUpdate(claim.id, { status: ClaimStatus.PENDING_APPROVAL });
+      void refresh();
       addToast(claim.status === ClaimStatus.DRAFT ? 'Draft submitted for approval.' : 'Claim revised and resubmitted for approval.', 'success');
       setRevising(false);
     } catch (err: any) {
@@ -185,7 +188,8 @@ export function ClaimDetailView() {
     setReceiptError('');
     try {
       await confirmReceipt(claim.id, receiptCode.trim());
-      await refresh();
+      applyClaimUpdate(claim.id, { status: ClaimStatus.COMPLETED });
+      void refresh();
       addToast('Receipt confirmed. Your reimbursement is complete.', 'success');
       setConfirmingReceipt(false);
       setReceiptCode('');
