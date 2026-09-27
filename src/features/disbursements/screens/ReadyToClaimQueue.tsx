@@ -74,11 +74,11 @@ export function ReadyToClaimQueue() {
         </div>
       </Card>
 
-      <Card>
-        <CardHeader className="bg-surface-container-lowest border-b border-outline-variant">
-          <h4 className="font-headline-md text-on-surface">Awaiting Confirmation ({filteredReadyClaims.length})</h4>
+      <Card className="bg-white">
+        <CardHeader className="bg-white border-b border-outline-variant">
+          <h4 className="font-headline-md text-slate-900 font-bold">Awaiting Confirmation ({filteredReadyClaims.length})</h4>
         </CardHeader>
-        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
+        <div className="border-b border-outline-variant bg-white p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <div className="relative min-w-0 flex-1">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
@@ -116,7 +116,7 @@ export function ReadyToClaimQueue() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Requestor</th>
                 <th className="px-6 py-4">Ref & Type</th>
@@ -125,7 +125,7 @@ export function ReadyToClaimQueue() {
                 <th className="px-6 py-4 text-center">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {filteredReadyClaims.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-outline">
@@ -136,7 +136,7 @@ export function ReadyToClaimQueue() {
               ) : paginatedClaims.map(claim => {
                 const req = users.find(u => u.id === claim.requestorId) || users[0];
                 return (
-                  <tr key={claim.id} className="hover:bg-primary-fixed/20 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+                  <tr key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer bg-white" onClick={() => navigate(`/claims/${claim.id}`)}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {req.avatarUrl ? (

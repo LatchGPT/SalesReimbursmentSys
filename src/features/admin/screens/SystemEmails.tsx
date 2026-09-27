@@ -69,12 +69,12 @@ export function SystemEmails() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center">
-          <h4 className="font-headline-md text-on-surface">Sent Mail Log</h4>
+      <Card className="bg-white">
+        <CardHeader className="bg-white border-b border-outline-variant flex justify-between items-center">
+          <h4 className="font-headline-md text-slate-900 font-bold">Sent Mail Log</h4>
           <span className="font-label-sm text-outline">{total} shown</span>
         </CardHeader>
-        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
+        <div className="border-b border-outline-variant bg-white p-4">
           <div className="max-w-lg">
             <Input
               type="text"
@@ -86,7 +86,7 @@ export function SystemEmails() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="w-8 px-4 py-4"></th>
                 <th className="px-4 py-4">Timestamp</th>
@@ -96,7 +96,7 @@ export function SystemEmails() {
                 <th className="px-4 py-4 w-20 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {loading ? (
                 <tr><td colSpan={6} className="px-6 py-12 text-center text-outline">
                   <span className="material-symbols-outlined animate-spin">sync</span>
@@ -111,7 +111,7 @@ export function SystemEmails() {
                   <tr
                     key={e.id}
                     onClick={() => openEmail(e)}
-                    className={`hover:bg-brand-row-hover transition-colors cursor-pointer ${!e.read ? 'bg-primary/5 font-semibold' : ''}`}
+                    className={`hover:bg-slate-50 transition-colors cursor-pointer bg-white ${!e.read ? 'font-semibold' : ''}`}
                   >
                     <td className="px-4 py-4 text-center">
                       <div className={`w-2 h-2 rounded-full mx-auto ${!e.read ? 'bg-primary animate-pulse' : 'bg-transparent'}`} />

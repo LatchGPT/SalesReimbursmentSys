@@ -159,9 +159,9 @@ export function AuditLog() {
       </div>
 
       <div className="space-y-0">
-      <Card className="rounded-b-none p-4 shadow-none">
+      <Card className="rounded-b-none p-4 shadow-none bg-white">
         <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Unified Activity Feed</h3>
+          <h3 className="font-headline-sm uppercase tracking-wider text-slate-900 font-bold">Unified Activity Feed</h3>
           <span className="font-label-sm text-outline">{total} event{total === 1 ? '' : 's'}</span>
         </div>
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
@@ -204,10 +204,10 @@ export function AuditLog() {
         </div>}
       </Card>
 
-      <Card className="rounded-t-none">
+      <Card className="rounded-t-none bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Timestamp</th>
                 <th className="px-6 py-4">Type</th>
@@ -217,7 +217,7 @@ export function AuditLog() {
                 <th className="px-6 py-4">Details</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {loading ? (
                 <tr><td colSpan={6} className="px-6 py-12 text-center text-outline"><span className="material-symbols-outlined animate-spin">sync</span></td></tr>
               ) : error ? (
@@ -237,7 +237,7 @@ export function AuditLog() {
                         setSelected(entry);
                       }
                     }}
-                    className="cursor-pointer hover:bg-primary-container/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
+                    className="cursor-pointer hover:bg-slate-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 bg-white"
                     aria-label={`View activity details for ${entry.subject}`}
                   >
                     <td className="px-6 py-5 font-mono-data text-on-surface-variant text-sm whitespace-nowrap">{formatDateTime(entry.timestamp)}</td>

@@ -244,7 +244,7 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
               ) : (
                 <div className="border border-outline-variant rounded-lg overflow-hidden max-h-56 overflow-y-auto">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-surface-container-low text-outline font-label-sm uppercase sticky top-0">
+                    <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant sticky top-0">
                       <tr>
                         <th className="px-3 py-2">Date</th>
                         <th className="px-3 py-2">Category / Vendor</th>
@@ -252,9 +252,9 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
                         <th className="px-3 py-2 text-center">Receipt</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-outline-variant">
+                    <tbody className="bg-white divide-y divide-outline-variant">
                       {items.map(item => (
-                        <tr key={item.id}>
+                        <tr key={item.id} className="hover:bg-slate-50 transition-colors bg-white">
                           <td className="px-3 py-2 whitespace-nowrap">{item.expenseDate}</td>
                           <td className="px-3 py-2">
                             <div className="font-medium text-on-surface">{item.category}</div>

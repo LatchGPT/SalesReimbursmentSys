@@ -225,14 +225,14 @@ export function FieldDefinitionsAdmin() {
           </button>
         ))}
       </div>
-      <Card>
+      <Card className="bg-white">
         <div className="overflow-x-auto">
           {/* table-fixed makes the <th> width hints below authoritative —
               under the default auto layout, a wide input's intrinsic content
               width (e.g. the disabled Key field) overrides percentage hints
               and starves Settings regardless of what's requested here. */}
           <table className="w-full text-left min-w-[960px]">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Label</th>
                 <th className="px-6 py-4 whitespace-nowrap">Key</th>
@@ -246,9 +246,9 @@ export function FieldDefinitionsAdmin() {
                 <th className="px-6 py-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {paginatedFields.map(fd => (
-                <tr key={fd.id} className="hover:bg-primary-fixed/5 transition-colors">
+                <tr key={fd.id} className="hover:bg-slate-50 transition-colors">
                   {editingId === fd.id && false ? (
                     <>
                       <td className="px-6 py-3"><Input value={editForm.label || ''} onChange={e => setEditForm(p => ({...p, label: e.target.value}))} /></td>

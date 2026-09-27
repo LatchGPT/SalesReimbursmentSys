@@ -190,9 +190,9 @@ export function CompanyDirectory() {
       </div>
 
       <div className="space-y-0">
-      <Card className="rounded-b-none p-4 shadow-none">
+      <Card className="rounded-b-none p-4 shadow-none bg-white">
         <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Registered Entities</h3>
+          <h3 className="font-label-md uppercase tracking-wider text-slate-900 font-bold">Registered Entities</h3>
           <span className="font-label-sm text-outline">{filtered.length} of {companies.length}</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -213,10 +213,10 @@ export function CompanyDirectory() {
         </div>}
       </Card>
 
-      <Card className="rounded-t-none">
+      <Card className="rounded-t-none bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Company Name</th>
                 <th className="px-6 py-4">Industry</th>
@@ -227,7 +227,7 @@ export function CompanyDirectory() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center text-outline">
@@ -236,7 +236,7 @@ export function CompanyDirectory() {
                   </td>
                 </tr>
               ) : filtered.map(company => (
-                <tr key={company.id} className="hover:bg-primary-container/5 transition-colors">
+                <tr key={company.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 font-bold text-on-surface">
                     <div className="flex items-center gap-2">
                       {company.name}

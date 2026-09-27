@@ -139,14 +139,14 @@ export function RequestorDashboard() {
 
       <div className="order-1 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Requests Table */}
-        <Card className="lg:col-span-2 flex flex-col">
-          <CardHeader>
-            <h3 className="font-headline-md text-headline-md text-on-surface">Recent Requests</h3>
+        <Card className="lg:col-span-2 flex flex-col bg-white">
+          <CardHeader className="bg-white">
+            <h3 className="font-headline-md text-headline-md text-slate-900 font-bold">Recent Requests</h3>
             <button className="text-primary font-label-md hover:underline transition-all outline-none focus:ring-2 focus:ring-primary rounded p-1" onClick={() => navigate('/claims')}>View All</button>
           </CardHeader>
           <div className="overflow-x-auto hidden md:block">
             <table className="w-full text-left">
-              <thead className="bg-brand-table-header text-on-surface-variant font-label-sm uppercase tracking-wider">
+              <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
                 <tr>
                   <th className="px-6 py-4">ID</th>
                   <th className="px-4 py-4">Type</th>
@@ -155,7 +155,7 @@ export function RequestorDashboard() {
                   <th className="px-6 py-4">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-brand-border font-body-base">
+              <tbody className="bg-white divide-y divide-outline-variant font-body-base">
                 {myClaims.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-outline">
@@ -169,7 +169,7 @@ export function RequestorDashboard() {
                     ? amounts.reimbursementLabel
                     : claim.type === 'Cash Advance' ? 'Released' : 'Reimbursed';
                   return (
-                  <tr key={claim.id} className="hover:bg-brand-row-hover transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+                  <tr key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
                     <td className="px-6 py-4 font-mono-data font-medium">{claim.ref}</td>
                     <td className="px-4 py-4">{claim.type}</td>
                     <td className="px-4 py-4">{claim.purpose}</td>

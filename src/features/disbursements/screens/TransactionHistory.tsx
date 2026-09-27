@@ -109,7 +109,7 @@ export function TransactionHistory() {
   const renderTxnTable = (items: Claim[]) => (
     <div className="overflow-x-auto">
       <table className="w-full text-left">
-        <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
+        <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
           <tr>
             <th className="px-6 py-4">Claim ID</th>
             <th className="px-6 py-4">Requestor</th>
@@ -122,7 +122,7 @@ export function TransactionHistory() {
             <th className="px-6 py-4 text-center">Status</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-outline-variant">
+        <tbody className="bg-white divide-y divide-outline-variant">
           {items.length === 0 ? (
             <tr>
               <td colSpan={9} className="px-6 py-12 text-center text-outline">
@@ -134,7 +134,7 @@ export function TransactionHistory() {
             const req = users.find(u => u.id === claim.requestorId) || users[0];
             const completedAt = completionDateFor(claim);
             return (
-              <tr key={claim.id} className="hover:bg-primary-container/5 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+              <tr key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer bg-white" onClick={() => navigate(`/claims/${claim.id}`)}>
                 <td className="px-6 py-5 font-mono-data text-primary font-bold">{claim.ref}</td>
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-3">
@@ -181,9 +181,9 @@ export function TransactionHistory() {
       </div>
 
       <div className={groupBy === 'none' ? 'space-y-0' : 'space-y-8'}>
-      <Card className="rounded-b-none p-4 shadow-none">
+      <Card className="rounded-b-none p-4 shadow-none bg-white">
         <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
-          <h3 className="font-label-md uppercase tracking-wider text-on-surface">Completed Disbursements</h3>
+          <h3 className="font-headline-sm uppercase tracking-wider text-slate-900 font-bold">Completed Disbursements</h3>
           <span className="font-label-sm text-outline whitespace-nowrap">{filteredClaims.length} of {completedClaims.length}</span>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -224,7 +224,7 @@ export function TransactionHistory() {
       </Card>
 
       {groupBy === 'none' ? (
-        <Card className="rounded-t-none">
+        <Card className="rounded-t-none bg-white">
           {renderTxnTable(paginatedClaims)}
           <Pagination
             currentPage={currentPage}

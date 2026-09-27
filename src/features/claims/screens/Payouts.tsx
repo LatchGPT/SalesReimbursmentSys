@@ -178,10 +178,10 @@ export function Payouts() {
               </Card>
             </div>
 
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden bg-white border border-outline-variant">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+                  <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
                     <tr>
                       <th className="px-5 py-3">Reference</th>
                       <th className="px-5 py-3">Purpose</th>
@@ -192,9 +192,9 @@ export function Payouts() {
                       <th className="px-5 py-3">Date Completed</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-outline-variant">
+                  <tbody className="bg-white divide-y divide-outline-variant">
                     {paginatedPayouts.map(({ claim, date }) => (
-                      <tr key={claim.id} className="hover:bg-surface-container-low/50 transition-colors">
+                      <tr key={claim.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-5 py-3 font-mono-data text-primary font-bold whitespace-nowrap">{claim.ref}</td>
                         <td className="px-5 py-3 text-body-sm text-on-surface max-w-[220px] truncate" title={claim.purpose}>{claim.purpose}</td>
                         <td className="px-5 py-3 font-mono-data font-bold text-on-surface text-right whitespace-nowrap">{formatMoney(claim.paidAmount)}</td>

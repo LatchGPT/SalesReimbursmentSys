@@ -133,7 +133,7 @@ export function MOMs() {
   const renderMomTable = (items: typeof filtered, showPreparer: boolean) => (
     <div className="overflow-x-auto">
       <table className="w-full text-left">
-        <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
+        <thead className="bg-slate-100 text-label-sm text-slate-600 uppercase font-semibold tracking-wider border-b border-outline-variant">
           <tr>
             <th className="px-6 py-4">Type</th>
             <th className="px-6 py-4">Purpose</th>
@@ -145,7 +145,7 @@ export function MOMs() {
             <th className="px-6 py-4 text-center">Status</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-outline-variant">
+        <tbody className="bg-white divide-y divide-outline-variant">
           {items.length === 0 ? (
             <tr>
               <td colSpan={showPreparer ? 8 : 7} className="px-6 py-12 text-center text-outline">
@@ -159,7 +159,7 @@ export function MOMs() {
             return (
               <tr
                 key={mom.id}
-                className="hover:bg-primary-container/5 transition-colors cursor-pointer"
+                className="hover:bg-slate-50 transition-colors cursor-pointer"
                 onClick={() => navigate(`/moms/${mom.id}`)}
               >
                 <td className="px-6 py-5">
@@ -242,14 +242,14 @@ export function MOMs() {
 
       <div className="space-y-0">
       <FilterBar
-        className="rounded-b-none"
-        title="Records"
+        className="rounded-b-none bg-white"
+        title="Minutes & Agreements"
         titleEnd={
-          <div className="min-w-[8.5rem] border-l border-outline-variant pl-6 text-right sm:min-w-[10rem] sm:pl-8">
-            <p className="font-label-sm uppercase tracking-wider text-outline whitespace-nowrap">No. of Items</p>
-            <p className="mt-1 font-mono-data text-sm font-bold text-on-surface whitespace-nowrap">
+          <div className="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-4">
+            <span className="font-label-sm uppercase tracking-wider text-slate-500 whitespace-nowrap">No. of Items:</span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono-data bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
               {filtered.length} of {moms.length}
-            </p>
+            </span>
           </div>
         }
         searchValue={query}

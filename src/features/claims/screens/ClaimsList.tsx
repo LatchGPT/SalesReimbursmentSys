@@ -357,7 +357,7 @@ export function ClaimsList() {
 
       <div className="space-y-0">
         <FilterBar
-          className="rounded-b-none"
+          className="rounded-b-none bg-white"
           title="Claims"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
@@ -397,7 +397,7 @@ export function ClaimsList() {
           ]}
           popoverDescription="Narrow claims by client, location, or submitted date."
         />
-      <Card className="!mt-[-1px] rounded-t-none">
+      <Card className="!mt-[-1px] rounded-t-none bg-white">
         {groupBy === 'none' ? (
           <>
             {renderClaimsBody(paginatedClaims)}
@@ -438,7 +438,7 @@ export function ClaimsList() {
       <>
         <div className="overflow-x-auto hidden md:block">
           <table className="w-full min-w-[1040px] text-left">
-            <thead className="bg-brand-table-header text-on-surface-variant font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">ID</th>
                 <th className="px-4 py-4">Type</th>
@@ -451,11 +451,11 @@ export function ClaimsList() {
                 <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-brand-border font-body-base">
+            <tbody className="bg-white divide-y divide-brand-border font-body-base">
               {items.map(claim => {
                 const amounts = getRequestAmountPresentation(claim);
                 return (
-                <tr key={claim.id} className="hover:bg-brand-row-hover transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+                <tr key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
                   <td className="px-6 py-4 font-mono-data font-medium">{claim.ref}</td>
                   <td className="px-4 py-4">
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">

@@ -22,6 +22,19 @@ const STAGE_LABELS: Partial<Record<ClaimStatus, string>> = {
   [ClaimStatus.CLOSED]: 'Closed',
 };
 
+const STEPPER_DISPLAY_LABELS: Partial<Record<ClaimStatus, string>> = {
+  [ClaimStatus.PENDING_APPROVAL]: 'Submitted',
+  [ClaimStatus.SUBMITTED]: 'Submitted',
+  [ClaimStatus.APPROVED]: 'Approved',
+  [ClaimStatus.PROCESSING]: 'Processing',
+  [ClaimStatus.READY_FOR_CLAIM]: 'Ready',
+  [ClaimStatus.COMPLETED]: 'Completed',
+  [ClaimStatus.RELEASED]: 'Released',
+  [ClaimStatus.LIQUIDATED]: 'Liquidated',
+  [ClaimStatus.REVIEWED]: 'Reviewed',
+  [ClaimStatus.CLOSED]: 'Closed',
+};
+
 const BRANCH_STATUSES = [ClaimStatus.REJECTED, ClaimStatus.RETURNED];
 
 function currentlyWith(claim: Claim, users: User[]): string {
@@ -179,19 +192,21 @@ export function ClaimProgressTracker({
       ) : (
         /* Standard Stepper Grid */
         <div
-          className="grid w-full mt-2"
+          className="grid w-full mt-2 gap-1"
           style={{ gridTemplateColumns: `repeat(${flow.length}, minmax(0, 1fr))` }}
         >
           {flow.map((stage, i) => {
             const isDone = currentIndex !== -1 && currentIndex > i;
             const isCurrent = currentIndex !== -1 ? currentIndex === i : i === 0;
+            const label = STEPPER_DISPLAY_LABELS[stage] || STAGE_LABELS[stage] || stage;
+            const fullLabel = STAGE_LABELS[stage] || stage;
 
             return (
-              <div key={stage} className="relative flex flex-col items-center text-center">
+              <div key={stage} className="relative flex flex-col items-center text-center w-full min-w-0 px-0.5">
                 {/* Horizontal Connecting Line behind nodes */}
                 {i < flow.length - 1 && (
                   <div
-                    className={`absolute top-4 left-1/2 w-full h-0.5 -translate-y-1/2 transition-colors duration-200 ${
+                    className={`absolute top-3.5 sm:top-4 left-1/2 w-full h-0.5 -translate-y-1/2 transition-colors duration-200 ${
                       currentIndex > i ? 'bg-emerald-500' : 'bg-slate-200'
                     }`}
                     aria-hidden="true"
@@ -200,18 +215,18 @@ export function ClaimProgressTracker({
 
                 {/* Node Circle */}
                 <div
-                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                  className={`relative z-10 flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
                     isDone
                       ? 'bg-emerald-600 text-white shadow-xs ring-4 ring-white'
                       : isCurrent
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-4 ring-blue-100'
                       : 'border-2 border-slate-200 bg-white text-slate-400 ring-4 ring-white'
                   }`}
-                  title={STAGE_LABELS[stage] || stage}
+                  title={fullLabel}
                 >
                   {isDone ? (
                     <svg
-                      className="h-4 w-4"
+                      className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                       fill="none"
                       viewBox="0 0 24 24"
                       strokeWidth="2.5"
@@ -225,24 +240,25 @@ export function ClaimProgressTracker({
                       />
                     </svg>
                   ) : (
-                    <span className={`text-xs ${isCurrent ? 'font-bold' : 'font-medium'}`}>
+                    <span className={`text-[11px] sm:text-xs ${isCurrent ? 'font-bold' : 'font-medium'}`}>
                       {i + 1}
                     </span>
                   )}
                 </div>
 
-                {/* Node Label (fixed height for clean multi-line baseline alignment) */}
-                <div className="mt-2 min-h-[30px] px-0.5 flex items-start justify-center">
+                {/* Node Label (fixed height for clean baseline alignment, wraps nicely without overlapping neighbors) */}
+                <div className="mt-1.5 w-full min-w-0 min-h-[26px] flex items-start justify-center">
                   <span
-                    className={`text-[11px] sm:text-xs leading-tight text-center transition-colors ${
+                    className={`w-full min-w-0 text-[9.5px] sm:text-[11px] leading-[1.15] text-center transition-colors break-words hyphens-auto ${
                       isCurrent
                         ? 'font-bold text-blue-600'
                         : isDone
                         ? 'font-medium text-slate-700'
                         : 'font-normal text-slate-400'
                     }`}
+                    title={fullLabel}
                   >
-                    {STAGE_LABELS[stage] || stage}
+                    {label}
                   </span>
                 </div>
               </div>
@@ -282,7 +298,7 @@ export function ClaimProgressTracker({
 
       {/* Card Footer: Currently With & View Activity */}
       <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -293,7 +309,7 @@ export function ClaimProgressTracker({
               />
             </svg>
           </span>
-          <span className="truncate text-slate-600">
+          <span className="truncate text-slate-600 min-w-0" title={currentlyWith(claim, users)}>
             <span className="text-slate-400">{isBranched ? 'Ended:' : 'Currently with:'}</span>{' '}
             <span className="font-semibold text-slate-900">{currentlyWith(claim, users)}</span>
           </span>

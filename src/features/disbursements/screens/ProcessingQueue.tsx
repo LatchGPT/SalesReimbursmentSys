@@ -97,10 +97,10 @@ export function ProcessingQueue() {
       })()}
 
       <div className="space-y-0">
-      <Card className="rounded-b-none p-4 shadow-none">
+      <Card className="rounded-b-none p-4 shadow-none bg-white">
         <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
           <div>
-            <h4 className="font-headline-md text-on-surface">Disbursement Worklist</h4>
+            <h4 className="font-headline-md text-slate-900">Disbursement Worklist</h4>
             <p className="mt-1 text-xs text-outline">Oldest approved requests are prioritized first.</p>
           </div>
           <span className="font-label-sm text-outline">{displayedClaims.length} records</span>
@@ -138,10 +138,10 @@ export function ProcessingQueue() {
         </div>}
       </Card>
 
-      <Card className="rounded-t-none">
+      <Card className="rounded-t-none bg-white">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-outline font-label-sm uppercase tracking-wider">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Requestor</th>
                 <th className="px-6 py-4">Ref & Type</th>
@@ -151,7 +151,7 @@ export function ProcessingQueue() {
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {displayedClaims.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-outline">
@@ -163,7 +163,7 @@ export function ProcessingQueue() {
                 const req = users.find(u => u.id === claim.requestorId) || users[0];
                 const aging = getClaimAgingInfo(claim.approvedAt || claim.submittedAt, claim.createdAt);
                 return (
-                  <tr key={claim.id} className={`hover:bg-primary-fixed/20 transition-colors group cursor-pointer ${claim.id === processingClaims[0]?.id ? 'bg-tertiary-container/10' : ''}`} onClick={(e) => {
+                  <tr key={claim.id} className="hover:bg-slate-50 transition-colors group cursor-pointer" onClick={(e) => {
                     if (!(e.target as HTMLElement).closest('button')) {
                       navigate(`/claims/${claim.id}`);
                     }

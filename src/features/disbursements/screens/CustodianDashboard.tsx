@@ -130,10 +130,10 @@ export function CustodianDashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="bg-surface-container-lowest">
+      <Card className="bg-white">
+        <CardHeader className="bg-white">
           <div className="flex items-center gap-4">
-            <h3 className="font-label-md uppercase tracking-wider text-on-surface">Claims Awaiting Processing</h3>
+            <h3 className="font-headline-sm uppercase tracking-wider text-slate-900 font-bold">Claims Awaiting Processing</h3>
             {queueRequestors.length > 0 && (
               <div className="flex -space-x-2">
                 {queueRequestors.slice(0, 3).map(u => (
@@ -157,7 +157,7 @@ export function CustodianDashboard() {
             <span className="font-label-sm text-outline">Viewing {visibleProcessingClaims.length} of {processingClaims.length}</span>
           </div>
         </CardHeader>
-        <div className="border-b border-outline-variant bg-surface-container-lowest p-4">
+        <div className="border-b border-outline-variant bg-white p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <div className="relative min-w-0 flex-1">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
@@ -197,7 +197,7 @@ export function CustodianDashboard() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-surface-container-low text-label-sm text-outline uppercase">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Ref &amp; Type</th>
                 <th className="px-6 py-4">Requestor</th>
@@ -207,7 +207,7 @@ export function CustodianDashboard() {
                 <th className="px-6 py-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant">
+            <tbody className="bg-white divide-y divide-outline-variant">
               {visibleProcessingClaims.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-outline">
@@ -219,7 +219,7 @@ export function CustodianDashboard() {
                 const req = users.find(u => u.id === claim.requestorId) || users[0];
                 const aging = getClaimAgingInfo(claim.approvedAt || claim.submittedAt, claim.createdAt);
                 return (
-                  <tr key={claim.id} className={`hover:bg-primary-container/5 transition-colors group cursor-pointer ${claim.id === oldestItem?.id ? 'bg-tertiary-container/10' : ''}`} onClick={(e) => {
+                  <tr key={claim.id} className="hover:bg-slate-50 transition-colors group cursor-pointer bg-white" onClick={(e) => {
                     if (!(e.target as HTMLElement).closest('button')) {
                       navigate(`/claims/${claim.id}`);
                     }

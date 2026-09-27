@@ -12,31 +12,31 @@ export function ClaimLineItemsTable({
   onSelectReceipt: (item: ExpenseLineItem) => void;
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <h3 className="font-headline-md text-on-surface">Expense Line Items</h3>
+    <Card className="bg-white">
+      <CardHeader className="bg-white">
+        <h3 className="font-headline-md text-slate-900 font-bold">Expense Line Items</h3>
         <div className="bg-primary-fixed text-on-primary-fixed px-3 py-1 rounded-full font-label-md">
           Total: {formatMoney(claim.total)}
         </div>
       </CardHeader>
       <div className="overflow-x-auto hidden md:block">
         <table className="w-full text-left">
-          <thead className="bg-surface-container-low">
+          <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
             <tr>
-              <th className="px-4 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Date of Purchase</th>
-              <th className="px-4 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Category</th>
-              <th className="px-4 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Vendor / Purpose</th>
-              <th className="px-4 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">OR Number</th>
-              <th className="px-4 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider">Payment</th>
-              <th className="px-4 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider text-right">Amount</th>
-              <th className="px-4 py-3 font-label-sm text-on-surface-variant uppercase tracking-wider text-center">Receipt</th>
+              <th className="px-4 py-3">Date of Purchase</th>
+              <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Vendor / Purpose</th>
+              <th className="px-4 py-3">OR Number</th>
+              <th className="px-4 py-3">Payment</th>
+              <th className="px-4 py-3 text-right">Amount</th>
+              <th className="px-4 py-3 text-center">Receipt</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-outline-variant">
+          <tbody className="bg-white divide-y divide-outline-variant">
             {items.map(item => {
               const hasReceipt = Boolean(item.receiptUrl);
               return (
-                <tr key={item.id} className="hover:bg-primary/5 transition-colors">
+                <tr key={item.id} className="hover:bg-slate-50 transition-colors bg-white">
                   <td className="px-4 py-3 font-mono-data text-xs">
                     {item.expenseDate}
                     {Math.floor((Date.now() - new Date(`${item.expenseDate}T00:00:00`).getTime()) / (1000 * 60 * 60 * 24)) > 30 && (

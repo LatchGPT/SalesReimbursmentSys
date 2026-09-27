@@ -75,7 +75,7 @@ describe('User Accounts - Add and Delete User API', () => {
         headers: { 'Content-Type': 'application/json', 'X-User-Id': adminId },
         body: JSON.stringify({
           name: 'Duplicate User',
-          email: 'alice@mgenesis.com',
+          email: state.users[0]?.email || 'mia@mgenesis.com',
           role: UserRole.REQUESTOR,
           department: 'Sales',
         }),
