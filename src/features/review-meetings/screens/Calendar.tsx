@@ -100,7 +100,7 @@ export function Calendar() {
     try {
       await confirmReviewMeeting(current.id);
       await refresh();
-      addToast('Review meeting confirmed.', 'success');
+      addToast('Review meeting confirmed successfully.', 'success');
       setSelected(null);
     } catch (err: any) {
       addToast(err?.message || 'Could not confirm this meeting.', 'error');
@@ -115,7 +115,7 @@ export function Calendar() {
     try {
       await declineReviewMeeting(current.id, declineReason.trim() || undefined);
       await refresh();
-      addToast('Review meeting declined. The requestor can propose a new time.', 'success');
+      addToast('Review meeting declined successfully.', 'success');
       setSelected(null);
     } catch (err: any) {
       addToast(err?.message || 'Could not decline this meeting.', 'error');
@@ -134,7 +134,7 @@ export function Calendar() {
     try {
       await rescheduleReviewMeeting(current.id, newDate, newTime);
       await refresh();
-      addToast('New time proposed to your approver.', 'success');
+      addToast('New time proposed successfully.', 'success');
       setSelected(null);
     } catch (err: any) {
       addToast(err?.message || 'Could not propose a new time.', 'error');

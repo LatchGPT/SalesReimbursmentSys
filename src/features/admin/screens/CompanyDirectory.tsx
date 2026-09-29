@@ -93,11 +93,10 @@ export function CompanyDirectory() {
     try {
       if (editing) {
         await updateCompany(editing.id, body);
-        addToast(`Updated ${name}.`, 'success');
       } else {
         await createCompany(body);
-        addToast(`Added ${name} to the directory.`, 'success');
       }
+      addToast('Record saved successfully.', 'success');
       await refresh();
       setShowModal(false);
     } catch (err: any) {

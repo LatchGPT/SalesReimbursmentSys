@@ -59,7 +59,7 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
       });
       void refresh();
       addToast(
-        activeModal === 'return' ? 'Returned to the requestor for revision.' : 'Request rejected before release.',
+        activeModal === 'return' ? 'Claim returned successfully.' : 'Claim rejected successfully.',
         'success',
       );
       setActiveModal(null);
@@ -124,7 +124,7 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
         break;
       case 'closeLiq':
         newStatus = ClaimStatus.CLOSED;
-        toastMsg = 'Liquidation closed.';
+        toastMsg = 'Liquidation closed successfully.';
         updates = { releaseReference: refundRef || undefined, paymentMethod: refundMethod };
         break;
     }

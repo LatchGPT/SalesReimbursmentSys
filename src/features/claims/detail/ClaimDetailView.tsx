@@ -128,7 +128,7 @@ export function ClaimDetailView() {
     try {
       await deleteClaim(claim.id);
       await refresh();
-      addToast('Draft discarded successfully.', 'success');
+      addToast('Record deleted successfully.', 'success');
       navigate('/claims');
     } catch (err: any) {
       addToast(err?.message || 'Could not discard draft.', 'error');
@@ -143,7 +143,7 @@ export function ClaimDetailView() {
       await apiFetch(`/api/cash-advances/${claim.id}/submit`, { method: 'POST' });
       applyClaimUpdate(claim.id, { status: ClaimStatus.SUBMITTED });
       void refresh();
-      addToast('Cash advance submitted for approval.', 'success');
+      addToast('Claim submitted successfully.', 'success');
     } catch (err: any) {
       addToast(err?.message || 'Could not submit cash advance.', 'error');
     } finally {
@@ -158,7 +158,7 @@ export function ClaimDetailView() {
       await apiFetch(`/api/liquidations/${claim.id}/submit`, { method: 'POST' });
       applyClaimUpdate(claim.id, { status: ClaimStatus.SUBMITTED });
       void refresh();
-      addToast('Liquidation report submitted for review.', 'success');
+      addToast('Claim submitted successfully.', 'success');
     } catch (err: any) {
       addToast(err?.message || 'Could not submit liquidation.', 'error');
     } finally {
@@ -218,7 +218,7 @@ export function ClaimDetailView() {
       });
       applyClaimUpdate(claim.id, { status: ClaimStatus.PENDING_APPROVAL });
       void refresh();
-      addToast(claim.status === ClaimStatus.DRAFT ? 'Draft submitted for approval.' : 'Claim revised and resubmitted for approval.', 'success');
+      addToast(claim.status === ClaimStatus.DRAFT ? 'Claim submitted successfully.' : 'Claim resubmitted successfully.', 'success');
       setRevising(false);
     } catch (err: any) {
       addToast(err?.message || 'Could not resubmit the claim.', 'error');
@@ -239,7 +239,7 @@ export function ClaimDetailView() {
       await confirmReceipt(claim.id, receiptCode.trim());
       applyClaimUpdate(claim.id, { status: ClaimStatus.COMPLETED });
       void refresh();
-      addToast('Receipt confirmed. Your reimbursement is complete.', 'success');
+      addToast('Receipt confirmed successfully.', 'success');
       setConfirmingReceipt(false);
       setReceiptCode('');
     } catch (err: any) {

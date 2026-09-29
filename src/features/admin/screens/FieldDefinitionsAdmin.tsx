@@ -187,7 +187,7 @@ export function FieldDefinitionsAdmin() {
         });
       }
       await refresh();
-      addToast('Field saved.', 'success');
+      addToast('Record saved successfully.', 'success');
       setEditingId(null);
       setEditForm({});
     } catch (err: any) {
