@@ -108,7 +108,7 @@ export function SystemEmails() {
               ) : emails.map(e => {
                 const recipient = users.find(u => u.id === e.recipientId);
                 return (
-                  <tr
+                  <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}
                     key={e.id}
                     onClick={() => openEmail(e)}
                     className={`hover:bg-slate-50 transition-colors cursor-pointer bg-white ${!e.read ? 'font-semibold' : ''}`}

@@ -271,7 +271,7 @@ export function AdminDashboard() {
               return (
                 <div key={c.id} className="flex items-center justify-between p-3 bg-tertiary-container/10 border border-tertiary/20 rounded-lg">
                   <div>
-                    <p className="font-label-md text-on-surface cursor-pointer hover:text-primary" onClick={() => navigate(`/claims/${c.id}`)}>{c.ref}</p>
+                    <button type="button" className="font-label-md text-on-surface cursor-pointer hover:text-primary" onClick={() => navigate(`/claims/${c.id}`)}>{c.ref}</button>
                     <p className="text-body-sm text-outline">Routed to {currentApprover?.name || '(unknown)'} — {c.approverStaleReason || 'org change'}</p>
                   </div>
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openReassign(c.id)}>

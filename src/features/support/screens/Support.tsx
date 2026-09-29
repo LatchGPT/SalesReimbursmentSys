@@ -168,6 +168,14 @@ export function Support() {
                     <div
                       key={ticket.id}
                       onClick={() => openTicket(ticket)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openTicket(ticket);
+                        }
+                      }}
                       className={`p-4 cursor-pointer hover:bg-brand-row-hover transition-colors ${isSelected ? 'bg-primary/10 border-l-4 border-primary' : ''}`}
                     >
                       <div className="flex justify-between items-start mb-1">
