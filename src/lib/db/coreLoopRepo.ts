@@ -260,6 +260,17 @@ export async function persistClaimWithLineItems(
   if (!isDbConfigured()) return;
   await trackedWrite('persistClaimWithLineItems', () =>
     getDb().$transaction(async (tx) => {
+      // A newly created MOM points back to its claim while the claim points to
+      // the MOM. Insert its nullable side first, then complete the backfill.
+      for (const mom of moms) {
+        const momRow = momToRow(mom);
+        await tx.moms.upsert({
+          where: { id: momRow.id },
+          create: { ...momRow, claim_id: null },
+          update: { ...momRow, claim_id: null },
+        });
+      }
+
       const claimRow = claimToRow(claim);
       await tx.claims.upsert({
         where: { id: claimRow.id },

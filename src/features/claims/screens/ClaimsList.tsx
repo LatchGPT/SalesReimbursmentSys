@@ -15,13 +15,19 @@ import { formatMoney } from '../../../lib/money';
 import { formatDate } from '../../../lib/date';
 import { claimTypeIcon, FINANCE_VISIBLE_STATUSES, getRequestAmountPresentation, isFinanceVisibleClaim } from '../domain/claimWorkflow';
 import { buildFinancialRecordsCsv } from '../../../lib/financialRecordsCsv';
+import { useToast } from '../../../components/shared/ToastContext';
+import { deleteClaim } from '../../../lib/api';
+import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 
 const ACTIVE_STATUSES = [ClaimStatus.DRAFT, ClaimStatus.PENDING_APPROVAL, ClaimStatus.PROCESSING, ClaimStatus.READY_FOR_CLAIM];
 
 export function ClaimsList() {
-  const { currentUser, claims, users } = useAppContext();
+  const { currentUser, claims, users, refresh } = useAppContext();
+  const { addToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [claimToDelete, setClaimToDelete] = useState<Claim | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
@@ -144,6 +150,21 @@ export function ClaimsList() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteDraft = async () => {
+    if (!claimToDelete) return;
+    setDeleting(true);
+    try {
+      await deleteClaim(claimToDelete.id);
+      await refresh();
+      addToast('Record deleted successfully.', 'success');
+      setClaimToDelete(null);
+    } catch (err: any) {
+      addToast(err?.message || 'Could not delete draft.', 'error');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Reset page when filters change
@@ -430,6 +451,16 @@ export function ClaimsList() {
         )}
       </Card>
       </div>
+      <ConfirmModal
+        isOpen={Boolean(claimToDelete)}
+        onClose={() => setClaimToDelete(null)}
+        onConfirm={handleDeleteDraft}
+        title="Discard Draft Request"
+        confirmLabel={deleting ? 'Discarding…' : 'Discard Draft'}
+        variant="error"
+      >
+        <p>Are you sure you want to discard draft {claimToDelete?.ref}? This request will be permanently removed.</p>
+      </ConfirmModal>
     </div>
   );
 
@@ -487,10 +518,24 @@ export function ClaimsList() {
                     <div className="flex items-center justify-between gap-3">
                       <StatusBadge status={claim.status} />
                       {claim.status === ClaimStatus.DRAFT && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
-                          <span>Continue</span>
-                          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title="Discard Draft"
+                            aria-label={`Discard draft ${claim.ref}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setClaimToDelete(claim);
+                            }}
+                            className="p-1 rounded-md text-error/70 hover:text-error hover:bg-error/10 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
+                            <span>Continue</span>
+                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                          </span>
+                        </div>
                       )}
                     </div>
                   </td>
@@ -524,10 +569,24 @@ export function ClaimsList() {
                 <div className="flex items-center gap-2">
                   <StatusBadge status={claim.status} />
                   {claim.status === ClaimStatus.DRAFT && (
-                    <span className="text-xs font-semibold text-primary inline-flex items-center gap-0.5">
-                      <span>Continue</span>
-                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        title="Discard Draft"
+                        aria-label={`Discard draft ${claim.ref}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setClaimToDelete(claim);
+                        }}
+                        className="p-1 rounded-md text-error/70 hover:text-error hover:bg-error/10 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                      <span className="text-xs font-semibold text-primary inline-flex items-center gap-0.5">
+                        <span>Continue</span>
+                        <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>

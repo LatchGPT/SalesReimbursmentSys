@@ -9,7 +9,7 @@ type Context = { params: Promise<{ id: string }> };
 
 export async function PUT(request: Request, context: Context): Promise<Response> {
   return withPersistenceScope(async () => {
-    await hydrateServerlessState();
+    await hydrateServerlessState('claim-submission');
     const { id } = await context.params;
     const body = await request.json().catch(() => ({}));
     const result = await resubmitClaim(request.headers.get('x-user-id'), id, body);

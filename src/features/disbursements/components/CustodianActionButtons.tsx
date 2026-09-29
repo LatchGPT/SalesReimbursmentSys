@@ -15,7 +15,7 @@ export interface CustodianActionButtonsProps {
 }
 
 export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionButtonsProps) {
-  const { lineItems, currentUser, updateClaimStatus, refresh, paymentMethods } = useAppContext();
+  const { lineItems, currentUser, updateClaimStatus, refresh, applyClaimUpdate, paymentMethods } = useAppContext();
   const { addToast } = useToast();
 
   const [activeModal, setActiveModal] = useState<'markReady' | 'release' | 'closeLiq' | 'return' | 'reject' | null>(null);
@@ -54,9 +54,12 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
         activeModal === 'return' ? 'Return' : 'Reject',
         correctionComment.trim(),
       );
-      await refresh();
+      applyClaimUpdate(claim.id, {
+        status: activeModal === 'return' ? ClaimStatus.RETURNED : ClaimStatus.REJECTED,
+      });
+      void refresh();
       addToast(
-        activeModal === 'return' ? 'Returned to the requestor for revision.' : 'Request rejected before release.',
+        activeModal === 'return' ? 'Claim returned successfully.' : 'Claim rejected successfully.',
         'success',
       );
       setActiveModal(null);
@@ -72,8 +75,9 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
     setGeneratingCode(true);
     setError('');
     try {
-      await generateClaimCode(claim.id);
-      await refresh();
+      const updated: any = await generateClaimCode(claim.id);
+      applyClaimUpdate(claim.id, { releaseCode: updated.release_code });
+      void refresh();
       addToast('Claim code generated — give it to the requestor.', 'success');
     } catch (err: any) {
       setError(err?.message || 'Could not generate the claim code.');
@@ -120,7 +124,7 @@ export function CustodianActionButtons({ claim, size = 'sm' }: CustodianActionBu
         break;
       case 'closeLiq':
         newStatus = ClaimStatus.CLOSED;
-        toastMsg = 'Liquidation closed.';
+        toastMsg = 'Liquidation closed successfully.';
         updates = { releaseReference: refundRef || undefined, paymentMethod: refundMethod };
         break;
     }
