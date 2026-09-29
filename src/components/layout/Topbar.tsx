@@ -7,6 +7,8 @@ import { GlobalSearch } from './GlobalSearch';
 import { NotificationsModal } from '../shared/NotificationsModal';
 import { getIconForSubject } from '../shared/NotificationsView';
 
+export const SYSTEM_NAME = 'Sales Reimbursement System';
+
 interface TopbarProps {
   onMenuClick: () => void;
   isCollapsed?: boolean;
@@ -76,7 +78,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <h2 className="hidden md:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
+        <h2 className="hidden md:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">{SYSTEM_NAME}</h2>
         
         <GlobalSearch />
       </div>
