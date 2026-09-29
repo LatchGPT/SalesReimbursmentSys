@@ -104,7 +104,8 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface border border-outline-variant rounded-lg shadow-lg overflow-hidden flex flex-col max-h-96 z-50">
                 <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
                   <div className="flex items-center gap-2">
-                    <span
+                    <button
+                      type="button"
                       className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary"
                       onClick={() => {
                         setShowNotifications(false);
@@ -113,7 +114,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                       }}
                     >
                       Notifications
-                    </span>
+                    </button>
                     {unreadCount > 0 && (
                       <span className="px-1.5 py-0.2 rounded-full bg-error/10 text-error text-[11px] font-bold">
                         {unreadCount}

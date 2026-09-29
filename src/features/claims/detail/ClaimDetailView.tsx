@@ -270,7 +270,7 @@ export function ClaimDetailView() {
       <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
         <div className="min-w-0">
           <nav className="flex gap-2 text-on-surface-variant font-label-sm mb-2">
-            <span className="cursor-pointer hover:text-primary" onClick={() => navigate(-1)}>Claims</span>
+            <button type="button" className="cursor-pointer hover:text-primary" onClick={() => navigate(-1)}>Claims</button>
             <span>/</span>
             <span className="text-on-surface font-semibold">{claim.ref}</span>
           </nav>
