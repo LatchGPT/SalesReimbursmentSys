@@ -11,7 +11,7 @@
 
 ## Migration workflow
 
-Track work in `docs/NEXT_MVC_MIGRATION_TRACKER.md`.
+Track work in `docs/03-STATUS-AND-NEXT-STEPS.md`.
 
 For each endpoint family:
 

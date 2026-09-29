@@ -93,7 +93,7 @@ export function AdminDashboard() {
   }, [claims]);
 
   const statusTotal = useMemo(() => statusBreakdown.reduce((acc, [, n]) => acc + n, 0), [statusBreakdown]);
-  // Org-change fallback (docs/hierarchy-sync-design.md §5): a claim whose
+  // Org-change fallback (docs/02-ARCHITECTURE.md): a claim whose
   // approver went stale and nobody transferred it within the fallback window
   // needs an admin to step in. This is normally a cron; there's no scheduler
   // in this prototype, so the sweep is a manual trigger.
