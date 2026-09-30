@@ -11,8 +11,10 @@ import { formatPHP, REIMBURSEMENT_CAP } from '../../server/constants';
 import { normalizeExpenseCategory } from '../../lib/expenseCategories';
 import { getReimbursementDateError, getTodayIsoDate } from '../../features/claims/domain/reimbursementPolicy';
 import { persistStatusHistoryFireAndForget } from '../../lib/db/coreLoopRepo';
+import { headers } from 'next/headers';
 
-export async function submitClaimAction(userId: string | null, body: any) {
+export async function submitClaimAction(body: any) {
+  const userId = (await headers()).get('x-user-id');
   if (!userId) return { status: 401, body: { error: 'Unauthorized' } };
 
   const db = getDb();
@@ -63,7 +65,7 @@ export async function submitClaimAction(userId: string | null, body: any) {
       action_items: momPayload.action_items || momPayload.actionItems || '',
       prepared_by: user.name,
       prepared_by_department: user.department,
-      prepared_by_job_title: user.job_title,
+      prepared_by_job_title: user.job_title ?? undefined,
       file_url: momPayload.file_url,
       file_name: momPayload.file_name,
       status: is_draft ? MomStatus.DRAFT : MomStatus.COMPLETED,
@@ -74,7 +76,7 @@ export async function submitClaimAction(userId: string | null, body: any) {
       participants_external: momPayload.participants_external || '',
       custom_fields: momPayload.custom_fields || undefined,
     };
-    if (mom.client) {
+    if (mom && mom.client) {
       await getOrCreateCompany(mom.client, user.id);
     }
   } else if (mom_id) {
@@ -170,7 +172,7 @@ export async function submitClaimAction(userId: string | null, body: any) {
 
   if (!is_draft) {
     const settings = await db.system_settings.findFirst();
-    const limits = settings?.expense_category_limits ? JSON.parse(settings.expense_category_limits as string) : {};
+    const limits = settings?.category_limits ? JSON.parse(settings.category_limits as string) : {};
     for (const item of itemsToCreate) {
       const limit = limits[item.category];
       if (limit && item.amount > limit) {

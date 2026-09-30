@@ -72,14 +72,14 @@ export async function decideOnClaim(
     });
   }
   const { approveClaimAction } = await import('../../../app/actions/approveClaimAction');
-  const result = await approveClaimAction(getCurrentUserId(), claim.id, {
+  const result = await approveClaimAction(claim.id, {
     decision,
     comment,
     review_meeting_date: options?.reviewMeetingDate || undefined,
     review_meeting_time: options?.reviewMeetingTime || undefined,
   });
   if (result.status && result.status >= 400) {
-    throw new Error(result.body.error || 'Approval failed');
+    throw new Error((result.body as any).error || 'Approval failed');
   }
   return result.body;
 }
@@ -227,7 +227,7 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
   }
 
   const { submitClaimAction } = await import('../../../app/actions/submitClaimAction');
-  const result = await submitClaimAction(getCurrentUserId(), {
+  const result = await submitClaimAction({
     claim_type: claimType,
     mom: momPayload,
     remarks: remarks || mom?.purpose || (isDraft ? 'Draft reimbursement' : (claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : '')),
