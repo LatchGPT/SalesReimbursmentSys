@@ -1,10 +1,12 @@
 import { InputHTMLAttributes, forwardRef, SelectHTMLAttributes, LabelHTMLAttributes } from 'react';
 import { cn } from './Button';
+import { DateTimeInput } from './DateTimeInput';
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => {
+    const Component = props.type === 'date' || props.type === 'time' ? DateTimeInput : 'input';
     return (
-      <input
+      <Component
         ref={ref}
         className={cn(
           "w-full bg-white border border-brand-field-border rounded-input px-4 py-2.5 text-body-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none",
