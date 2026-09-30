@@ -114,7 +114,7 @@ export function CustodianDashboard() {
         />
         <Card
           className={`p-5 ${oldestItem ? 'cursor-pointer hover:border-tertiary transition-colors' : ''}`}
-          onClick={oldestItem ? () => navigate(`/claims/${oldestItem.id}`) : undefined}
+          onClick={() => oldestItem && navigate(`/claims/${oldestItem.id}`)}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -219,7 +219,7 @@ export function CustodianDashboard() {
                 const req = users.find(u => u.id === claim.requestorId) || users[0];
                 const aging = getClaimAgingInfo(claim.approvedAt || claim.submittedAt, claim.createdAt);
                 return (
-                  <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={claim.id} className="hover:bg-slate-50 transition-colors group cursor-pointer bg-white" onClick={(e) => {
+                  <tr key={claim.id} className="hover:bg-slate-50 transition-colors group cursor-pointer bg-white" onClick={(e) => {
                     if (!(e.target as HTMLElement).closest('button')) {
                       navigate(`/claims/${claim.id}`);
                     }

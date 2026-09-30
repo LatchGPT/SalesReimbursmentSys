@@ -168,37 +168,6 @@ describe('persist -> load round trip against the full (pg-mem) schema', () => {
     expect(new Date(loadedClaim!.release_code_expires_at!).getTime()).toBe(new Date(expiresAt).getTime());
     expect(new Date(loadedClaim!.release_code_locked_until!).getTime()).toBe(new Date(lockedUntil).getTime());
   });
-
-  it('persists a newly created MOM and its claim in one transaction', async () => {
-    const claimId = 'pgmem-test-claim-transactional';
-    const mom: Mom = {
-      id: 'pgmem-test-mom-transactional',
-      claim_id: claimId,
-      requestor_id: REQUESTOR.id,
-      client: 'Transactional Corp',
-      meeting_date: '2026-01-16',
-      status: MomStatus.COMPLETED,
-      created_at: new Date().toISOString(),
-      minutes_source: MinutesSource.TEMPLATE,
-    };
-    const claim: Claim = {
-      id: claimId,
-      requestor_id: REQUESTOR.id,
-      current_approver_id: APPROVER.id,
-      mom_id: mom.id,
-      claim_type: 'Reimbursement',
-      status: ClaimStatus.PENDING_APPROVAL,
-      total_amount: 250,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    await persistClaimWithLineItems(claim, [], [mom]);
-
-    const loaded = await loadCoreLoopFromDb();
-    expect(loaded.claims.find(candidate => candidate.id === claim.id)?.mom_id).toBe(mom.id);
-    expect(loaded.moms.find(candidate => candidate.id === mom.id)?.claim_id).toBe(claim.id);
-  });
 });
 
 describe('a database missing a migration reproduces the exact production failure', () => {

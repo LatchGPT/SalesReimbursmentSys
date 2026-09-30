@@ -46,7 +46,7 @@ export function CompanyPolicy() {
       if (Number.isFinite(t) && t > 0) body.highValueThreshold = t;
       await updateAdminSettings(body);
       await refresh();
-      addToast('Record saved successfully.', 'success');
+      addToast('Company policy updated.', 'success');
     } catch (err: any) {
       addToast(err?.message || 'Could not save the policy.', 'error');
     } finally {

@@ -126,7 +126,7 @@ export function ChartEmptyState({
 export const EmptyChartState = ChartEmptyState;
 
 export function TrendBadge({ value, context = 'vs prior month' }: { value: number | null; context?: string }) {
-  if (value == null) return null;
+  if (value == null) return <span className="text-xs text-outline">No prior-period comparison</span>;
   const isUp = value > 0;
   const isFlat = Math.abs(value) < 0.05;
   return (

@@ -157,7 +157,7 @@ export function MOMs() {
             const ref = claimRefFor(mom.claimId);
             const dt: MomDocumentType = mom.documentType === 'LOA' ? 'LOA' : 'MoM';
             return (
-              <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}
+              <tr
                 key={mom.id}
                 className="hover:bg-slate-50 transition-colors cursor-pointer"
                 onClick={() => navigate(`/moms/${mom.id}`)}

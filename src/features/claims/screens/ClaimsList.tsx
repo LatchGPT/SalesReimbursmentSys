@@ -15,19 +15,13 @@ import { formatMoney } from '../../../lib/money';
 import { formatDate } from '../../../lib/date';
 import { claimTypeIcon, FINANCE_VISIBLE_STATUSES, getRequestAmountPresentation, isFinanceVisibleClaim } from '../domain/claimWorkflow';
 import { buildFinancialRecordsCsv } from '../../../lib/financialRecordsCsv';
-import { useToast } from '../../../components/shared/ToastContext';
-import { deleteClaim } from '../../../lib/api';
-import { ConfirmModal } from '../../../components/shared/ConfirmModal';
 
 const ACTIVE_STATUSES = [ClaimStatus.DRAFT, ClaimStatus.PENDING_APPROVAL, ClaimStatus.PROCESSING, ClaimStatus.READY_FOR_CLAIM];
 
 export function ClaimsList() {
-  const { currentUser, claims, users, refresh } = useAppContext();
-  const { addToast } = useToast();
+  const { currentUser, claims, users } = useAppContext();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [claimToDelete, setClaimToDelete] = useState<Claim | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
@@ -150,21 +144,6 @@ export function ClaimsList() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-  };
-
-  const handleDeleteDraft = async () => {
-    if (!claimToDelete) return;
-    setDeleting(true);
-    try {
-      await deleteClaim(claimToDelete.id);
-      await refresh();
-      addToast('Record deleted successfully.', 'success');
-      setClaimToDelete(null);
-    } catch (err: any) {
-      addToast(err?.message || 'Could not delete draft.', 'error');
-    } finally {
-      setDeleting(false);
-    }
   };
 
   // Reset page when filters change
@@ -451,16 +430,6 @@ export function ClaimsList() {
         )}
       </Card>
       </div>
-      <ConfirmModal
-        isOpen={Boolean(claimToDelete)}
-        onClose={() => setClaimToDelete(null)}
-        onConfirm={handleDeleteDraft}
-        title="Discard Draft Request"
-        confirmLabel={deleting ? 'Discarding…' : 'Discard Draft'}
-        variant="error"
-      >
-        <p>Are you sure you want to discard draft {claimToDelete?.ref}? This request will be permanently removed.</p>
-      </ConfirmModal>
     </div>
   );
 
@@ -486,7 +455,7 @@ export function ClaimsList() {
               {items.map(claim => {
                 const amounts = getRequestAmountPresentation(claim);
                 return (
-                <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+                <tr key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
                   <td className="px-6 py-4 font-mono-data font-medium">{claim.ref}</td>
                   <td className="px-4 py-4">
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
@@ -518,24 +487,10 @@ export function ClaimsList() {
                     <div className="flex items-center justify-between gap-3">
                       <StatusBadge status={claim.status} />
                       {claim.status === ClaimStatus.DRAFT && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            title="Discard Draft"
-                            aria-label={`Discard draft ${claim.ref}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setClaimToDelete(claim);
-                            }}
-                            className="p-1 rounded-md text-error/70 hover:text-error hover:bg-error/10 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                          </button>
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
-                            <span>Continue</span>
-                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                          </span>
-                        </div>
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:underline">
+                          <span>Continue</span>
+                          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                        </span>
                       )}
                     </div>
                   </td>
@@ -560,7 +515,7 @@ export function ClaimsList() {
               ? amounts.reimbursementLabel
               : claim.type === 'Cash Advance' ? 'Released' : 'Reimbursed';
             return (
-            <div key={claim.id} role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); event.currentTarget.click(); } }} className="p-4 flex flex-col gap-3 cursor-pointer hover:bg-surface-container-low transition-colors" onClick={() => navigate(`/claims/${claim.id}`)}>
+            <div key={claim.id} className="p-4 flex flex-col gap-3 cursor-pointer hover:bg-surface-container-low transition-colors" onClick={() => navigate(`/claims/${claim.id}`)}>
               <div className="flex justify-between items-start">
                 <div className="flex flex-col">
                   <span className="font-mono-data font-bold text-primary">{claim.ref}</span>
@@ -569,24 +524,10 @@ export function ClaimsList() {
                 <div className="flex items-center gap-2">
                   <StatusBadge status={claim.status} />
                   {claim.status === ClaimStatus.DRAFT && (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        title="Discard Draft"
-                        aria-label={`Discard draft ${claim.ref}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setClaimToDelete(claim);
-                        }}
-                        className="p-1 rounded-md text-error/70 hover:text-error hover:bg-error/10 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                      </button>
-                      <span className="text-xs font-semibold text-primary inline-flex items-center gap-0.5">
-                        <span>Continue</span>
-                        <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-                      </span>
-                    </div>
+                    <span className="text-xs font-semibold text-primary inline-flex items-center gap-0.5">
+                      <span>Continue</span>
+                      <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    </span>
                   )}
                 </div>
               </div>

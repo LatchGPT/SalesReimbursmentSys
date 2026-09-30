@@ -23,8 +23,6 @@ interface AppContextType {
   ) => Promise<void>;
   /** Re-pull the whole workspace from the server. */
   refresh: () => Promise<void>;
-  /** Apply confirmed transition data while the full workspace refresh runs. */
-  applyClaimUpdate: (claimId: string, changes: Partial<Claim>) => void;
   lineItems: ExpenseLineItem[];
   moms: MOM[];
   emails: SystemEmail[];
@@ -135,12 +133,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  const applyClaimUpdate = useCallback((claimId: string, changes: Partial<Claim>) => {
-    setClaims(previous => previous.map(claim =>
-      claim.id === claimId ? { ...claim, ...changes } : claim
-    ));
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -276,11 +268,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         throw new Error(`No server route maps to status "${newStatus}"`);
     }
 
-    // Confirmed transition response is authoritative for the status. Do not
-    // make the user wait for a second, whole-workspace read before showing it.
-    applyClaimUpdate(claimId, { status: newStatus, ...updates });
-    void refresh();
-  }, [applyClaimUpdate, claims, refresh]);
+    await refresh();
+  }, [claims, refresh]);
 
   if (loadError) {
     return (
@@ -310,7 +299,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider value={{
-      currentUser, setCurrentUser, users, refresh, applyClaimUpdate,
+      currentUser, setCurrentUser, users, refresh,
       claims, statusHistory, updateClaimStatus,
       lineItems, moms,
       emails, markEmailsRead: markEmailsReadLocal,

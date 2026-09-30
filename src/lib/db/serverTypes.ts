@@ -15,7 +15,7 @@ export interface User {
   job_title?: string;
   reports_to: string | null; // ID of the Approver they report to
 
-  // Simulated Entra ID hierarchy sync fields - see docs/02-ARCHITECTURE.md.
+  // Simulated Entra ID hierarchy sync fields — see docs/hierarchy-sync-design.md.
   // reports_to above is the field that sync writes; these two track the
   // consequences of a sync-driven org-chart change (approval authority is
   // derived from headcount but Admin-overridable; employment status flags
@@ -25,7 +25,8 @@ export interface User {
   notification_prefs?: Record<string, { inApp: boolean; email: boolean }>;
   avatar_url?: string;
 
-  // Entra ID prep - see docs/02-ARCHITECTURE.md. These are the join keys a
+  // Phase 3 (O365/Entra ID) prep — see docs/PROTOTYPE-AUDIT.md, "Target
+  // integration: Office 365 / Microsoft Entra ID". These are the join keys a
   // validated Entra JWT will actually carry (`oid` claim, `preferred_username`
   // UPN); populating them on the seed now — even with fake values — means
   // getUser() and every id-shaped field below can resolve on them today, so
@@ -224,7 +225,7 @@ export interface Claim {
 
   // Set when the requestor's manager changes (simulated Entra ID sync) while
   // this claim is still Pending Approval under their old approver. See
-  // docs/02-ARCHITECTURE.md - the claim stays with the old approver,
+  // docs/hierarchy-sync-design.md §5 — the claim stays with the old approver,
   // who is notified and can keep it or transfer to pending_transfer_to.
   approver_stale_since?: string | null;
   pending_transfer_to?: string | null;
@@ -257,7 +258,7 @@ export interface Company {
   industry?: string;
   notes?: string;
   // Phase 1 MDM enrichment — all optional, additive. Populates the "Company
-  // Auto-Fill" behavior (see docs/02-ARCHITECTURE.md) once a
+  // Auto-Fill" behavior (see docs/hierarchy-sync-design.md-style ADRs) once a
   // form reads it; nothing reads these yet as of Phase 1.
   address?: string;
   business_unit_id?: string;
