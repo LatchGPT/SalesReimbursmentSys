@@ -19,8 +19,13 @@ import { config } from './config';
 import { state } from './state';
 
 let activeHydration: Promise<void> | undefined;
+let activeUserHydration: Promise<void> | undefined;
 
-export type StateHydrationProfile = 'full' | 'claim-approval';
+export type StateHydrationProfile =
+  | 'full'
+  | 'claim-approval'
+  | 'claim-submission'
+  | 'claim-transition';
 
 /**
  * Refreshes production state from PostgreSQL for a serverless request.
@@ -80,7 +85,9 @@ export async function hydrateServerlessState(
         profile === 'full' ? loadUserHistoryFromDb() : Promise.resolve([]),
         loadCoreLoopFromDb(),
         profile === 'full' ? loadCashAdvanceLoopFromDb() : Promise.resolve({ cashAdvances: [], liquidations: [], liquidationLineItems: [], statusHistories: [] }),
-        profile === 'full' ? loadCompaniesFromDb() : Promise.resolve([]),
+        profile === 'full' || profile === 'claim-submission'
+          ? loadCompaniesFromDb()
+          : Promise.resolve([]),
         profile === 'full' ? loadMasterDataTable('departments') : Promise.resolve([]),
         profile === 'full' ? loadMasterDataTable('cost-centers') : Promise.resolve([]),
         profile === 'full' ? loadMasterDataTable('business-units') : Promise.resolve([]),
@@ -88,11 +95,15 @@ export async function hydrateServerlessState(
         profile === 'full' ? loadMasterDataTable('project-codes') : Promise.resolve([]),
         profile === 'full' ? loadMasterDataTable('vendors') : Promise.resolve([]),
         profile === 'full' ? loadFieldDefinitionsFromDb() : Promise.resolve([]),
-        profile === 'full' ? loadSystemSettingsFromDb() : Promise.resolve(undefined),
+        profile === 'full' || profile === 'claim-submission'
+          ? loadSystemSettingsFromDb()
+          : Promise.resolve(undefined),
         profile === 'full' ? loadMasterDataHistoryFromDb() : Promise.resolve([]),
         loadDelegationsFromDb(),
         profile === 'full' ? loadDelegationHistoryFromDb() : Promise.resolve([]),
-        loadReviewMeetingsFromDb(),
+        profile === 'full' || profile === 'claim-approval' || profile === 'claim-transition'
+          ? loadReviewMeetingsFromDb()
+          : Promise.resolve([]),
         profile === 'full' ? loadSupportRequestsFromDb() : Promise.resolve({ requests: [], messages: [] }),
       ]);
 
@@ -141,4 +152,31 @@ export async function hydrateServerlessState(
   });
 
   return activeHydration;
+}
+
+/** Load only identities needed by an upload authorization check. */
+export async function hydrateUsersForRequest(): Promise<void> {
+  if (!isDbConfigured()) {
+    if (!config.demoMode) {
+      throw new Error('DATABASE_URL is required when DEMO_MODE=false');
+    }
+    return;
+  }
+
+  if (activeUserHydration) return activeUserHydration;
+
+  activeUserHydration = loadUsersFromDb()
+    .then((users) => {
+      if (users.length > 0) state.users = users;
+    })
+    .catch((err) => {
+      console.error('[stateLoader] Could not load users from PostgreSQL:', err);
+      globalForStateLoader.dbConnectionFailed = true;
+      if (!config.demoMode && serverEnv.isProduction) throw err;
+    })
+    .finally(() => {
+      activeUserHydration = undefined;
+    });
+
+  return activeUserHydration;
 }

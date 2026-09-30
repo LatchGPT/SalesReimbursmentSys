@@ -71,17 +71,15 @@ export async function decideOnClaim(
       body: JSON.stringify({ decision, comment }),
     });
   }
-  const { approveClaimAction } = await import('../../../app/actions/approveClaimAction');
-  const result = await approveClaimAction(claim.id, {
-    decision,
-    comment,
-    review_meeting_date: options?.reviewMeetingDate || undefined,
-    review_meeting_time: options?.reviewMeetingTime || undefined,
+  return apiFetch(`/api/claims/${claim.id}/approve`, {
+    method: 'POST',
+    body: JSON.stringify({
+      decision,
+      comment,
+      review_meeting_date: options?.reviewMeetingDate || undefined,
+      review_meeting_time: options?.reviewMeetingTime || undefined,
+    }),
   });
-  if (result.status && result.status >= 400) {
-    throw new Error((result.body as any).error || 'Approval failed');
-  }
-  return result.body;
 }
 
 /**
@@ -226,28 +224,25 @@ export async function submitClaimFlow(input: SubmitClaimInput) {
     }
   }
 
-  const { submitClaimAction } = await import('../../../app/actions/submitClaimAction');
-  const result = await submitClaimAction({
-    claim_type: claimType,
-    mom: momPayload,
-    remarks: remarks || mom?.purpose || (isDraft ? 'Draft reimbursement' : (claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : '')),
-    is_draft: Boolean(isDraft),
-    line_items: uploaded.map((li) => ({
-      category: normalizeExpenseCategory(li.category),
-      amount: Number(li.amount) || 0,
-      receipt_url: li.receiptUrl,
-      or_number: li.orNumber || '',
-      vendor: li.vendor || '',
-      expense_date: li.expenseDate || '',
-      payment_method: li.paymentMethod || '',
-      business_purpose: li.businessPurpose || '',
-    })),
+  return apiFetch('/api/claims', {
+    method: 'POST',
+    body: JSON.stringify({
+      claim_type: claimType,
+      mom: momPayload,
+      remarks: remarks || mom?.purpose || (isDraft ? 'Draft reimbursement' : (claimType === 'Transport Reimbursement' ? 'Transport reimbursement' : '')),
+      is_draft: Boolean(isDraft),
+      line_items: uploaded.map((li) => ({
+        category: normalizeExpenseCategory(li.category),
+        amount: Number(li.amount) || 0,
+        receipt_url: li.receiptUrl,
+        or_number: li.orNumber || '',
+        vendor: li.vendor || '',
+        expense_date: li.expenseDate || '',
+        payment_method: li.paymentMethod || '',
+        business_purpose: li.businessPurpose || '',
+      })),
+    }),
   });
-  
-  if (result.status && result.status >= 400) {
-    throw new Error(result.body.error || 'Submission failed');
-  }
-  return result.body;
 }
 
 /**

@@ -1,44 +1,41 @@
 import { InputHTMLAttributes, forwardRef, SelectHTMLAttributes, LabelHTMLAttributes } from 'react';
 import { cn } from './Button';
 
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  error?: string;
-}
-
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, ...props }, ref) => {
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
+  ({ className, ...props }, ref) => {
     return (
-      <div className="w-full">
-        <input
-          ref={ref}
-          className={cn(
-            "w-full bg-white border border-brand-field-border rounded-input px-4 py-2.5 text-body-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:bg-surface-container-low disabled:text-outline",
-            error && "border-error focus-visible:outline-error focus:ring-error/20 focus:border-error",
-            className
-          )}
-          {...props}
-        />
-        {error && <p className="text-error text-label-sm mt-1">{error}</p>}
-      </div>
+      <input
+        ref={ref}
+        className={cn(
+          "w-full bg-white border border-brand-field-border rounded-input px-4 py-2.5 text-body-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none",
+          className
+        )}
+        {...props}
+      />
     );
   }
 );
 Input.displayName = 'Input';
 
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   containerClassName?: string;
-  error?: string;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, containerClassName, children, error, ...props }, ref) => {
+  ({ className, containerClassName, children, ...props }, ref) => {
     return (
-      <div className={cn("relative w-full", containerClassName)}>
+      // `className` is applied to both the wrapper and the <select> — the
+      // chevron below is positioned absolute against this wrapper, so if a
+      // caller's width utility (e.g. `w-44`) only reached the <select>, the
+      // wrapper stayed at its default w-full and the chevron floated off to
+      // the wrapper's true right edge instead of sitting inside the visible,
+      // narrower control. Non-width classes (padding, text size, etc.)
+      // landing on this wrapper too is harmless — it's an invisible div.
+      <div className={cn("relative w-full", className, containerClassName)}>
         <select
           ref={ref}
           className={cn(
             "w-full appearance-none bg-white border border-brand-field-border rounded-input pl-4 pr-10 py-2.5 text-body-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:bg-surface-container-low disabled:text-outline",
-            error && "border-error focus-visible:outline-error focus:ring-error/20 focus:border-error",
             className
           )}
           {...props}
@@ -47,18 +44,17 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </select>
         <span
           aria-hidden="true"
-          className="material-symbols-outlined pointer-events-none absolute right-3 top-[18px] -translate-y-1/2 text-[20px] text-on-surface-variant"
+          className="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant"
         >
           expand_more
         </span>
-        {error && <p className="text-error text-label-sm mt-1">{error}</p>}
       </div>
     );
   }
 );
 Select.displayName = 'Select';
 
-export const Label = ({ children, className, optional, required, ...props }: LabelHTMLAttributes<HTMLLabelElement> & { optional?: boolean, required?: boolean }) => (
+export const Label = ({ children, className, required, ...props }: LabelHTMLAttributes<HTMLLabelElement> & { required?: boolean }) => (
   <label className={cn("block font-label-md text-label-md text-on-surface-variant mb-2", className)} {...props}>
     {children}
     {required && (
@@ -66,9 +62,6 @@ export const Label = ({ children, className, optional, required, ...props }: Lab
         <span aria-hidden="true" className="text-error ml-1">*</span>
         <span className="sr-only"> (required)</span>
       </>
-    )}
-    {optional && (
-      <span className="text-outline text-label-sm ml-1 font-normal">(optional)</span>
     )}
   </label>
 );

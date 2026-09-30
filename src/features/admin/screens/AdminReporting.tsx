@@ -296,7 +296,7 @@ export function AdminReporting({ audience = 'admin' }: ReportingProps = {}) {
               {!loading && paginatedRecords.length === 0 ? (
                 <tr><td colSpan={9} className="px-6 py-12 text-center text-outline">No records match the current filters.</td></tr>
               ) : paginatedRecords.map(record => (
-                <tr
+                <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}
                   key={`${record.type}-${record.id}`}
                   className="hover:bg-slate-50 cursor-pointer bg-white"
                   onClick={() => navigate(`/claims/${record.id}`)}

@@ -116,39 +116,12 @@ export const uploadUrl = (url?: string) => {
 };
 
 export async function uploadFile(file: File): Promise<{ url: string; filename: string }> {
-  const currentUserId = getCurrentUserId();
-  
-  try {
-    const signRes = await fetch(apiUrl('/api/upload'), {
-      method: 'POST',
-      headers: {
-        'X-User-Id': currentUserId,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ name: file.name, size: file.size, type: file.type })
-    });
-    
-    if (signRes.ok) {
-      const signed = await signRes.json() as { url: string, filename: string, uploadUrl: string };
-      const uploadRes = await fetch(signed.uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type, 'x-upsert': 'false' },
-        body: file
-      });
-      if (uploadRes.ok) {
-        return { url: signed.url, filename: signed.filename };
-      }
-    }
-  } catch (err) {
-    console.warn('[uploadFile] Signed upload failed, falling back to server proxy', err);
-  }
-
   const form = new FormData();
   form.append('file', file);
   const res = await fetch(apiUrl('/api/upload'), {
     method: 'POST',
     headers: {
-      'X-User-Id': currentUserId,
+      'X-User-Id': getCurrentUserId(),
     },
     body: form,
   });

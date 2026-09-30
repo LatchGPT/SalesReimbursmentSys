@@ -11,8 +11,8 @@ export default defineConfig({
   migrations: {
     path: '../prisma/migrations',
   },
-  // Generate does not need a valid datasource URL, but Prisma 7 will hang or error
-  // if no URL is provided at all. We provide a dummy URL if DIRECT_URL is absent
-  // (e.g. during Vercel builds where secrets are not exposed).
-  datasource: { url: directUrl || 'postgresql://dummy:dummy@localhost:5432/dummy' },
+  // Generate does not need a datasource, which keeps DIRECT_URL out of normal
+  // Vercel builds. Migration/introspection commands require this block and
+  // Prisma will reject those commands when the administrative URL is absent.
+  ...(directUrl ? { datasource: { url: directUrl } } : {}),
 });

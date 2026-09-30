@@ -52,7 +52,7 @@ export function MasterData() {
         await updateMasterData(activeTab, editingId, body);
       }
       await refresh();
-      addToast('Saved.', 'success');
+      addToast('Record saved successfully.', 'success');
       setEditingId(null);
       setEditForm({});
     } catch (err: any) {

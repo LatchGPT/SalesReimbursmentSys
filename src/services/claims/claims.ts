@@ -340,6 +340,13 @@ export async function createClaim(userId: string | null, body: any) {
     await persistClaimWithLineItems(claim, state.expenses.filter(e => e.claim_id === claim.id), mom ? [mom] : []);
   } catch (err) {
     console.error('[db] Could not persist new claim to Postgres:', err);
+    state.expenses = state.expenses.filter(expense => expense.claim_id !== claim.id);
+    state.claims = state.claims.filter(candidate => candidate.id !== claim.id);
+    if (mom?.claim_id === claim.id) {
+      if (momPayload) state.moms = state.moms.filter(candidate => candidate.id !== mom?.id);
+      else mom.claim_id = undefined;
+    }
+    return { status: 500, body: { error: 'Could not save reimbursement. Please try again.' } };
   }
 
   addHistory(
