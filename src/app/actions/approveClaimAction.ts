@@ -202,8 +202,8 @@ ${actionText}`;
       notifyClientCcSent({
         recipientIds: [claim.requestor_id, user.id],
         claimNumber,
-        clientName: momRow.contact_person,
-        clientEmail: momRow.contact_person_email,
+        clientName: momRow.contact_person ?? undefined,
+        clientEmail: momRow.contact_person_email ?? undefined,
         eventLabel: decision,
       });
     }
