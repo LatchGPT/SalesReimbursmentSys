@@ -51,6 +51,24 @@ export function CreateMom() {
   );
   const [customFields, setCustomFields] = useState<Record<string, string>>(editing?.customFields || {});
   const [momErrors, setMomErrors] = useState<Record<string, string>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const validateField = (field: keyof typeof form) => {
+    setFormErrors(prev => {
+      const next = { ...prev };
+      if (field === 'client' && !form.client.trim()) next.client = 'Client is required';
+      else if (field === 'client') delete next.client;
+
+      if (field === 'purpose' && !form.purpose.trim()) next.purpose = 'Purpose is required';
+      else if (field === 'purpose') delete next.purpose;
+
+      if (field === 'meetingDate' && !form.meetingDate) next.meetingDate = 'Meeting date is required';
+      else if (field === 'meetingDate') delete next.meetingDate;
+
+      return next;
+    });
+  };
+
   const initialContacts = contactsFromMom(editing?.contactPerson, editing?.customFields?.contact_person_designation);
   const [contacts, setContacts] = useState<MomContact[]>(initialContacts.length ? initialContacts : [{ name: '', designation: '' }]);
   const [clientEmails, setClientEmails] = useState<string[]>(splitEmails(editing?.contactPersonEmail));
@@ -112,8 +130,10 @@ export function CreateMom() {
     setEmailError('');
   };
 
-  const removeEmail = (email: string) =>
+  const removeEmail = (email: string) => {
     setClientEmails(current => current.filter(e => e !== email));
+    addToast('Email removed', 'info');
+  };
 
   const emailFieldId = useMemo(() => `client-emails-${id || 'new'}`, [id]);
 
@@ -137,8 +157,14 @@ export function CreateMom() {
 
   const save = async (status: 'Draft' | 'Completed', leaveAfterSave = true): Promise<boolean> => {
     if (status === 'Completed') {
-      if (!form.client.trim() || !form.purpose.trim() || !form.meetingDate) {
-        addToast('Client, purpose, and date of meeting are required.', 'error');
+      const newErrors: Record<string, string> = {};
+      if (!form.client.trim()) newErrors.client = 'Client is required';
+      if (!form.purpose.trim()) newErrors.purpose = 'Purpose is required';
+      if (!form.meetingDate) newErrors.meetingDate = 'Meeting date is required';
+      
+      setFormErrors(newErrors);
+
+      if (Object.keys(newErrors).length > 0) {
         return false;
       }
       // Validate the dynamic MoM fields exactly as DynamicFieldRenderer shows them
@@ -258,7 +284,7 @@ export function CreateMom() {
       <Card>
         <CardContent className="p-6 space-y-6">
           <div className="max-w-sm">
-            <Label>Document Type</Label>
+            <Label optional>Document Type</Label>
             <Select value={documentType} onChange={event => setDocumentType(event.target.value as MomDocumentType)}>
               <option value="MoM">Minutes of Meeting</option>
               <option value="LOA">Letter of Agreement</option>
@@ -267,26 +293,39 @@ export function CreateMom() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label required htmlFor="mom-client">Client / Company</Label>
+              <Label htmlFor="mom-client">Client / Company</Label>
+              {/* Note: CompanyPicker does not yet accept error prop natively, but we could wrap it */}
               <CompanyPicker
                 id="mom-client"
                 value={form.client}
                 companies={companies}
-                onSelectExisting={company => selectCompany(company.name)}
-                onChangeText={name => setForm(current => ({ ...current, client: name }))}
+                onSelectExisting={company => { selectCompany(company.name); validateField('client'); }}
+                onChangeText={name => { setForm(current => ({ ...current, client: name })); validateField('client'); }}
                 placeholder="Who did you meet with?"
+              />
+              {formErrors.client && <p className="text-error text-label-sm mt-1">{formErrors.client}</p>}
+            </div>
+            <div>
+              <Label>Purpose of Meeting</Label>
+              <Input 
+                value={form.purpose} 
+                onChange={event => setForm(current => ({ ...current, purpose: event.target.value }))} 
+                onBlur={() => validateField('purpose')}
+                error={formErrors.purpose}
               />
             </div>
             <div>
-              <Label required>Purpose of Meeting</Label>
-              <Input value={form.purpose} onChange={event => setForm(current => ({ ...current, purpose: event.target.value }))} />
+              <Label>Date of Meeting</Label>
+              <Input 
+                type="date" 
+                value={form.meetingDate} 
+                onChange={event => setForm(current => ({ ...current, meetingDate: event.target.value }))} 
+                onBlur={() => validateField('meetingDate')}
+                error={formErrors.meetingDate}
+              />
             </div>
             <div>
-              <Label required>Date of Meeting</Label>
-              <Input type="date" value={form.meetingDate} onChange={event => setForm(current => ({ ...current, meetingDate: event.target.value }))} />
-            </div>
-            <div>
-              <Label>Location of Meeting</Label>
+              <Label optional>Location of Meeting</Label>
               <Input value={form.location} onChange={event => setForm(current => ({ ...current, location: event.target.value }))} />
             </div>
           </div>
@@ -410,13 +449,13 @@ export function CreateMom() {
 
           <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant">
             {(!isEdit || editing?.status === 'Draft') && (
-              <Button variant="outline" onClick={() => save('Draft')} disabled={saving}>
+              <Button variant="outline" onClick={() => save('Draft')} isLoading={saving}>
                 {saving ? 'Saving…' : 'Save Draft'}
               </Button>
             )}
             <Button
               onClick={() => save(isEdit && editing?.status !== 'Draft' ? 'Completed' : 'Completed')}
-              disabled={saving}
+              isLoading={saving}
             >
               {saving ? 'Saving…' : isEdit && editing?.status !== 'Draft' ? 'Save Changes' : 'Finalize Record'}
             </Button>
