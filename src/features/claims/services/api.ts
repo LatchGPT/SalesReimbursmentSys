@@ -71,15 +71,17 @@ export async function decideOnClaim(
       body: JSON.stringify({ decision, comment }),
     });
   }
-  return apiFetch(`/api/claims/${claim.id}/approve`, {
-    method: 'POST',
-    body: JSON.stringify({
-      decision,
-      comment,
-      review_meeting_date: options?.reviewMeetingDate || undefined,
-      review_meeting_time: options?.reviewMeetingTime || undefined,
-    }),
+  const { approveClaimAction } = await import('../../../app/actions/approveClaimAction');
+  const result = await approveClaimAction(getCurrentUserId(), claim.id, {
+    decision,
+    comment,
+    review_meeting_date: options?.reviewMeetingDate || undefined,
+    review_meeting_time: options?.reviewMeetingTime || undefined,
   });
+  if (result.status && result.status >= 400) {
+    throw new Error(result.body.error || 'Approval failed');
+  }
+  return result.body;
 }
 
 /**
