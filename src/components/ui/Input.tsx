@@ -58,9 +58,15 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
 );
 Select.displayName = 'Select';
 
-export const Label = ({ children, className, optional, ...props }: LabelHTMLAttributes<HTMLLabelElement> & { optional?: boolean }) => (
+export const Label = ({ children, className, optional, required, ...props }: LabelHTMLAttributes<HTMLLabelElement> & { optional?: boolean, required?: boolean }) => (
   <label className={cn("block font-label-md text-label-md text-on-surface-variant mb-2", className)} {...props}>
     {children}
+    {required && (
+      <>
+        <span aria-hidden="true" className="text-error ml-1">*</span>
+        <span className="sr-only"> (required)</span>
+      </>
+    )}
     {optional && (
       <span className="text-outline text-label-sm ml-1 font-normal">(optional)</span>
     )}
