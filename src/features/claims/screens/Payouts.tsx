@@ -77,7 +77,7 @@ export function Payouts() {
     try {
       await confirmReceipt(selectedClaim.id, code.trim());
       await refresh();
-      addToast('Receipt confirmed — claim completed.', 'success');
+      addToast('Receipt confirmed successfully.', 'success');
       setSelectedClaim(null);
       setCode('');
     } catch (err: any) {

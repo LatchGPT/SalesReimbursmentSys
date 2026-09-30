@@ -290,7 +290,7 @@ export function ApprovalQueue() {
                 const req = users.find(u => u.id === claim.requestorId) || { name: 'Unknown requestor', department: '—', avatarUrl: undefined };
                 const aging = getClaimAgingInfo(claim.submittedAt, claim.createdAt);
                 return (
-                  <tr key={claim.id} className={`hover:bg-primary/5 transition-colors group cursor-pointer ${claim.approverStaleSince ? 'bg-tertiary-container/10' : ''}`} onClick={(e) => {
+                  <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={claim.id} className={`hover:bg-primary/5 transition-colors group cursor-pointer ${claim.approverStaleSince ? 'bg-tertiary-container/10' : ''}`} onClick={(e) => {
                     if (!(e.target as HTMLElement).closest('button')) {
                       navigate(`/claims/${claim.id}`);
                     }
@@ -387,7 +387,7 @@ export function ApprovalQueue() {
                 ) : paginatedHistory.map(({ entry, claim }) => {
                   const requestor = users.find(user => user.id === claim.requestorId);
                   return (
-                    <tr key={entry.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
+                    <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={entry.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
                       <td className="px-6 py-4">
                         <p className="font-label-md text-on-surface">{requestor?.name || 'Unknown requestor'}</p>
                         <p className="text-body-sm text-outline">{requestor?.department || '—'}</p>
