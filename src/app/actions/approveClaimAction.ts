@@ -7,8 +7,10 @@ import { persistClaim, insertApproval, persistStatusHistoryFireAndForget } from 
 import { persistReviewMeeting } from '../../lib/db/workflowExtrasRepo';
 import { sendEmail, notifyClientCcSent } from '../../server/services/notifications';
 import { formatPHP, REIMBURSEMENT_CAP } from '../../server/constants';
+import { headers } from 'next/headers';
 
-export async function approveClaimAction(userId: string | null, id: string, body: any) {
+export async function approveClaimAction(id: string, body: any) {
+  const userId = (await headers()).get('x-user-id');
   if (!userId) return { status: 401, body: { error: 'Unauthorized' } };
 
   const db = getDb();
@@ -72,7 +74,7 @@ export async function approveClaimAction(userId: string | null, id: string, body
     const hasConflict = await db.review_meetings.findFirst({
       where: {
         approver_id: user.id,
-        status: { in: ['Pending Confirmation', 'Confirmed'] },
+        status: { in: ['PendingConfirmation', 'Confirmed'] },
         meeting_date: review_meeting_date,
         meeting_time: review_meeting_time
       }
@@ -195,7 +197,7 @@ ${actionText}`;
         `Copy: Reimbursement ${decision} - ${claimNumber}`,
         `${claimNumber}, filed by ${requestor?.name || 'the requestor'}, was ${decision.toLowerCase()}.${comment ? `\n\nComment: ${comment}` : ''}`,
         undefined,
-        { plain: true, recipientName: momRow.contact_person || undefined, fromLabel: `${user.name} via Sales Reimbursement System` }
+        { plain: true, recipientName: momRow.contact_person ?? undefined, fromLabel: `${user.name} via Sales Reimbursement System` }
       );
       notifyClientCcSent({
         recipientIds: [claim.requestor_id, user.id],
