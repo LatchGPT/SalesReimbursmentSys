@@ -223,7 +223,7 @@ export function CompanyDirectory() {
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Location</th>
                 <th className="px-6 py-4">Notes</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+                <th className="px-6 py-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-outline-variant">
