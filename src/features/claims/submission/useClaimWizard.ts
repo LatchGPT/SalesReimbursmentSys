@@ -331,12 +331,12 @@ export function useClaimWizard() {
           isDraft,
         });
       }
-      addToast(isDraft ? 'Draft saved successfully.' : 'Claim submitted successfully.', 'success');
+      addToast(isDraft ? 'Saved as draft.' : `${claimType} submitted successfully!`, 'success');
       if (leaveAfterSave) navigate('/claims');
       refresh().catch((err) => console.warn('[wizard] Background refresh failed:', err));
       return true;
     } catch (err: any) {
-      addToast(err?.message || (isDraft ? 'Could not save draft.' : 'Could not submit claim.'), 'error');
+      addToast(err?.message || (isDraft ? 'Could not save draft.' : `Could not submit the ${claimType.toLowerCase()}.`), 'error');
       return false;
     } finally {
       setLoading(false);

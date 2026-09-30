@@ -1,22 +1,9 @@
 import { ReactNode, HTMLAttributes } from 'react';
 import { cn } from './Button';
 
-export function Card({ children, className, onClick, onKeyDown, tabIndex, role, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function Card({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn("bg-surface-container-lowest border border-brand-border rounded-container shadow-sm overflow-hidden", onClick && "cursor-pointer", className)}
-      onClick={onClick}
-      onKeyDown={event => {
-        onKeyDown?.(event);
-        if (!event.defaultPrevented && onClick && event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
-          event.preventDefault();
-          event.currentTarget.click();
-        }
-      }}
-      tabIndex={tabIndex ?? (onClick ? 0 : undefined)}
-      role={role ?? (onClick ? 'button' : undefined)}
-      {...props}
-    >
+    <div className={cn("bg-surface-container-lowest border border-brand-border rounded-container shadow-sm overflow-hidden", className)} {...props}>
       {children}
     </div>
   );

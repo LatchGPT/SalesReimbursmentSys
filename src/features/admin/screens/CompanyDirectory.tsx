@@ -93,10 +93,11 @@ export function CompanyDirectory() {
     try {
       if (editing) {
         await updateCompany(editing.id, body);
+        addToast(`Updated ${name}.`, 'success');
       } else {
         await createCompany(body);
+        addToast(`Added ${name} to the directory.`, 'success');
       }
-      addToast('Record saved successfully.', 'success');
       await refresh();
       setShowModal(false);
     } catch (err: any) {
@@ -223,7 +224,7 @@ export function CompanyDirectory() {
                 <th className="px-6 py-4">Email</th>
                 <th className="px-6 py-4">Location</th>
                 <th className="px-6 py-4">Notes</th>
-                <th className="px-6 py-4 text-right whitespace-nowrap">Actions</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-outline-variant">

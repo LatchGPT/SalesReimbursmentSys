@@ -134,7 +134,7 @@ export function TransactionHistory() {
             const req = users.find(u => u.id === claim.requestorId) || users[0];
             const completedAt = completionDateFor(claim);
             return (
-              <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer bg-white" onClick={() => navigate(`/claims/${claim.id}`)}>
+              <tr key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer bg-white" onClick={() => navigate(`/claims/${claim.id}`)}>
                 <td className="px-6 py-5 font-mono-data text-primary font-bold">{claim.ref}</td>
                 <td className="px-6 py-5">
                   <div className="flex items-center gap-3">

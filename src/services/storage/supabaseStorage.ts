@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { UserRole } from '../../lib/db/serverTypes';
 import { state } from '../../server/state';
-import { hydrateServerlessState, hydrateUsersForRequest } from '../../server/stateLoader';
+import { hydrateServerlessState } from '../../server/stateLoader';
 import { findUploadAccessCheck } from '../../server/services/authorization';
 import { serverEnv } from '../../config/env';
 
@@ -83,7 +83,7 @@ function extension(filename: string): string {
 }
 
 async function authorizedUploader(request: Request): Promise<Response | null> {
-  await hydrateUsersForRequest();
+  await hydrateServerlessState();
   const userId = request.headers.get('x-user-id');
   const user = state.users.find((candidate) =>
     candidate.id === userId
@@ -169,51 +169,35 @@ export async function uploadToSupabase(request: Request): Promise<Response> {
     const validationError = validateUploadMetadata({ name: file.name, size: file.size, type: file.type });
     if (validationError) return validationError;
 
-    const filename = `${randomUUID()}${extension(file.name)}`;
-
-    const saveLocally = async (): Promise<Response> => {
-      const uploadDir = getLocalStorageDir();
-      const buffer = Buffer.from(await file.arrayBuffer());
-      fs.writeFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ uploadDir, filename), buffer);
-      return json({ url: `/uploads/${filename}` });
-    };
-
     const config = storageConfig();
     if (!config) {
       if (!serverEnv.isProduction || serverEnv.demoMode) {
-        return saveLocally();
+        const uploadDir = getLocalStorageDir();
+        const filename = `${randomUUID()}${extension(file.name)}`;
+        const buffer = Buffer.from(await file.arrayBuffer());
+        fs.writeFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ uploadDir, filename), buffer);
+        return json({ url: `/uploads/${filename}` });
       }
       return json({ error: 'Upload storage is not configured.' }, 503);
     }
 
-    try {
-      const result = await fetch(objectUrl(config, filename), {
-        method: 'POST',
-        headers: {
-          ...storageHeaders(config.serviceKey, file.type),
-          'x-upsert': 'false',
-        },
-        body: file,
-        cache: 'no-store',
-      });
-      if (!result.ok) {
-        const errBody = await result.text().catch(() => '(unreadable)');
-        console.error(`[storage] Supabase upload failed — status ${result.status}, body: ${errBody}`);
-        if (!serverEnv.isProduction || serverEnv.demoMode) {
-          console.warn('[storage] Supabase upload failed, falling back to local storage');
-          return saveLocally();
-        }
-        return json({ error: 'Upload failed.' }, 502);
-      }
-
-      return json({ url: `/uploads/${filename}` });
-    } catch (networkError) {
-      if (!serverEnv.isProduction || serverEnv.demoMode) {
-        console.warn('[storage] Supabase unreachable, falling back to local storage:', networkError);
-        return saveLocally();
-      }
-      throw networkError;
+    const filename = `${randomUUID()}${extension(file.name)}`;
+    const result = await fetch(objectUrl(config, filename), {
+      method: 'POST',
+      headers: {
+        ...storageHeaders(config.serviceKey, file.type),
+        'x-upsert': 'false',
+      },
+      body: file,
+      cache: 'no-store',
+    });
+    if (!result.ok) {
+      const errBody = await result.text().catch(() => '(unreadable)');
+      console.error(`[storage] Supabase upload failed — status ${result.status}, body: ${errBody}`);
+      return json({ error: 'Upload failed.' }, 502);
     }
+
+    return json({ url: `/uploads/${filename}` });
   } catch (error) {
     console.error('[storage] Upload failed:', error);
     return json({ error: 'Upload failed.' }, 500);
@@ -236,28 +220,29 @@ export async function downloadFromSupabase(request: Request, filename: string): 
     if (!authorized) return json({ error: 'File not found' }, 404);
     if (!authorized(user)) return json({ error: 'Forbidden' }, 403);
 
-    // First, check if the file exists on local disk (used in Docker, dev, or local storage fallback)
-    const uploadDir = getLocalStorageDir();
-    const filePath = path.join(/*turbopackIgnore: true*/ uploadDir, filename);
-    if (fs.existsSync(/*turbopackIgnore: true*/ filePath)) {
-      const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ filePath);
-      const ext = extension(filename);
-      const contentType = MIME_BY_EXT[ext] || 'application/octet-stream';
-      return new Response(fileBuffer, {
-        status: 200,
-        headers: {
-          'Content-Type': contentType,
-          'Content-Length': String(fileBuffer.length),
-          'Cache-Control': 'private, no-store',
-          'Content-Disposition': `inline; filename="${filename.replace(/["\r\n]/g, '')}"`,
-          'X-Content-Type-Options': 'nosniff',
-        },
-      });
-    }
-
     const config = storageConfig();
     if (!config) {
-      return json({ error: 'File not found' }, 404);
+      if (!serverEnv.isProduction || serverEnv.demoMode) {
+        const uploadDir = getLocalStorageDir();
+        const filePath = path.join(/*turbopackIgnore: true*/ uploadDir, filename);
+        if (!fs.existsSync(/*turbopackIgnore: true*/ filePath)) {
+          return json({ error: 'File not found' }, 404);
+        }
+        const fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ filePath);
+        const ext = extension(filename);
+        const contentType = MIME_BY_EXT[ext] || 'application/octet-stream';
+        return new Response(fileBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': String(fileBuffer.length),
+            'Cache-Control': 'private, no-store',
+            'Content-Disposition': `inline; filename="${filename.replace(/["\r\n]/g, '')}"`,
+            'X-Content-Type-Options': 'nosniff',
+          },
+        });
+      }
+      return json({ error: 'File storage is not configured.' }, 503);
     }
     const result = await fetch(authenticatedObjectUrl(config, filename), {
       headers: storageHeaders(config.serviceKey),
