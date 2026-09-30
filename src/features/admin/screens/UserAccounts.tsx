@@ -100,7 +100,7 @@ export function UserAccounts() {
         confirmOrphan,
       });
       await refresh();
-      addToast('Record saved successfully.', 'success');
+      addToast('User updated.', 'success');
       setEditing(null);
     } catch (err) {
       const e = err as ApiError;
@@ -189,7 +189,7 @@ export function UserAccounts() {
     try {
       await deleteUser(deletingUser.id);
       await refresh();
-      addToast('Record deleted successfully.', 'success');
+      addToast(`User ${deletingUser.name} deleted successfully.`, 'success');
       setDeletingUser(null);
     } catch (err) {
       const e = err as ApiError;

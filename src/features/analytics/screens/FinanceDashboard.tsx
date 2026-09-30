@@ -146,7 +146,7 @@ export function FinanceDashboard() {
               ) : recent.map(claim => {
                 const requestor = users.find(u => u.id === claim.requestorId);
                 return (
-                  <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={claim.id} className="hover:bg-slate-50 cursor-pointer bg-white" onClick={() => navigate(`/claims/${claim.id}`)}>
+                  <tr key={claim.id} className="hover:bg-slate-50 cursor-pointer bg-white" onClick={() => navigate(`/claims/${claim.id}`)}>
                     <td className="px-6 py-4 font-mono-data font-bold text-primary">{claim.ref}</td>
                     <td className="px-6 py-4 text-sm text-on-surface">{requestor?.name || 'Unknown'}</td>
                     <td className="px-6 py-4">

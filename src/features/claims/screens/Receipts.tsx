@@ -298,7 +298,7 @@ export function Receipts() {
         </thead>
         <tbody className="bg-white divide-y divide-outline-variant">
           {items.map(receipt => (
-            <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}
+            <tr
               key={receipt.id}
               onClick={() => setSelectedReceipt(receipt)}
               className="hover:bg-slate-50 cursor-pointer transition-colors"

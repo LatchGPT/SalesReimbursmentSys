@@ -12,8 +12,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           className={cn(
-            "w-full bg-white border border-brand-field-border rounded-input px-4 py-2.5 text-body-base transition-[background-color,border-color] duration-150 disabled:bg-surface-container-low disabled:text-outline",
-            error && "border-error focus-visible:outline-error",
+            "w-full bg-white border border-brand-field-border rounded-input px-4 py-2.5 text-body-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:bg-surface-container-low disabled:text-outline",
+            error && "border-error focus-visible:outline-error focus:ring-error/20 focus:border-error",
             className
           )}
           {...props}
@@ -37,8 +37,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           className={cn(
-            "w-full appearance-none bg-white border border-brand-field-border rounded-input pl-4 pr-10 py-2.5 text-body-base transition-[background-color,border-color] duration-150 disabled:bg-surface-container-low disabled:text-outline",
-            error && "border-error focus-visible:outline-error",
+            "w-full appearance-none bg-white border border-brand-field-border rounded-input pl-4 pr-10 py-2.5 text-body-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none disabled:bg-surface-container-low disabled:text-outline",
+            error && "border-error focus-visible:outline-error focus:ring-error/20 focus:border-error",
             className
           )}
           {...props}

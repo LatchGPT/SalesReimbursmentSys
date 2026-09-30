@@ -100,7 +100,7 @@ export function Calendar() {
     try {
       await confirmReviewMeeting(current.id);
       await refresh();
-      addToast('Review meeting confirmed successfully.', 'success');
+      addToast('Review meeting confirmed.', 'success');
       setSelected(null);
     } catch (err: any) {
       addToast(err?.message || 'Could not confirm this meeting.', 'error');
@@ -115,7 +115,7 @@ export function Calendar() {
     try {
       await declineReviewMeeting(current.id, declineReason.trim() || undefined);
       await refresh();
-      addToast('Review meeting declined successfully.', 'success');
+      addToast('Review meeting declined. The requestor can propose a new time.', 'success');
       setSelected(null);
     } catch (err: any) {
       addToast(err?.message || 'Could not decline this meeting.', 'error');
@@ -134,7 +134,7 @@ export function Calendar() {
     try {
       await rescheduleReviewMeeting(current.id, newDate, newTime);
       await refresh();
-      addToast('New time proposed successfully.', 'success');
+      addToast('New time proposed to your approver.', 'success');
       setSelected(null);
     } catch (err: any) {
       addToast(err?.message || 'Could not propose a new time.', 'error');
@@ -273,7 +273,7 @@ export function Calendar() {
 
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-outline">Claim</span>
-                  <button type="button" className="text-primary font-medium cursor-pointer hover:underline" onClick={() => { setSelected(null); navigate(`/claims/${current.claimId}`); }}>{current.claimNumber || 'View claim'}</button>
+                  <span className="text-primary font-medium cursor-pointer hover:underline" onClick={() => { setSelected(null); navigate(`/claims/${current.claimId}`); }}>{current.claimNumber || 'View claim'}</span>
                 </div>
                 <div className="flex justify-between"><span className="text-outline">Requestor</span><span className="text-on-surface">{current.requestorName || '—'}</span></div>
                 <div className="flex justify-between"><span className="text-outline">Approver</span><span className="text-on-surface">{current.approverName || '—'}</span></div>

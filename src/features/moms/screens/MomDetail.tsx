@@ -28,7 +28,7 @@ export function MomDetail() {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
         <nav className="flex gap-2 text-on-surface-variant font-label-sm">
-          <button type="button" className="cursor-pointer hover:text-primary" onClick={() => navigate('/moms')}>Minutes &amp; Agreements</button>
+          <span className="cursor-pointer hover:text-primary" onClick={() => navigate('/moms')}>Minutes &amp; Agreements</span>
         </nav>
         <Card className="p-12 text-center text-outline">
           <span className="material-symbols-outlined text-[48px] mb-3">meeting_room</span>
@@ -90,7 +90,7 @@ export function MomDetail() {
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12">
       <nav className="flex gap-2 text-on-surface-variant font-label-sm">
-        <button type="button" className="cursor-pointer hover:text-primary" onClick={() => navigate('/moms')}>Minutes &amp; Agreements</button>
+        <span className="cursor-pointer hover:text-primary" onClick={() => navigate('/moms')}>Minutes &amp; Agreements</span>
         <span>/</span>
         <span className="text-on-surface font-semibold">{mom.companyName || 'Untitled meeting'}</span>
       </nav>

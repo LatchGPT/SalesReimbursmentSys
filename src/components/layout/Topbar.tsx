@@ -7,8 +7,6 @@ import { GlobalSearch } from './GlobalSearch';
 import { NotificationsModal } from '../shared/NotificationsModal';
 import { getIconForSubject } from '../shared/NotificationsView';
 
-export const SYSTEM_NAME = 'Sales Reimbursement System';
-
 interface TopbarProps {
   onMenuClick: () => void;
   isCollapsed?: boolean;
@@ -78,7 +76,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
         >
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <h2 className="hidden md:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">{SYSTEM_NAME}</h2>
+        <h2 className="hidden md:block shrink-0 whitespace-nowrap font-headline-md text-headline-md font-semibold text-on-surface">Expense Dashboard</h2>
         
         <GlobalSearch />
       </div>
@@ -106,8 +104,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
               <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-surface border border-outline-variant rounded-lg shadow-lg overflow-hidden flex flex-col max-h-96 z-50">
                 <div className="p-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
+                    <span
                       className="font-semibold text-on-surface text-sm cursor-pointer hover:text-primary"
                       onClick={() => {
                         setShowNotifications(false);
@@ -116,7 +113,7 @@ export function Topbar({ onMenuClick, isCollapsed = false }: TopbarProps) {
                       }}
                     >
                       Notifications
-                    </button>
+                    </span>
                     {unreadCount > 0 && (
                       <span className="px-1.5 py-0.2 rounded-full bg-error/10 text-error text-[11px] font-bold">
                         {unreadCount}

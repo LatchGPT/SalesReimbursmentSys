@@ -93,7 +93,7 @@ export function AdminDashboard() {
   }, [claims]);
 
   const statusTotal = useMemo(() => statusBreakdown.reduce((acc, [, n]) => acc + n, 0), [statusBreakdown]);
-  // Org-change fallback (docs/02-ARCHITECTURE.md): a claim whose
+  // Org-change fallback (docs/hierarchy-sync-design.md §5): a claim whose
   // approver went stale and nobody transferred it within the fallback window
   // needs an admin to step in. This is normally a cron; there's no scheduler
   // in this prototype, so the sweep is a manual trigger.
@@ -271,7 +271,7 @@ export function AdminDashboard() {
               return (
                 <div key={c.id} className="flex items-center justify-between p-3 bg-tertiary-container/10 border border-tertiary/20 rounded-lg">
                   <div>
-                    <button type="button" className="font-label-md text-on-surface cursor-pointer hover:text-primary" onClick={() => navigate(`/claims/${c.id}`)}>{c.ref}</button>
+                    <p className="font-label-md text-on-surface cursor-pointer hover:text-primary" onClick={() => navigate(`/claims/${c.id}`)}>{c.ref}</p>
                     <p className="text-body-sm text-outline">Routed to {currentApprover?.name || '(unknown)'} — {c.approverStaleReason || 'org change'}</p>
                   </div>
                   <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openReassign(c.id)}>
