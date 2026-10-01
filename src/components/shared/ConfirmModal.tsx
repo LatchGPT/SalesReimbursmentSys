@@ -42,7 +42,7 @@ export function ConfirmModal({
   const getVariantStyles = () => {
     if (variant === 'error') return 'bg-error text-white hover:bg-error/90';
     if (variant === 'warning') return 'bg-red-600 text-white hover:bg-red-700 shadow-xs font-semibold';
-    if (variant === 'success') return 'bg-success text-on-success hover:brightness-110 shadow-sm font-semibold';
+    if (variant === 'success') return 'bg-green-600 text-white hover:brightness-110 shadow-sm font-semibold';
     return '';
   };
 

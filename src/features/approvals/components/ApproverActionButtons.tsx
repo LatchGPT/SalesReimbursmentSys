@@ -183,7 +183,7 @@ export function ApproverActionButtons({ claim, size = 'sm', compact = false }: A
                   style={{ top: menuPosition.top, left: menuPosition.left, maxHeight: menuPosition.maxHeight }}
                   onClick={event => event.stopPropagation()}
                 >
-                  <button role="menuitem" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-success hover:bg-success/10" onClick={() => handleAction('approve')}>
+                  <button role="menuitem" className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-green-600 hover:bg-green-50" onClick={() => handleAction('approve')}>
                     <span aria-hidden="true" className="material-symbols-outlined text-[18px]">check_circle</span>Approve
                   </button>
                   {claim.type !== 'Cash Advance' && (
