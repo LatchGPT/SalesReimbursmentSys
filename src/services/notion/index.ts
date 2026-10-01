@@ -1,14 +1,28 @@
-import { Client } from '@notionhq/client';
+import { Client, isFullDatabase, isFullDataSource } from '@notionhq/client';
 
 export const notion = new Client({
   auth: process.env.NOTION_API_KEY,
 });
 
-export async function fetchTasks(databaseId: string) {
+export async function fetchTasks(databaseId?: string) {
   try {
-    const response = await notion.databases.query({
-      database_id: databaseId,
-      // You can add filters here, e.g., only fetch incomplete tasks
+    const targetDbId = databaseId || process.env.NOTION_DATABASE_ID?.trim();
+    if (!targetDbId) {
+      throw new Error('Notion Database ID is required');
+    }
+
+    const db = await notion.databases.retrieve({ database_id: targetDbId });
+    if (!isFullDatabase(db)) {
+      throw new Error('Received partial database response from Notion');
+    }
+
+    const dataSourceId = db.data_sources?.[0]?.id;
+    if (!dataSourceId) {
+      throw new Error('No data source found for database');
+    }
+
+    const response = await notion.dataSources.query({
+      data_source_id: dataSourceId,
     });
     return response.results;
   } catch (error) {
@@ -17,12 +31,30 @@ export async function fetchTasks(databaseId: string) {
   }
 }
 
-export async function createTask(databaseId: string, title: string) {
+export async function createTask(databaseId: string | undefined, title: string) {
   try {
+    const targetDbId = databaseId || process.env.NOTION_DATABASE_ID?.trim();
+    if (!targetDbId) {
+      throw new Error('Notion Database ID is required');
+    }
+
+    const db = await notion.databases.retrieve({ database_id: targetDbId });
+    let titlePropName = 'title';
+
+    if (isFullDatabase(db) && db.data_sources?.[0]?.id) {
+      const ds = await notion.dataSources.retrieve({ data_source_id: db.data_sources[0].id });
+      if (isFullDataSource(ds)) {
+        const foundTitleProp = Object.entries(ds.properties).find(([_, prop]) => prop.type === 'title');
+        if (foundTitleProp) {
+          titlePropName = foundTitleProp[0];
+        }
+      }
+    }
+
     const response = await notion.pages.create({
-      parent: { database_id: databaseId },
+      parent: { database_id: targetDbId },
       properties: {
-        title: {
+        [titlePropName]: {
           title: [
             {
               text: {
