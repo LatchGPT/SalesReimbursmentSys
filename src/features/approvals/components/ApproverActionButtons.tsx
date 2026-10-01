@@ -202,7 +202,7 @@ export function ApproverActionButtons({ claim, size = 'sm', compact = false }: A
           </>
         ) : (
           <>
-            <Button size={size} variant="outline" className="text-success border-success hover:bg-success/10" onClick={() => handleAction('approve')}>Approve</Button>
+            <Button size={size} variant="success-outline" onClick={() => handleAction('approve')}>Approve</Button>
             {claim.type !== 'Cash Advance' && (
               <Button size={size} variant="outline" className="text-tertiary border-tertiary hover:bg-tertiary/10" onClick={() => handleAction('return')}>Return</Button>
             )}
@@ -220,6 +220,7 @@ export function ApproverActionButtons({ claim, size = 'sm', compact = false }: A
         title="Approve Claim"
         confirmLabel={isSubmitting ? "Approving..." : "Approve"}
         disabled={isSubmitting}
+        variant="success"
       >
         <p className="mb-4">Are you sure you want to approve this claim? It will be forwarded to the custodian for processing.</p>
         <div>
