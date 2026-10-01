@@ -115,13 +115,13 @@ export function ApproverActionButtons({ claim, size = 'sm', compact = false }: A
         break;
       case 'reject':
         newStatus = ClaimStatus.REJECTED;
-        toastMsg = 'Claim rejected.';
-        toastType = 'error';
+        toastMsg = 'Claim rejected successfully.';
+        toastType = 'success';
         break;
       case 'return':
         newStatus = ClaimStatus.RETURNED;
-        toastMsg = 'Claim returned to requestor.';
-        toastType = 'info';
+        toastMsg = 'Claim returned successfully.';
+        toastType = 'success';
         break;
     }
 

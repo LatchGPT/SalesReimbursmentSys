@@ -92,12 +92,18 @@ export function useUnsavedChangesPrompt({ isDirty, onSaveDraft, formName }: Unsa
             <p className="text-body-md text-on-surface-variant">
               You have unsaved changes. You can discard them, keep working, or save this work as a draft before leaving.
             </p>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
-              <Button variant="outline" onClick={discardAndLeave} disabled={savingDraft}>Yes</Button>
-              <Button variant="outline" onClick={closeDialog} disabled={savingDraft}>Back</Button>
-              <Button onClick={saveDraftAndLeave} disabled={savingDraft}>
-                {savingDraft ? 'Saving Draft…' : 'Save to Draft'}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+              <Button variant="outline" onClick={discardAndLeave} disabled={savingDraft}>
+                Yes
               </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="outline" onClick={closeDialog} disabled={savingDraft}>
+                  Back
+                </Button>
+                <Button onClick={saveDraftAndLeave} disabled={savingDraft}>
+                  {savingDraft ? 'Saving Draft…' : 'Save to Draft'}
+                </Button>
+              </div>
             </div>
           </div>
         </Card>

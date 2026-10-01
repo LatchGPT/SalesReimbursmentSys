@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import { useAppContext } from '../AppContext';
+import { useToast } from './ToastContext';
 import { EmptyState } from './states';
 import { formatDateShort, formatFullDateTime } from '../../lib/date';
 
@@ -56,6 +57,7 @@ export interface NotificationsViewProps {
 export function NotificationsView({ initialSelectedId, isModal = false, onCloseModal }: NotificationsViewProps) {
   const navigate = useNavigate();
   const { emails, claims, currentUser, markEmailsRead } = useAppContext();
+  const { addToast } = useToast();
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -102,7 +104,10 @@ export function NotificationsView({ initialSelectedId, isModal = false, onCloseM
 
   const handleMarkAllRead = () => {
     const unreadIds = myMessages.filter(m => !m.read).map(m => m.id);
-    if (unreadIds.length > 0) markEmailsRead(unreadIds);
+    if (unreadIds.length > 0) {
+      markEmailsRead(unreadIds);
+      addToast('All notifications marked as read.', 'success');
+    }
   };
 
   const handleSelectMessage = (id: string) => {

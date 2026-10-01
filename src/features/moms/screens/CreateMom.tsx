@@ -197,10 +197,10 @@ export function CreateMom() {
       if (pending) setEmailDraft('');
       addToast(
         isEdit
-          ? 'Changes saved.'
+          ? 'Record saved successfully.'
           : status === 'Draft'
-            ? `${DOCUMENT_TYPE_LABEL[documentType]} draft saved.`
-            : `${DOCUMENT_TYPE_LABEL[documentType]} finalized.`,
+            ? 'Draft saved successfully.'
+            : 'Record saved successfully.',
         'success',
       );
       if (leaveAfterSave) navigate(isEdit && id ? `/moms/${id}` : '/moms');

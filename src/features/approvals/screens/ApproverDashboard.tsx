@@ -133,31 +133,31 @@ export function ApproverDashboard() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-surface-container-lowest p-6 border border-outline-variant rounded-card shadow-sm">
-          <p className="font-label-sm text-outline uppercase mb-2">Awaiting Approval</p>
-          <p className="font-headline-lg text-on-surface">{myPending.length}</p>
-        </div>
-        <div className="bg-surface-container-lowest p-6 border border-outline-variant rounded-card shadow-sm">
-          <p className="font-label-sm text-outline uppercase mb-2">Total Pending Amount</p>
-          <p className="font-headline-lg text-on-surface">{formatMoney(totalPendingAmount)}</p>
-        </div>
-        <div className="bg-surface-container-lowest p-6 border border-outline-variant rounded-card shadow-sm">
-          <p className="font-label-sm text-outline uppercase mb-2">Oldest Waiting</p>
-          <p className="font-headline-lg text-on-surface">{oldestPendingAging?.text || '—'}</p>
-          <p className="text-[12px] text-outline mt-1">{oldestPending?.ref || 'Queue is clear'}</p>
-        </div>
-        <div className="bg-white p-6 border border-outline-variant rounded-card shadow-sm">
+        <Card className="p-6 transition-all hover:shadow-md group">
+          <h4 className="font-headline-md text-on-surface mb-2">Awaiting Approval</h4>
+          <p className="font-headline-lg text-on-surface group-hover:text-primary transition-colors">{myPending.length}</p>
+        </Card>
+        <Card className="p-6 transition-all hover:shadow-md group">
+          <h4 className="font-headline-md text-on-surface mb-2">Total Pending Amount</h4>
+          <p className="font-headline-lg text-on-surface group-hover:text-primary transition-colors">{formatMoney(totalPendingAmount)}</p>
+        </Card>
+        <Card className="p-6 transition-all hover:shadow-md group">
+          <h4 className="font-headline-md text-on-surface mb-2">Oldest Waiting</h4>
+          <p className="font-headline-lg text-on-surface group-hover:text-primary transition-colors">{oldestPendingAging?.text || '—'}</p>
+          <p className="text-xs text-outline mt-1">{oldestPending?.ref || 'Queue is clear'}</p>
+        </Card>
+        <Card className="p-6 transition-all hover:shadow-md group">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="font-label-sm text-outline uppercase tracking-wider mb-2">Total Team Spend</p>
-              <p className="font-headline-lg text-on-surface truncate">{formatMoney(teamSpend)}</p>
+              <h4 className="font-headline-md text-on-surface mb-2">Total Team Spend</h4>
+              <p className="font-headline-lg text-on-surface truncate group-hover:text-primary transition-colors">{formatMoney(teamSpend)}</p>
             </div>
             <div className="flex shrink-0 items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100/80 shadow-xs" title="Team members">
+              <div className="flex h-9 w-9 items-center justify-center rounded-btn border border-outline-variant bg-surface-container-lowest text-on-surface shadow-xs" title="Team members">
                 <span aria-hidden="true" className="material-symbols-outlined text-[20px]">groups</span>
               </div>
               <label
-                className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-outline-variant bg-white text-outline shadow-xs transition-all hover:border-primary hover:text-primary hover:bg-slate-50 focus-within:ring-2 focus-within:ring-primary/30"
+                className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-btn border border-outline-variant bg-surface-container-lowest text-on-surface shadow-xs transition-colors hover:text-primary hover:border-primary focus-within:ring-2 focus-within:ring-primary/30"
                 title={`Filter month: ${formatMonthValue(teamSpendMonth)}`}
               >
                 <span aria-hidden="true" className="material-symbols-outlined text-[19px]">calendar_month</span>
@@ -171,8 +171,8 @@ export function ApproverDashboard() {
               </label>
             </div>
           </div>
-          <p className="text-[11px] text-outline mt-3">Approved, released, or completed direct-report requests.</p>
-        </div>
+          <p className="text-xs text-outline mt-3">Approved, released, or completed direct-report requests.</p>
+        </Card>
       </div>
 
       <Card className="bg-white">
@@ -224,7 +224,7 @@ export function ApproverDashboard() {
                 const req = users.find(u => u.id === claim.requestorId) || users[0];
                 const aging = getClaimAgingInfo(claim.submittedAt, claim.createdAt);
                 return (
-                  <tr key={claim.id} className="hover:bg-primary-fixed/20 transition-colors group cursor-pointer" onClick={(e) => {
+                  <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={claim.id} className="hover:bg-primary-fixed/20 transition-colors group cursor-pointer" onClick={(e) => {
                     if (!(e.target as HTMLElement).closest('button')) {
                       navigate(`/claims/${claim.id}`);
                     }
