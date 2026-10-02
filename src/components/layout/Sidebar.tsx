@@ -108,7 +108,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
       {/* Mobile overlay */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-inverse-surface/50 z-20 lg:hidden transition-opacity duration-300" 
+          className="fixed inset-0 bg-scrim/40 backdrop-blur-sm z-20 lg:hidden transition-all duration-300 ease-in-out" 
           onClick={onClose}
         />
       )}
@@ -117,7 +117,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
         id="sidebar-navigation"
         aria-label="Main Navigation"
         className={cn(
-          "flex flex-col h-screen pb-6 bg-primary fixed left-0 top-0 z-30 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] shadow-xl",
+          "flex flex-col h-screen pb-6 bg-gradient-to-b from-[#0a2540] to-primary fixed left-0 top-0 z-30 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] shadow-[4px_0_24px_rgba(0,0,0,0.15)]",
           isCollapsed ? "w-[220px] lg:w-[80px]" : "w-[220px] lg:w-[220px]",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}

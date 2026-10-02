@@ -10,6 +10,7 @@ import { useAppContext } from '../../../components/AppContext';
 import { Pagination } from '../../../components/ui/Pagination';
 import { GroupByControl, GroupSection, GroupMetric } from '@/features/analytics';
 import { FilterBar } from '../../../components/shared/FilterBar';
+import { ExportDropdown } from '../../../components/shared/ExportDropdown';
 import { Claim, ClaimStatus, UserRole } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { formatDate } from '../../../lib/date';
@@ -187,16 +188,10 @@ export function ClaimsList() {
         {isFinance ? (
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
-            <Button
-              variant="outline"
-              className="gap-2 shrink-0"
-              onClick={exportFinancialRecords}
+            <ExportDropdown 
+              onExportCsv={exportFinancialRecords}
               disabled={filteredClaims.length === 0}
-              aria-label="Export filtered financial records to CSV"
-            >
-              <span className="material-symbols-outlined text-[18px]">download</span>
-              Export CSV
-            </Button>
+            />
           </div>
         ) : (
           <Button className="gap-2" onClick={() => navigate('/claims/new')}>
@@ -256,7 +251,7 @@ export function ClaimsList() {
 
       {/* Drafts Callout Banner (when drafts exist and not currently filtering to drafts) */}
       {!isFinance && draftsCount > 0 && statusFilter !== ClaimStatus.DRAFT && (
-        <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
+        <div className="mb-6 p-5 rounded-[16px] bg-gradient-to-r from-amber-50/80 to-amber-100/50 backdrop-blur-md border border-amber-200/60 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-300">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-[24px]">drafts</span>
@@ -469,7 +464,7 @@ export function ClaimsList() {
       <>
         <div className="overflow-x-auto hidden md:block">
           <table className="w-full min-w-[1040px] text-left">
-            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
+            <thead className="bg-surface-container-lowest/80 backdrop-blur-md text-on-surface-variant font-label-sm uppercase font-bold tracking-wider border-b border-brand-border sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-4">ID</th>
                 <th className="px-4 py-4">Type</th>
@@ -543,8 +538,14 @@ export function ClaimsList() {
               );})}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-8 text-center text-on-surface-variant">
-                    No claims found.
+                  <td colSpan={9} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-3 animate-in fade-in zoom-in-95 duration-500">
+                      <div className="w-16 h-16 rounded-full bg-surface-container-high/50 flex items-center justify-center shadow-inner">
+                        <span className="material-symbols-outlined text-[32px] text-outline">search_off</span>
+                      </div>
+                      <p className="font-headline-md text-on-surface font-semibold mt-2">No claims found.</p>
+                      <p className="text-body-base text-outline max-w-sm mx-auto">We couldn't find any requests matching your current filters and search terms.</p>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -613,8 +614,12 @@ export function ClaimsList() {
             </div>
           );})}
           {items.length === 0 && (
-            <div className="p-8 text-center text-on-surface-variant">
-              No claims found.
+            <div className="p-12 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-500">
+              <div className="w-16 h-16 rounded-full bg-surface-container-high/50 flex items-center justify-center shadow-inner mb-4">
+                <span className="material-symbols-outlined text-[32px] text-outline">search_off</span>
+              </div>
+              <p className="font-headline-md text-on-surface font-semibold">No claims found.</p>
+              <p className="text-body-base text-outline max-w-xs mx-auto mt-2">We couldn't find any requests matching your filters.</p>
             </div>
           )}
         </div>
