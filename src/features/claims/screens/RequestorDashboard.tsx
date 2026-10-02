@@ -51,7 +51,7 @@ export function RequestorDashboard() {
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-500">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6">
         <div>
           <h2 className="font-display text-display text-on-surface">Hello, {currentUser.name.split(' ')[0]}.</h2>
           <p className="font-body-lg text-body-lg text-on-surface-variant mt-1">Today is {formatLongDate(new Date())}</p>
@@ -110,7 +110,7 @@ export function RequestorDashboard() {
       )}
 
       {/* KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <KPICard
           title="Active Claims"
           value={activeClaimsCount.toString()}
@@ -137,7 +137,7 @@ export function RequestorDashboard() {
         />
       </div>
 
-      <div className="order-1 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="order-1 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Recent Requests Table */}
         <Card className="lg:col-span-2 flex flex-col bg-white">
           <CardHeader className="bg-white">
