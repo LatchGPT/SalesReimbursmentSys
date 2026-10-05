@@ -5,6 +5,8 @@ import { Button } from '../../../components/ui/Button';
 import { Input, Label, Select } from '../../../components/ui/Input';
 import { Pagination } from '../../../components/ui/Pagination';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
+import { ExportDropdown } from '../../../components/shared/ExportDropdown';
+import { buildFinancialRecordsCsv } from '../../../lib/financialRecordsCsv';
 import { GroupByControl, GroupSection, GroupMetric } from '@/features/analytics';
 import { useAppContext } from '../../../components/AppContext';
 import { Claim, ClaimStatus, UserRole } from '../../../types';
@@ -168,6 +170,19 @@ export function TransactionHistory() {
     </div>
   );
 
+  const exportFinancialRecords = () => {
+    const csv = buildFinancialRecordsCsv(filteredClaims, users);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `transaction-history-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-wrap justify-between items-end gap-3">
@@ -177,7 +192,15 @@ export function TransactionHistory() {
           </span>
           <h1 className="font-display text-display text-on-surface mt-1">{currentUser.role === UserRole.FINANCE ? 'Paid & Completed' : 'Transaction History'}</h1>
         </div>
-        <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
+          {currentUser.role === UserRole.FINANCE && (
+            <ExportDropdown 
+              disabled={filteredClaims.length === 0} 
+              onExportCsv={exportFinancialRecords} 
+            />
+          )}
+        </div>
       </div>
 
       <div className={groupBy === 'none' ? 'space-y-0' : 'space-y-8'}>
