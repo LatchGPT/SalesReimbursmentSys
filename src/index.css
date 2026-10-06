@@ -319,13 +319,18 @@ table > tbody {
 /* Shared data-table rhythm: matching header/body insets keep values aligned,
    while ordinary prose can wrap instead of crowding adjacent columns. */
 table th {
-  padding: 0.875rem 1.25rem !important;
+  padding: 1rem 1.25rem !important;
   vertical-align: middle;
+  white-space: nowrap !important;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-height: 1.5;
 }
 
 table td {
   padding: 1rem 1.25rem !important;
-  vertical-align: middle;
+  vertical-align: top;
+  line-height: 1.5;
 }
 
 /* Numeric values stay at the same inset even when adjacent content grows. */
@@ -335,10 +340,15 @@ table td:has(.font-mono-data) {
   text-align: left;
 }
 
-table th:not(.whitespace-nowrap),
 table td:not(.whitespace-nowrap) {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
   white-space: normal !important;
+}
+
+table td.font-mono-data {
+  white-space: nowrap !important;
+  overflow-wrap: normal;
 }
 
 @media (max-width: 639px) {
@@ -370,7 +380,6 @@ table td:not(.whitespace-nowrap) {
 }
 
 .approver-receipts table th {
-  padding: 0.75rem 1.25rem !important;
   font-weight: 500;
 }
 
