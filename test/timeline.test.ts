@@ -124,6 +124,50 @@ describe('ClaimTimeline adapter', () => {
     expect(html).toContain('Submitted');
     expect(html).toContain('2 events');
   });
+
+  it('formats rejected step with "by [name]" and auto ends subsequent steps', () => {
+    const historyWithRejection: StatusHistory[] = [
+      {
+        id: 'hist-1',
+        claimId: 'claim-1',
+        oldStatus: ClaimStatus.DRAFT,
+        newStatus: ClaimStatus.SUBMITTED,
+        changedBy: 'usr-1',
+        timestamp: '2026-09-13T09:15:00.000Z',
+      },
+      {
+        id: 'hist-2',
+        claimId: 'claim-1',
+        oldStatus: ClaimStatus.SUBMITTED,
+        newStatus: ClaimStatus.REJECTED,
+        changedBy: 'usr-2',
+        timestamp: '2026-09-13T10:00:00.000Z',
+        comment: 'Missing proof of payment',
+      },
+      {
+        id: 'hist-3',
+        claimId: 'claim-1',
+        oldStatus: ClaimStatus.REJECTED,
+        newStatus: ClaimStatus.APPROVED,
+        changedBy: 'usr-2',
+        timestamp: '2026-09-13T11:00:00.000Z',
+      },
+    ];
+
+    const html = renderToStaticMarkup(
+      React.createElement(ClaimTimeline, {
+        history: historyWithRejection,
+        users: mockUsers,
+      })
+    );
+
+    expect(html).toContain('STEP 2 - REJECTED');
+    expect(html).toContain('by Bob Approver');
+    expect(html).toContain('Missing proof of payment');
+    // Ensure subsequent steps are truncated (auto-ends)
+    expect(html).toContain('2 events');
+    expect(html).not.toContain('STEP 3');
+  });
 });
 
 describe('ClaimProgressTracker component', () => {
