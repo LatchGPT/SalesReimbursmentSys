@@ -408,7 +408,7 @@ export function ClaimDetailView() {
           </Card>
         )}
         <ClaimLineItemsTable claim={claim} items={items} onSelectReceipt={setActiveReceipt} />
-        <ClaimTimeline history={history} users={users} />
+        <ClaimTimeline claim={claim} history={history} users={users} />
         {mom && <ClaimMomSection mom={mom} claim={claim} />}
       </div>
 

@@ -168,6 +168,49 @@ describe('ClaimTimeline adapter', () => {
     expect(html).toContain('2 events');
     expect(html).not.toContain('STEP 3');
   });
+
+  it('renders upcoming next steps in the reimbursement workflow', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ClaimTimeline, {
+        history: mockHistory,
+        users: mockUsers,
+      })
+    );
+
+    expect(html).toContain('STEP 1 - Submitted');
+    expect(html).toContain('STEP 2 - Approved');
+    expect(html).toContain('STEP 3 - Processing');
+    expect(html).toContain('STEP 4 - Ready for Claim');
+    expect(html).toContain('STEP 5 - Completed');
+  });
+
+  it('renders workflow steps for Cash Advance with next steps', () => {
+    const caClaim: Claim = {
+      id: 'ca-1',
+      ref: 'CADV-001',
+      requestorId: 'usr-1',
+      status: ClaimStatus.SUBMITTED,
+      type: 'Cash Advance',
+      purpose: 'Travel',
+      total: 5000,
+      claimedAmount: 5000,
+      paidAmount: 0,
+      createdAt: '2026-09-13T09:00:00.000Z',
+    };
+
+    const html = renderToStaticMarkup(
+      React.createElement(ClaimTimeline, {
+        claim: caClaim,
+        history: [mockHistory[1]],
+        users: mockUsers,
+      })
+    );
+
+    expect(html).toContain('STEP 1 - Submitted');
+    expect(html).toContain('STEP 2 - Approved');
+    expect(html).toContain('STEP 3 - Released');
+    expect(html).toContain('STEP 4 - Liquidated');
+  });
 });
 
 describe('ClaimProgressTracker component', () => {
