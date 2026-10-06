@@ -5,12 +5,12 @@ import { Modal } from '../../../components/shared/Modal';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { formatMoney } from '../../../lib/money';
 import { Button } from '../../../components/ui/Button';
-import { Select } from '../../../components/ui/Input';
+import { Label, Select } from '../../../components/ui/Input';
 import { Pagination } from '../../../components/ui/Pagination';
 import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { useAppContext } from '../../../components/AppContext';
 import { GroupByControl, TeamAnalytics } from '@/features/analytics';
-import { FilterBar } from '../../../components/shared/FilterBar';
+import { FilterBar, type SelectFilterSpec } from '../../../components/shared/FilterBar';
 import { ExportDropdown } from '../../../components/shared/ExportDropdown';
 import { uploadUrl } from '../../../lib/api';
 import { ClaimStatus, UserRole } from '../../../types';
@@ -54,17 +54,18 @@ export function Receipts() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [groupBy, setGroupBy] = useState<'none' | 'member' | 'client'>('none');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12;
 
   // Approvers manage their own submissions plus whatever's routed through
   // them; split the archive so "my receipts" isn't buried in the team's.
   const isApprover = currentUser.role === UserRole.APPROVER;
   const isFinance = currentUser.role === UserRole.FINANCE;
+  const compactToolbar = isApprover || isFinance || currentUser.role === UserRole.CUSTODIAN;
   const reporteeIds = new Set(users.filter(u => u.reportsTo === currentUser.id).map(u => u.id));
   const teamMembers = users
     .filter(user => user.reportsTo === currentUser.id)
     .sort((a, b) => a.name.localeCompare(b.name));
-  const [scope, setScope] = useState<'mine' | 'team'>('mine');
+  const [scope, setScope] = useState<'mine' | 'team'>(isApprover ? 'team' : 'mine');
+  const itemsPerPage = isApprover && scope === 'team' ? 5 : 8;
 
   // Every line item belongs here, including expenses whose receipt is missing.
   const derivedReceipts: ReceiptRecord[] = lineItems
@@ -158,9 +159,11 @@ export function Receipts() {
   // Grouping by member is only meaningful when more than one person's receipts
   // are visible; grouping by client works in any scope.
   const canGroupByMember = isFinance || (isApprover && scope === 'team');
+  const totalPages = Math.ceil(filteredReceipts.length / itemsPerPage);
+  const paginatedReceipts = filteredReceipts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const receiptGroups = groupBy === 'none' ? [] : (() => {
     const map = new Map<string, ReceiptRecord[]>();
-    for (const receipt of filteredReceipts) {
+    for (const receipt of paginatedReceipts) {
       const key = groupBy === 'member' ? (receipt.requestorId || 'unknown') : (receipt.client || '—');
       const bucket = map.get(key);
       if (bucket) bucket.push(receipt);
@@ -176,8 +179,6 @@ export function Receipts() {
     }).sort((a, b) => b.total - a.total);
   })();
 
-  const totalPages = Math.ceil(filteredReceipts.length / itemsPerPage);
-  const paginatedReceipts = filteredReceipts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const applyThisMonth = () => {
     const now = new Date();
@@ -282,6 +283,31 @@ export function Receipts() {
     showRequestor: boolean,
     summary?: { total: number; coverage: number; attached: number; count: number }
   ) => (
+    isApprover ? (
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[650px] text-left">
+          <thead className="bg-primary/5 text-[10px] uppercase tracking-wider text-outline"><tr><th>Vendor / Merchant</th><th>Purpose &amp; Claim Ref</th><th>Date</th><th>Receipt Status</th><th>Amount (PHP)</th></tr></thead>
+          <tbody className="divide-y divide-outline-variant/30 bg-white">
+            {items.map(receipt => <tr key={receipt.id} tabIndex={0} role="button" onClick={() => setSelectedReceipt(receipt)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedReceipt(receipt); } }} className="cursor-pointer hover:bg-primary/5">
+              <td><p className="text-sm font-semibold">{receipt.vendor}</p><p className="text-xs text-outline">{receipt.category}</p></td>
+              <td><p className="text-sm">{receipt.businessPurpose || '?'}</p><p className="font-mono-data text-xs text-primary">{receipt.claimRef || '?'}</p>{showRequestor && <p className="text-xs text-outline">{users.find(user => user.id === receipt.requestorId)?.name}</p>}</td>
+              <td className="text-xs whitespace-nowrap">{receipt.date}</td>
+              <td><span className={`rounded-md px-2 py-1 text-xs ${receipt.fileUrl ? 'bg-primary/5 text-primary' : 'bg-tertiary/5 text-tertiary'}`}>{receipt.fileUrl ? 'Attached' : 'Missing receipt'}</span></td>
+              <td className="font-mono-data text-sm font-semibold whitespace-nowrap">{formatMoney(receipt.amount)}</td>
+            </tr>)}
+            {items.length === 0 && <tr><td colSpan={5}>
+              <div className="flex min-h-[360px] flex-col items-center justify-center gap-3 text-center">
+                <span aria-hidden="true" className="material-symbols-outlined rounded-2xl bg-primary/5 p-4 text-4xl text-primary">folder_open</span>
+                <p className="text-sm font-semibold text-on-surface">No expenses found</p>
+                <p className="text-xs text-outline">Expense lines will appear here when they are added to a claim.</p>
+                {scope === 'mine' && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => navigate('/claims/new')}><span aria-hidden="true" className="material-symbols-outlined text-[16px]">add</span>Create New Expense</Button><Button size="sm" variant="outline" onClick={() => navigate('/claims/new')} title="Attach a receipt when adding an expense to a new claim"><span aria-hidden="true" className="material-symbols-outlined text-[16px]">upload_file</span>Upload Receipt</Button></div>}
+              </div>
+            </td></tr>}
+          </tbody>
+          {summary && <tfoot><tr><td colSpan={4} className="text-xs text-outline">Subtotal ? {summary.coverage}% receipt coverage</td><td className="font-mono-data font-semibold">{formatMoney(summary.total)}</td></tr></tfoot>}
+        </table>
+      </div>
+    ) :
     <div className="overflow-x-auto">
       <table className="w-full text-left min-w-[980px]">
         <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
@@ -348,14 +374,14 @@ export function Receipts() {
             <tr>
               <td colSpan={showRequestor ? 7 : 6} className="px-5 py-4" />
               <td className="px-5 py-4 text-right align-top whitespace-nowrap">
-                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px] whitespace-nowrap">Subtotal</p>
-                <p className="font-mono-data font-bold text-primary mt-0.5 whitespace-nowrap">{formatMoney(summary.total)}</p>
+                <p className="font-mono-data font-bold text-primary whitespace-nowrap">{formatMoney(summary.total)}</p>
+                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px] mt-0.5 whitespace-nowrap">Subtotal</p>
               </td>
               <td className="px-5 py-4 text-right align-top whitespace-nowrap">
-                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px] whitespace-nowrap">Receipt coverage</p>
-                <p className="font-mono-data font-semibold text-on-surface mt-0.5 whitespace-nowrap">
+                <p className="font-mono-data font-semibold text-on-surface whitespace-nowrap">
                   {summary.coverage}% <span className="text-outline font-normal text-xs">({summary.attached}/{summary.count})</span>
                 </p>
+                <p className="font-label-sm text-outline uppercase tracking-wider text-[11px] mt-0.5 whitespace-nowrap">Receipt coverage</p>
               </td>
             </tr>
           </tfoot>
@@ -373,9 +399,14 @@ export function Receipts() {
     <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
   );
 
+  const receiptQuickFilters: SelectFilterSpec[] = [
+    { type: 'select', key: 'category', label: 'Category', placeholder: 'All Categories', value: selectedCategory, onChange: setSelectedCategory, options: categoryOptions.map(c => ({ value: c, label: c })) },
+    { type: 'select', key: 'receiptStatus', label: 'Receipt status', placeholder: 'All Receipts', value: receiptStatus === 'all' ? '' : receiptStatus, onChange: v => setReceiptStatus((v || 'all') as typeof receiptStatus), options: [{ value: 'attached', label: 'Receipt Attached' }, { value: 'missing', label: 'Missing Receipt' }] },
+  ];
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className={isApprover ? "approver-receipts space-y-5 animate-in fade-in duration-500" : "space-y-8 animate-in fade-in duration-500"}>
+      <div className={isApprover ? "sr-only" : "flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant pb-4"}>
         <div>
           <h1 className="font-display text-display text-on-surface">{isFinance ? 'Financial Receipts' : 'Expenses & Receipts'}</h1>
           <p className="text-body-md text-outline mt-1">
@@ -385,82 +416,70 @@ export function Receipts() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          {groupControl}
           {isFinance && (
             <ExportDropdown disabled={filteredReceipts.length === 0} />
           )}
         </div>
       </div>
 
-      {isApprover && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-outline-variant bg-surface-container-low p-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setScope('mine')}
-              className={`px-5 py-2.5 rounded-lg font-label-md transition-colors ${scope === 'mine' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}
-            >
-              My Expenses
-            </button>
-            <button
-              onClick={() => setScope('team')}
-              className={`px-5 py-2.5 rounded-lg font-label-md transition-colors ${scope === 'team' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}
-            >
-              Team Expenses
-            </button>
-          </div>
-          <p className="text-xs text-outline px-3">
-            {scope === 'team'
-              ? 'Review direct-report expenses and identify missing supporting receipts.'
-              : 'Expense lines and receipts attached to your own requests.'}
-          </p>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card className="p-4">
-          <p className="font-label-sm text-outline uppercase tracking-wider">Total Expense Amount</p>
+          <div className="flex items-center justify-between gap-2"><p className="font-label-sm text-outline uppercase tracking-wider">Total Expense Amount</p>{isApprover && <span aria-hidden="true" className="material-symbols-outlined rounded-md bg-primary/5 p-1 text-[16px] text-primary">payments</span>}</div>
           <p className="font-headline-md text-primary mt-1">{formatMoney(filteredTotal)}</p>
           <p className="text-[12px] text-outline mt-1">{filteredReceipts.length} expense{filteredReceipts.length === 1 ? '' : 's'} in this view</p>
         </Card>
         <Card className="p-4">
-          <p className="font-label-sm text-outline uppercase tracking-wider">Receipt Coverage</p>
+          <div className="flex items-center justify-between gap-2"><p className="font-label-sm text-outline uppercase tracking-wider">Receipt Coverage</p>{isApprover && <span aria-hidden="true" className="material-symbols-outlined rounded-md bg-primary/5 p-1 text-[16px] text-primary">receipt_long</span>}</div>
           <p className="font-headline-md text-on-surface mt-1">{receiptCoverage === null ? '—' : `${receiptCoverage}%`}</p>
           <p className="text-[12px] text-outline mt-1">{attachedReceiptCount} attached, {filteredReceipts.length - attachedReceiptCount} missing</p>
         </Card>
         <Card className="p-4">
-          <p className="font-label-sm text-outline uppercase tracking-wider">Average Expense</p>
+          <div className="flex items-center justify-between gap-2"><p className="font-label-sm text-outline uppercase tracking-wider">Average Expense</p>{isApprover && <span aria-hidden="true" className="material-symbols-outlined rounded-md bg-primary/5 p-1 text-[16px] text-primary">monitoring</span>}</div>
           <p className="font-headline-md text-on-surface mt-1">{filteredReceipts.length === 0 ? '—' : formatMoney(averageReceipt)}</p>
           <p className="text-[12px] text-outline mt-1">Across the current filter</p>
         </Card>
         <Card className="p-4">
-          <p className="font-label-sm text-outline uppercase tracking-wider">Top Category</p>
+          <div className="flex items-center justify-between gap-2"><p className="font-label-sm text-outline uppercase tracking-wider">Top Category</p>{isApprover && <span aria-hidden="true" className="material-symbols-outlined rounded-md bg-primary/5 p-1 text-[16px] text-primary">category</span>}</div>
           <p className="font-headline-md text-on-surface mt-1 truncate">{topCategory?.[0] || '—'}</p>
           <p className="text-[12px] text-outline mt-1">{topCategory ? formatMoney(topCategory[1]) : 'No supported spend'}</p>
         </Card>
       </div>
 
       <div className="space-y-0">
+      {isApprover && <div className="flex gap-1 px-2" role="tablist" aria-label="Expense scope">
+        {(['team', 'mine'] as const).map(value => <button key={value} type="button" role="tab" aria-selected={scope === value} onClick={() => setScope(value)} className={`flex items-center gap-2 rounded-t-lg border-t-2 px-5 py-3 text-xs font-semibold ${scope === value ? 'border-primary bg-white text-primary' : 'border-transparent bg-primary/5 text-on-surface-variant'}`}>
+          <span aria-hidden="true" className="material-symbols-outlined text-[16px]">{value === 'mine' ? 'person' : 'groups'}</span>
+          {value === 'mine' ? 'My Expenses' : 'Team Expenses'}
+          <span className="rounded-full bg-primary/5 px-2 py-0.5 text-[10px]">{derivedReceipts.filter(receipt => value === 'mine' ? receipt.requestorId === currentUser.id : Boolean(receipt.requestorId && reporteeIds.has(receipt.requestorId) && receipt.claimStatus !== ClaimStatus.DRAFT)).length}</span>
+        </button>)}
+      </div>}
       <FilterBar
-        className="rounded-b-none"
-        title="Expense records"
+        className={isApprover ? "receipt-toolbar rounded-b-none border-0 bg-white shadow-none" : "rounded-b-none"}
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search vendor, purpose, OR number, or claim..."
+        searchClassName={compactToolbar ? 'sm:min-w-40 sm:basis-48' : undefined}
+        searchEnd={<>
+          {groupControl}
+        </>}
         popoverDescription="Narrow expenses using claim and purchase details."
-        quickFilters={[
-          {
-            type: 'select', key: 'category', label: 'Category', placeholder: 'All Categories',
-            value: selectedCategory, onChange: setSelectedCategory,
-            options: categoryOptions.map(c => ({ value: c, label: c })),
-          },
-          {
-            type: 'select', key: 'receiptStatus', label: 'Receipt status', placeholder: 'All Receipts',
-            value: receiptStatus === 'all' ? '' : receiptStatus,
-            onChange: v => setReceiptStatus((v || 'all') as typeof receiptStatus),
-            options: [{ value: 'attached', label: 'Receipt Attached' }, { value: 'missing', label: 'Missing Receipt' }],
-          },
-        ]}
+        quickFilters={compactToolbar ? [] : receiptQuickFilters}
         popoverExtra={
+          <>
+            {compactToolbar && <div className="mb-5"><Label>Sort expenses</Label>
+          <Select
+            aria-label="Sort expenses"
+            className="w-full"
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as typeof sortBy)}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="highest">Highest amount</option>
+            <option value="lowest">Lowest amount</option>
+            <option value="missing">Missing receipts first</option>
+          </Select>
+            </div>}
           <div className="mb-5">
             <p className="text-[11px] font-bold uppercase tracking-wider text-outline mb-2">Quick views</p>
             <div className="flex flex-wrap gap-2">
@@ -470,8 +489,10 @@ export function Receipts() {
               <button className="px-3 py-1.5 rounded-full border border-outline-variant text-xs font-semibold hover:border-primary hover:text-primary" onClick={() => setAmountMin('1000')}>High-value expenses</button>
             </div>
           </div>
+          </>
         }
         advancedFilters={[
+          ...(compactToolbar ? receiptQuickFilters : []),
           {
             type: 'select', key: 'claimStatus', label: 'Claim status', placeholder: 'All Statuses',
             value: claimStatusFilter, onChange: setClaimStatusFilter,
@@ -504,6 +525,9 @@ export function Receipts() {
           },
         ]}
         extraRight={
+          <div className="flex flex-wrap items-center gap-3">
+
+          {!compactToolbar && (
           <Select
             aria-label="Sort expenses"
             className="w-full lg:w-44"
@@ -516,16 +540,49 @@ export function Receipts() {
             <option value="lowest">Lowest amount</option>
             <option value="missing">Missing receipts first</option>
           </Select>
+          )}
+            {groupBy === 'none' && (
+            <div className="flex items-center gap-3">
+              <div className="flex rounded-lg border border-outline-variant bg-white p-1" aria-label="Expense view">
+                <button
+                  type="button"
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === 'grid'}
+                  onClick={() => setViewMode('grid')}
+                  className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">grid_view</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="List view"
+                  aria-pressed={viewMode === 'list'}
+                  onClick={() => setViewMode('list')}
+                  className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'list' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">view_list</span>
+                </button>
+              </div>
+              <span className="font-label-sm text-outline whitespace-nowrap">{filteredReceipts.length} records</span>
+            </div>
+            )}
+          </div>
         }
       />
 
       {/* Expense records */}
       {filteredReceipts.length === 0 ? (
+        isApprover ? <Card className="!mt-[-1px] rounded-t-none border-0 bg-white">
+          {renderReceiptTable([], showRequestorCol)}
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} showPageSelect />
+        </Card> : (
         <Card className="!mt-[-1px] rounded-t-none p-12 text-center text-outline">
           <span className="material-symbols-outlined text-[48px] mb-3">folder_open</span>
           <p className="font-headline-sm text-on-surface mb-1">No expenses found</p>
           <p className="text-sm">Expense lines will appear here when they are added to a claim.</p>
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </Card>
+        )
       ) : groupBy !== 'none' ? (
         <div className="!mt-[-1px] space-y-5 border-x border-b border-outline-variant bg-surface-container-lowest p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -553,43 +610,16 @@ export function Receipts() {
               })}
             </Card>
           ))}
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       ) : (
         <Card className="!mt-[-1px] overflow-hidden rounded-t-none">
-          <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
-            <div>
-              <h2 className="text-[16px] font-bold text-on-surface">Expense records</h2>
-              <p className="text-sm text-outline mt-1">Inspect each purchase, its claim status, and whether evidence is attached.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="font-label-sm text-outline whitespace-nowrap">{filteredReceipts.length} records</span>
-              <div className="flex rounded-lg border border-outline-variant bg-white p-1" aria-label="Expense view">
-                <button
-                  type="button"
-                  aria-label="Grid view"
-                  title="Grid view"
-                  onClick={() => setViewMode('grid')}
-                  className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">grid_view</span>
-                </button>
-                <button
-                  type="button"
-                  aria-label="List view"
-                  title="List view"
-                  onClick={() => setViewMode('list')}
-                  className={`w-9 h-8 rounded flex items-center justify-center ${viewMode === 'list' ? 'bg-primary text-white' : 'text-outline hover:bg-surface-container-high'}`}
-                >
-                  <span className="material-symbols-outlined text-[18px]">view_list</span>
-                </button>
-              </div>
-            </div>
-          </div>
           {viewMode === 'grid' ? renderReceiptGrid(paginatedReceipts, showRequestorCol) : renderReceiptTable(paginatedReceipts, showRequestorCol)}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
+            showPageSelect={isApprover}
           />
         </Card>
       )}

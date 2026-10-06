@@ -1,3 +1,4 @@
+import { PaginatedTable } from '../../../components/ui/PaginatedTable';
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader } from '../../../components/ui/Card';
@@ -25,7 +26,7 @@ export function MOMs() {
   const [groupBy, setGroupBy] = useState<'none' | 'client' | 'preparedBy'>('none');
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const itemsPerPage = 8;
   const isApprover = currentUser.role === UserRole.APPROVER;
   const reporteeIds = useMemo(
     () => new Set(users.filter(u => u.reportsTo === currentUser.id).map(u => u.id)),
@@ -132,7 +133,7 @@ export function MOMs() {
 
   const renderMomTable = (items: typeof filtered, showPreparer: boolean) => (
     <div className="overflow-x-auto">
-      <table className="w-full text-left">
+      <PaginatedTable paginate={groupBy !== 'none'} className="w-full text-left">
         <thead className="bg-slate-100 text-label-sm text-slate-600 uppercase font-semibold tracking-wider border-b border-outline-variant">
           <tr>
             <th className="px-6 py-4">Type</th>
@@ -203,13 +204,13 @@ export function MOMs() {
             );
           })}
         </tbody>
-      </table>
+      </PaginatedTable>
     </div>
   );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-wrap justify-between items-end gap-4 border-b border-outline-variant pb-4">
         <div>
           <h1 className="font-display text-display text-on-surface">Minutes &amp; Agreements</h1>
           <p className="text-body-md text-outline mt-1">Track the meeting minutes and letters of agreement attached to claims.</p>
@@ -220,8 +221,7 @@ export function MOMs() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {isApprover ? (
+      {isApprover && (
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => setScope('mine')}
@@ -236,17 +236,13 @@ export function MOMs() {
               Team Documents
             </button>
           </div>
-        ) : <span />}
-        <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
-      </div>
+      )}
 
       <div className="space-y-0">
       <FilterBar
         className="rounded-b-none bg-white"
-        title="Minutes & Agreements"
-        titleEnd={
+        extraRight={
           <div className="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-4">
-            <span className="font-label-sm uppercase tracking-wider text-slate-500 whitespace-nowrap">No. of Items:</span>
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-mono-data bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
               {filtered.length} of {moms.length}
             </span>
@@ -255,6 +251,7 @@ export function MOMs() {
         searchValue={query}
         onSearchChange={setQuery}
         searchPlaceholder="Search minutes and agreements..."
+        searchEnd={<GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />}
         advancedFilters={[
           {
             type: 'select', key: 'link', label: 'Claim linkage', placeholder: 'All linkages',

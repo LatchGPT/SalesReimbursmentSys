@@ -1,3 +1,4 @@
+import { PaginatedTable } from '../../../components/ui/PaginatedTable';
 import { useState, useMemo } from 'react';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -76,7 +77,7 @@ export function CompanyPolicy() {
           <h3 className="font-label-md uppercase tracking-wider text-slate-900 font-bold">Per-Category Spending Limits</h3>
         </CardHeader>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <PaginatedTable className="w-full text-left">
             <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
               <tr>
                 <th className="px-6 py-4">Category</th>
@@ -107,7 +108,7 @@ export function CompanyPolicy() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </PaginatedTable>
         </div>
       </Card>
 

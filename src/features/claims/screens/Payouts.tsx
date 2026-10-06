@@ -10,7 +10,7 @@ import { useToast } from '../../../components/shared/ToastContext';
 import { confirmReceipt } from '../../../lib/api';
 import { ClaimStatus, Claim } from '../../../types';
 
-const PAYOUT_HISTORY_PAGE_SIZE = 10;
+const PAYOUT_HISTORY_PAGE_SIZE = 8;
 
 export function Payouts() {
   const { currentUser, claims, statusHistory, refresh } = useAppContext();
@@ -51,7 +51,7 @@ export function Payouts() {
     .filter(p => p.date && new Date(p.date).getFullYear() === thisYear)
     .reduce((acc, p) => acc + p.claim.paidAmount, 0);
 
-  const historyTotalPages = Math.max(1, Math.ceil(completedPayouts.length / PAYOUT_HISTORY_PAGE_SIZE));
+  const historyTotalPages = Math.ceil(completedPayouts.length / PAYOUT_HISTORY_PAGE_SIZE);
   const paginatedPayouts = completedPayouts.slice(
     (historyPage - 1) * PAYOUT_HISTORY_PAGE_SIZE,
     historyPage * PAYOUT_HISTORY_PAGE_SIZE
@@ -160,6 +160,7 @@ export function Payouts() {
           <Card className="p-8 text-center text-outline">
             <span className="material-symbols-outlined text-[36px] mb-2">receipt_long</span>
             <p className="text-body-sm">No completed payouts yet. Confirmed claims will show up here.</p>
+            <Pagination currentPage={historyPage} totalPages={historyTotalPages} onPageChange={setHistoryPage} />
           </Card>
         ) : (
           <>

@@ -189,8 +189,8 @@ export function Calendar() {
               const events = byDay[`${year}-${month}-${day}`] || [];
               const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
               const content = <>
-                <span className={`font-label-sm ${isToday ? 'text-primary font-bold' : events.length ? 'text-on-surface-variant group-hover:text-primary' : 'text-on-surface-variant'}`}>{day}</span>
-                <span className="mt-1 block space-y-1">
+                <span className={`absolute top-2 left-2 font-label-sm ${isToday ? 'text-primary font-bold' : events.length ? 'text-on-surface-variant group-hover:text-primary' : 'text-on-surface-variant'}`}>{day}</span>
+                <span className="block w-full min-w-0 space-y-1">
                   {events.slice(0, 3).map(event => (
                     <span key={event.kind + '-' + event.id} className={`block truncate rounded px-2 py-1 text-[12px] ${event.kind === 'review' ? STATUS_STYLE[event.review.status] || 'bg-surface-container-high text-on-surface' : 'bg-blue-100 text-blue-900'}`}>
                       {event.kind === 'review' ? (event.review.meetingTime ? event.review.meetingTime + ' ' : '') + (event.review.claimNumber || 'Claim review') : event.mom.companyName || 'Client meeting'}
@@ -199,7 +199,7 @@ export function Calendar() {
                   {events.length > 3 && <span className="block text-xs text-primary">+{events.length - 3} more</span>}
                 </span>
               </>;
-              const cellStyle = `min-h-[100px] min-w-0 p-2 border rounded-lg text-left ${isToday ? 'border-primary ring-1 ring-primary/30' : 'border-outline-variant'}`;
+              const cellStyle = `relative flex flex-col justify-start items-stretch min-h-[100px] min-w-0 px-2 pb-2 pt-8 border rounded-lg text-left ${isToday ? 'border-primary ring-1 ring-primary/30' : 'border-outline-variant'}`;
               return events.length ? (
                 <button key={day} type="button" aria-label={dayLabel(day) + ': ' + events.length + ' scheduled entries'} aria-haspopup="dialog"
                   onClick={() => setSelectedDay(day)} className={cellStyle + ' group transition-colors hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'}>

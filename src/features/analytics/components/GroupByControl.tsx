@@ -18,7 +18,7 @@ export function GroupByControl({ value, options, onChange, label = 'View by', cl
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       {label && <span className="font-label-sm text-outline uppercase tracking-wider hidden sm:inline">{label}</span>}
-      <div className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-surface-container-low p-1" role="group" aria-label={label}>
+      <div className="inline-flex items-center gap-1 rounded-lg border border-outline-variant bg-white p-1" role="group" aria-label={label}>
         {options.map(option => (
           <button
             key={option.value}

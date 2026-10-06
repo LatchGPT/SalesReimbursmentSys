@@ -14,7 +14,7 @@ import { claimTypeIcon, getClaimAgingInfo } from '@/features/claims';
 import { formatDate } from '../../../lib/date';
 import { Input, Label, Select } from '../../../components/ui/Input';
 
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 8;
 
 export function ApprovalQueue() {
   const navigate = useNavigate();
@@ -127,6 +127,9 @@ export function ApprovalQueue() {
     const q = searchTerm.trim().toLowerCase();
     return approvalHistory.filter(({ entry, claim }) => {
       const requestor = users.find(user => user.id === claim.requestorId);
+      if (filter === 'Advances' && claim.type !== 'Cash Advance') return false;
+      if (filter === 'HighPriority' && !(claim.flaggedHighValue || claim.total > 15000)) return false;
+      if (filter === 'Stale' && !claim.approverStaleSince) return false;
       if (selectedDepartment && requestor?.department !== selectedDepartment) return false;
       if (q && ![claim.ref, claim.purpose, requestor?.name, entry.comment]
         .filter(Boolean)
@@ -141,7 +144,7 @@ export function ApprovalQueue() {
       const bTime = new Date(b.entry.timestamp).getTime();
       return sortOrder === 'oldest' ? aTime - bTime : bTime - aTime;
     });
-  }, [approvalHistory, users, searchTerm, selectedDepartment, dateFrom, dateTo, sortOrder]);
+  }, [approvalHistory, users, filter, searchTerm, selectedDepartment, dateFrom, dateTo, sortOrder]);
 
   const displayedRecords = view === 'pending' ? displayedClaims : displayedHistory;
   const hasAdvancedFilters = Boolean(selectedDepartment || dateFrom || dateTo);
@@ -187,29 +190,19 @@ export function ApprovalQueue() {
 
       <div className="space-y-0">
       <Card className="rounded-b-none p-4 shadow-none bg-white">
-        <div className="table-section-title mb-4 flex flex-wrap items-center justify-between gap-4 border-b border-outline-variant pb-4">
-          <div>
-            <h4 className="font-headline-md text-slate-900">{view === 'pending' ? 'Pending Your Action' : 'Approval History'}</h4>
-            <p className="mt-1 text-xs text-outline">
-              {view === 'pending' ? 'Review the longest-waiting requests first.' : 'Your recorded approval decisions, including comments.'}
-            </p>
-          </div>
-          <span className="font-label-sm text-outline">{displayedRecords.length} records</span>
-        </div>
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <button onClick={() => { setView('pending'); setFilter('All'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'pending' && filter === 'All' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>All Pending ({pendingClaims.length})</button>
-          <button onClick={() => { setView('history'); setFilter('All'); setSortOrder('newest'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'history' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Approval History ({approvalHistory.length})</button>
-          {view === 'pending' && <>
+          <button onClick={() => { setView('history'); setSortOrder('newest'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'history' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Approval History ({approvalHistory.length})</button>
             <button onClick={() => setFilter('HighPriority')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'HighPriority' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>High Priority</button>
             <button onClick={() => setFilter('Advances')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'Advances' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Cash Advances</button>
             {staleClaims.length > 0 && (
               <button onClick={() => setFilter('Stale')} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${filter === 'Stale' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Stale ({staleClaims.length})</button>
             )}
-          </>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-xl">
             <Input
+              type="search"
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
               placeholder={view === 'pending' ? 'Search pending requests...' : 'Search approval history...'}
@@ -228,6 +221,9 @@ export function ApprovalQueue() {
           {(searchTerm || hasAdvancedFilters || (view === 'pending' ? sortOrder !== 'oldest' : sortOrder !== 'newest')) && (
             <button className="text-xs font-semibold text-primary hover:underline" onClick={clearFilters}>Clear all</button>
           )}
+          <p className="ml-auto shrink-0 text-right text-xs text-outline">
+            Showing {displayedRecords.length} {view === 'pending' ? `of ${pendingClaims.length} pending requests` : `of ${approvalHistory.length} approval decisions`}.
+          </p>
         </div>
         {showFilters && (
           <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-outline-variant pt-4">
@@ -255,9 +251,6 @@ export function ApprovalQueue() {
             {dateTo && <button onClick={() => setDateTo('')} className="inline-flex items-center gap-1 rounded-full bg-primary/8 text-primary px-3 py-1 text-xs font-semibold">To {dateTo}<span className="material-symbols-outlined text-[14px]">close</span></button>}
           </div>
         )}
-        <p className="text-xs text-outline mt-3">
-          Showing {displayedRecords.length} {view === 'pending' ? `of ${pendingClaims.length} pending requests` : `of ${approvalHistory.length} approval decisions`}.
-        </p>
       </Card>
 
       {view === 'pending' ? (

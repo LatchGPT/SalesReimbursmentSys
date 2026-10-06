@@ -9,7 +9,7 @@ import { ClaimStatus } from '../../../types';
 import { formatMoney } from '../../../lib/money';
 import { useAppContext } from '../../../components/AppContext';
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 8;
 
 export function ReadyToClaimQueue() {
   const navigate = useNavigate();
@@ -81,8 +81,7 @@ export function ReadyToClaimQueue() {
         <div className="border-b border-outline-variant bg-white p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <div className="relative min-w-0 flex-1">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-              <Input
+              <Input type="search"
                 className="pl-10"
                 value={search}
                 onChange={event => setSearch(event.target.value)}

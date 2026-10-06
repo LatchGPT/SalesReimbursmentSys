@@ -328,6 +328,13 @@ table td {
   vertical-align: middle;
 }
 
+/* Numeric values stay at the same inset even when adjacent content grows. */
+table td.font-mono-data,
+table td:has(.font-mono-data) {
+  vertical-align: top;
+  text-align: left;
+}
+
 table th:not(.whitespace-nowrap),
 table td:not(.whitespace-nowrap) {
   overflow-wrap: anywhere;
@@ -345,11 +352,36 @@ table td:not(.whitespace-nowrap) {
 }
 
 /* Give every table caption a clearer visual hierarchy than its column labels. */
+.unified-worklist,
+.unified-worklist :where(h4, p, button, th, td, span, div) {
+  font-weight: 400;
+}
+
+.approver-receipts .font-label-sm {
+  font-size: 0.625rem;
+}
+
+.approver-receipts .receipt-toolbar input[type="search"] {
+  font-size: 0.75rem;
+}
+
+.approver-receipts .receipt-toolbar button {
+  font-size: 0.75rem;
+}
+
+.approver-receipts table th {
+  padding: 0.75rem 1.25rem !important;
+  font-weight: 500;
+}
+
 .table-section-title h2,
 .table-section-title h3,
 .table-section-title h4 {
   font-size: 1.375rem;
   line-height: 1.75rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 @media print {

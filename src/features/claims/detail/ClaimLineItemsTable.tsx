@@ -1,3 +1,4 @@
+import { PaginatedTable } from '../../../components/ui/PaginatedTable';
 import { Card, CardHeader } from '../../../components/ui/Card';
 import { Claim, ExpenseLineItem } from '../../../types';
 import { formatMoney } from '../../../lib/money';
@@ -20,7 +21,7 @@ export function ClaimLineItemsTable({
         </div>
       </CardHeader>
       <div className="overflow-x-auto hidden md:block">
-        <table className="w-full text-left">
+        <PaginatedTable className="w-full text-left">
           <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
             <tr>
               <th className="px-4 py-3">Date of Purchase</th>
@@ -81,7 +82,7 @@ export function ClaimLineItemsTable({
               </tr>
             )}
           </tbody>
-        </table>
+        </PaginatedTable>
       </div>
 
       {/* Mobile View */}

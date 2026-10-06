@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Card, CardHeader, CardContent } from '../../../components/ui/Card';
-import { Select } from '../../../components/ui/Input';
 import { useAppContext } from '../../../components/AppContext';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, ReferenceLine } from 'recharts';
 import { formatMoney, formatAxisMoney } from '../../../lib/money';
 import { Claim, ClaimStatus, ClaimType, StatusHistory } from '../../../types';
 import { isCustodianProcessingClaim } from '@/features/claims';
 import { CHART_ANIMATION_PROPS, CHART_AXIS_PROPS, CHART_COLORS, CHART_GRID_PROPS, calculatePercentChange } from '../../../lib/chartTheme';
-import { ChartEmptyState, ChartTooltip, TrendBadge, formatCompactChartValue } from '@/features/analytics';
+import { ChartEmptyState, ChartTooltip, TrendBadge, formatCompactChartValue, GroupByControl } from '@/features/analytics';
 
 /** The status that means "the custodian is done with this one", per type --
  *  Cash Advance's final custodian action is Released (what happens to it
@@ -118,14 +117,17 @@ export function CustodianAnalytics() {
           <h1 className="font-display text-display text-on-surface">Custodian Analytics</h1>
           <p className="text-body-md text-outline mt-1">Throughput and processing time across everything you've released or closed.</p>
         </div>
-        <div className="w-full sm:w-48">
-          <label className="text-xs font-semibold text-outline block mb-1">Timeframe</label>
-          <Select value={dateRange} onChange={e => setDateRange(e.target.value as typeof dateRange)}>
-            <option value="all">All Time</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="90d">Last 90 Days</option>
-          </Select>
-        </div>
+        <GroupByControl
+          label="Timeframe"
+          className="flex-wrap shrink-0"
+          value={dateRange}
+          onChange={value => setDateRange(value as typeof dateRange)}
+          options={[
+            { value: 'all', label: 'All Time' },
+            { value: '30d', label: 'Last 30 Days' },
+            { value: '90d', label: 'Last 90 Days' },
+          ]}
+        />
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">

@@ -9,7 +9,7 @@ import { createFieldDefinition, updateFieldDefinition } from '../../../lib/api';
 import { FieldDefinition, FIELD_ENTITIES, FieldDefinitionEntity, ClaimType } from '../../../types';
 import { Pagination } from '../../../components/ui/Pagination';
 
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 8;
 
 
 
