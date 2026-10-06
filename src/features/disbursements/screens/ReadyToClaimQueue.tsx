@@ -74,7 +74,7 @@ export function ReadyToClaimQueue() {
         </div>
       </Card>
 
-      <Card className="bg-white">
+      <div className="overflow-hidden rounded-xl border border-outline-variant bg-white">
         <CardHeader className="bg-white border-b border-outline-variant">
           <h4 className="font-headline-md text-slate-900 font-bold">Awaiting Confirmation ({filteredReadyClaims.length})</h4>
         </CardHeader>
@@ -178,7 +178,7 @@ export function ReadyToClaimQueue() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
-      </Card>
+      </div>
     </div>
   );
 }

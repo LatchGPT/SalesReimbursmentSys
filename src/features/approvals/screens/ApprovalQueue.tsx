@@ -189,7 +189,7 @@ export function ApprovalQueue() {
       )}
 
       <div className="space-y-0">
-      <Card className="rounded-b-none p-4 shadow-none bg-white">
+      <Card className="rounded-b-none p-4 shadow-none bg-white border border-outline-variant">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <button onClick={() => { setView('pending'); setFilter('All'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'pending' && filter === 'All' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>All Pending ({pendingClaims.length})</button>
           <button onClick={() => { setView('history'); setSortOrder('newest'); }} className={`px-5 py-2 rounded-full font-label-md transition-colors shadow-sm ${view === 'history' ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant hover:bg-outline-variant'}`}>Approval History ({approvalHistory.length})</button>
@@ -254,7 +254,7 @@ export function ApprovalQueue() {
       </Card>
 
       {view === 'pending' ? (
-      <Card className="!mt-[-1px] rounded-t-none bg-white">
+      <div className="!mt-[-1px] overflow-hidden rounded-b-xl border-x border-b border-outline-variant bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px] text-left">
             <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
@@ -354,9 +354,9 @@ export function ApprovalQueue() {
           </table>
         </div>
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-      </Card>
+      </div>
       ) : (
-        <Card className="!mt-[-1px] rounded-t-none bg-white">
+        <div className="!mt-[-1px] overflow-hidden rounded-b-xl border-x border-b border-outline-variant bg-white">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
@@ -402,7 +402,7 @@ export function ApprovalQueue() {
             </table>
           </div>
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-        </Card>
+        </div>
       )}
       </div>
     </div>
