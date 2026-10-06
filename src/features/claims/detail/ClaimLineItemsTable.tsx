@@ -21,7 +21,7 @@ export function ClaimLineItemsTable({
         </div>
       </CardHeader>
       <div className="overflow-x-auto hidden md:block">
-        <PaginatedTable className="w-full text-left">
+        <PaginatedTable paginate={items.length > 8} className="w-full text-left">
           <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant">
             <tr>
               <th className="px-4 py-3">Date of Purchase</th>
