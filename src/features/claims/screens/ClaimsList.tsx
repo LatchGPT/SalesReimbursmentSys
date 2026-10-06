@@ -413,9 +413,20 @@ export function ClaimsList() {
           ]}
           popoverDescription="Narrow claims by client, location, or submitted date."
         />
-      <Card className="!mt-[-1px] rounded-t-none bg-white">
+      <div className="!mt-[-1px] overflow-hidden rounded-b-xl border-x border-b border-outline-variant bg-white">
         {groupBy === 'none' ? (
           <>
+            <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
+              <div>
+                <h2 className="text-[16px] font-bold text-on-surface">{isFinance ? 'Approved Records' : 'Request records'}</h2>
+                <p className="text-sm text-outline mt-1">
+                  {isFinance
+                    ? 'Review approved-onward reimbursements, cash advances, and liquidations.'
+                    : 'Track each submitted claim, advance, or liquidation and its current status.'}
+                </p>
+              </div>
+              <span className="font-label-sm text-outline whitespace-nowrap">{filteredClaims.length} records</span>
+            </div>
             {renderClaimsBody(paginatedClaims)}
             <Pagination
               currentPage={currentPage}
@@ -444,7 +455,7 @@ export function ClaimsList() {
             ))}
           </div>
         )}
-      </Card>
+      </div>
       </div>
       <ConfirmModal
         isOpen={Boolean(claimToDelete)}
@@ -464,40 +475,40 @@ export function ClaimsList() {
       <>
         <div className="overflow-x-auto hidden md:block">
           <PaginatedTable paginate={groupBy !== 'none'} className="w-full min-w-[1040px] text-left">
-            <thead className="bg-surface-container-lowest/80 backdrop-blur-md text-on-surface-variant font-label-sm uppercase font-bold tracking-wider border-b border-brand-border sticky top-0 z-10">
+            <thead className="bg-slate-100 text-slate-600 font-label-sm uppercase font-semibold tracking-wider border-b border-outline-variant sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-4">ID</th>
-                <th className="px-4 py-4">Type</th>
-                <th className="px-4 py-4">Purpose</th>
-                <th className="px-4 py-4">Client</th>
-                <th className="px-4 py-4">Location</th>
-                <th className="px-4 py-4">Submitted</th>
-                <th className="px-3 py-4" title="Receipt total for reimbursements; requested amount for cash advances.">Expense Total</th>
-                <th className="px-3 py-4" title="Approved or paid reimbursement; approved or released amount for cash advances.">Reimbursed</th>
-                <th className="px-6 py-4">Status</th>
+                <th className="px-5 py-3 whitespace-nowrap">ID</th>
+                <th className="px-5 py-3 whitespace-nowrap">Type</th>
+                <th className="px-5 py-3 whitespace-nowrap">Purpose</th>
+                <th className="px-5 py-3 whitespace-nowrap">Client</th>
+                <th className="px-5 py-3 whitespace-nowrap">Location</th>
+                <th className="px-5 py-3 whitespace-nowrap">Submitted</th>
+                <th className="px-5 py-3 whitespace-nowrap" title="Receipt total for reimbursements; requested amount for cash advances.">Expense Total</th>
+                <th className="px-5 py-3 whitespace-nowrap" title="Approved or paid reimbursement; approved or released amount for cash advances.">Reimbursed</th>
+                <th className="px-5 py-3 whitespace-nowrap">Status</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-brand-border font-body-base">
+            <tbody className="bg-white divide-y divide-outline-variant font-body-base">
               {items.map(claim => {
                 const amounts = getRequestAmountPresentation(claim);
                 return (
                 <tr role="button" tabIndex={0} onKeyDown={event => { if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); event.currentTarget.click(); } }}  key={claim.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onClick={() => navigate(`/claims/${claim.id}`)}>
-                  <td className="px-6 py-4 font-mono-data font-medium">{claim.ref}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-5 py-4 font-mono-data font-medium">{claim.ref}</td>
+                  <td className="px-5 py-4">
                     <span className="inline-flex items-center gap-2 whitespace-nowrap">
                       <span className="material-symbols-outlined text-[18px] text-primary">{claimTypeIcon(claim.type)}</span>
                       {claim.type}
                     </span>
                   </td>
-                  <td className="px-4 py-4">{claim.purpose}</td>
-                  <td className="px-4 py-4 text-on-surface-variant">{claim.client || '—'}</td>
-                  <td className="px-4 py-4 text-on-surface-variant">{claim.location || '—'}</td>
-                  <td className="px-4 py-4 text-on-surface-variant whitespace-nowrap">{formatDate(claim.submittedAt || claim.createdAt)}</td>
-                  <td className="px-3 py-4 whitespace-nowrap">
+                  <td className="px-5 py-4">{claim.purpose}</td>
+                  <td className="px-5 py-4 text-on-surface-variant">{claim.client || '—'}</td>
+                  <td className="px-5 py-4 text-on-surface-variant">{claim.location || '—'}</td>
+                  <td className="px-5 py-4 text-on-surface-variant whitespace-nowrap">{formatDate(claim.submittedAt || claim.createdAt)}</td>
+                  <td className="px-5 py-4 whitespace-nowrap">
                     <span className="block font-mono-data font-semibold text-on-surface">{formatMoney(amounts.expenseAmount)}</span>
                     {amounts.expenseLabel !== 'Expense total' && <span className="block text-[11px] text-outline">{amounts.expenseLabel}</span>}
                   </td>
-                  <td className="px-3 py-4 whitespace-nowrap">
+                  <td className="px-5 py-4 whitespace-nowrap">
                     {amounts.reimbursementAmount !== undefined ? (
                       <>
                         <span className="block font-mono-data font-bold text-primary">{formatMoney(amounts.reimbursementAmount)}</span>
@@ -509,7 +520,7 @@ export function ClaimsList() {
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <StatusBadge status={claim.status} />
                       {claim.status === ClaimStatus.DRAFT && (
