@@ -584,7 +584,7 @@ export function Receipts() {
         </Card>
         )
       ) : groupBy !== 'none' ? (
-        <div className="!mt-[-1px] space-y-5 border-x border-b border-outline-variant bg-surface-container-lowest p-4">
+        <div className="!mt-[-1px] space-y-5 rounded-b-xl border-x border-b border-outline-variant bg-surface-container-lowest p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-sm text-outline pl-2">
               {receiptGroups.length} {groupBy === 'member' ? (receiptGroups.length === 1 ? 'team member' : 'team members') : (receiptGroups.length === 1 ? 'client' : 'clients')}
@@ -592,7 +592,7 @@ export function Receipts() {
             </p>
           </div>
           {receiptGroups.map(group => (
-            <Card key={group.key} className="overflow-hidden">
+            <div key={group.key} className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-xs">
               <div className="p-5 border-b border-outline-variant flex items-center justify-between gap-4 bg-surface-container-low/40">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="material-symbols-outlined text-primary text-[22px]">{groupBy === 'member' ? 'person' : 'domain'}</span>
@@ -608,7 +608,7 @@ export function Receipts() {
                 attached: group.attached,
                 count: group.items.length,
               })}
-            </Card>
+            </div>
           ))}
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
