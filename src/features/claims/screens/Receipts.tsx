@@ -11,6 +11,7 @@ import { StatusBadge } from '../../../components/ui/StatusBadge';
 import { useAppContext } from '../../../components/AppContext';
 import { GroupByControl, TeamAnalytics } from '@/features/analytics';
 import { FilterBar } from '../../../components/shared/FilterBar';
+import { ExportDropdown } from '../../../components/shared/ExportDropdown';
 import { uploadUrl } from '../../../lib/api';
 import { ClaimStatus, UserRole } from '../../../types';
 import { FINANCE_VISIBLE_STATUSES, isFinanceVisibleClaim } from '../domain/claimWorkflow';
@@ -383,7 +384,12 @@ export function Receipts() {
               : 'Review individual expenses, linked claims, and the supporting receipts behind them.'}
           </p>
         </div>
-        <div className="shrink-0">{groupControl}</div>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          {groupControl}
+          {isFinance && (
+            <ExportDropdown disabled={filteredReceipts.length === 0} />
+          )}
+        </div>
       </div>
 
       {isApprover && (
