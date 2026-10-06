@@ -135,14 +135,14 @@ export function MOMs() {
       <table className="w-full text-left">
         <thead className="bg-slate-100 text-label-sm text-slate-600 uppercase font-semibold tracking-wider border-b border-outline-variant">
           <tr>
-            <th className="px-6 py-4">Type</th>
-            <th className="px-6 py-4">Purpose</th>
-            <th className="px-6 py-4">Client</th>
-            <th className="px-6 py-4">Location of Meeting</th>
-            <th className="px-6 py-4">Date of Meeting</th>
-            {showPreparer && <th className="px-6 py-4">Prepared By</th>}
-            <th className="px-6 py-4">Claim</th>
-            <th className="px-6 py-4 text-center">Status</th>
+            <th className="px-5 py-3 whitespace-nowrap">Type</th>
+            <th className="px-5 py-3 whitespace-nowrap">Purpose</th>
+            <th className="px-5 py-3 whitespace-nowrap">Client</th>
+            <th className="px-5 py-3 whitespace-nowrap">Location of Meeting</th>
+            <th className="px-5 py-3 whitespace-nowrap">Date of Meeting</th>
+            {showPreparer && <th className="px-5 py-3 whitespace-nowrap">Prepared By</th>}
+            <th className="px-5 py-3 whitespace-nowrap">Claim</th>
+            <th className="px-5 py-3 whitespace-nowrap text-center">Status</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-outline-variant">
@@ -295,18 +295,25 @@ export function MOMs() {
       />
 
       {groupBy === 'none' && (
-        <Card className="!mt-[-1px] rounded-t-none">
+        <div className="!mt-[-1px] overflow-hidden rounded-b-xl border-x border-b border-outline-variant bg-white">
+          <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
+            <div>
+              <h2 className="text-[16px] font-bold text-on-surface">Minutes & Agreements</h2>
+              <p className="text-sm text-outline mt-1">Review meeting minutes, LOAs, and related claim linkages.</p>
+            </div>
+            <span className="font-label-sm text-outline whitespace-nowrap">{filtered.length} records</span>
+          </div>
           {renderMomTable(paginatedMOMs, showPreparedBy)}
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        </Card>
+        </div>
       )}
 
       {groupBy !== 'none' && (
-        <div className="!mt-[-1px] space-y-5 border-x border-b border-outline-variant bg-surface-container-lowest p-4">
+        <div className="!mt-[-1px] space-y-5 rounded-b-xl border-x border-b border-outline-variant bg-surface-container-lowest p-4">
           <p className="text-sm text-outline">
             {groups.length} {groupBy === 'client' ? (groups.length === 1 ? 'client' : 'clients') : (groups.length === 1 ? 'preparer' : 'preparers')}
             {' · '}{filtered.length} record{filtered.length === 1 ? '' : 's'}

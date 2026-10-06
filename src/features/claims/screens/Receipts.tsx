@@ -521,13 +521,13 @@ export function Receipts() {
 
       {/* Expense records */}
       {filteredReceipts.length === 0 ? (
-        <Card className="!mt-[-1px] rounded-t-none p-12 text-center text-outline">
+        <div className="!mt-[-1px] rounded-b-xl border-x border-b border-outline-variant bg-white p-12 text-center text-outline">
           <span className="material-symbols-outlined text-[48px] mb-3">folder_open</span>
           <p className="font-headline-sm text-on-surface mb-1">No expenses found</p>
           <p className="text-sm">Expense lines will appear here when they are added to a claim.</p>
-        </Card>
+        </div>
       ) : groupBy !== 'none' ? (
-        <div className="!mt-[-1px] space-y-5 border-x border-b border-outline-variant bg-surface-container-lowest p-4">
+        <div className="!mt-[-1px] space-y-5 rounded-b-xl border-x border-b border-outline-variant bg-surface-container-lowest p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <p className="text-sm text-outline pl-2">
               {receiptGroups.length} {groupBy === 'member' ? (receiptGroups.length === 1 ? 'team member' : 'team members') : (receiptGroups.length === 1 ? 'client' : 'clients')}
@@ -535,7 +535,7 @@ export function Receipts() {
             </p>
           </div>
           {receiptGroups.map(group => (
-            <Card key={group.key} className="overflow-hidden">
+            <div key={group.key} className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-xs">
               <div className="p-5 border-b border-outline-variant flex items-center justify-between gap-4 bg-surface-container-low/40">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="material-symbols-outlined text-primary text-[22px]">{groupBy === 'member' ? 'person' : 'domain'}</span>
@@ -551,11 +551,11 @@ export function Receipts() {
                 attached: group.attached,
                 count: group.items.length,
               })}
-            </Card>
+            </div>
           ))}
         </div>
       ) : (
-        <Card className="!mt-[-1px] overflow-hidden rounded-t-none">
+        <div className="!mt-[-1px] overflow-hidden rounded-b-xl border-x border-b border-outline-variant bg-white">
           <div className="p-5 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3 bg-surface-container-low/40">
             <div>
               <h2 className="text-[16px] font-bold text-on-surface">Expense records</h2>
@@ -591,7 +591,7 @@ export function Receipts() {
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        </Card>
+        </div>
       )}
       </div>
 
