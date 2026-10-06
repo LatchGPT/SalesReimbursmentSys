@@ -11,7 +11,7 @@ import { claimTypeIcon, getClaimAgingInfo, isCustodianProcessingClaim } from '@/
 import { Button } from '../../../components/ui/Button';
 import { Input, Label, Select } from '../../../components/ui/Input';
 
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 8;
 
 export function ProcessingQueue() {
   const navigate = useNavigate();
@@ -113,7 +113,7 @@ export function ProcessingQueue() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-[240px] flex-1 max-w-xl">
-            <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search reference, requestor, or purpose..." aria-label="Search processing queue" />
+            <Input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search reference, requestor, or purpose..." aria-label="Search processing queue" />
           </div>
           <Button variant="outline" className="gap-2" onClick={() => setShowFilters(open => !open)}>
             <span className="material-symbols-outlined text-[18px]">filter_list</span>

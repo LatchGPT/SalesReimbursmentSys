@@ -9,7 +9,7 @@ import { fetchOutbox, PageResult, fromServerEmail } from '../../../lib/api';
 import { SystemEmail } from '../../../types';
 import { formatDateTime } from '../../../lib/date';
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 8;
 
 export function SystemEmails() {
   const { markEmailsRead, users } = useAppContext();
@@ -77,7 +77,7 @@ export function SystemEmails() {
         <div className="border-b border-outline-variant bg-white p-4">
           <div className="max-w-lg">
             <Input
-              type="text"
+              type="search"
               placeholder="Search by subject, body, recipient name or email..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}

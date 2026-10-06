@@ -1,3 +1,4 @@
+import { PaginatedTable } from '../../../components/ui/PaginatedTable';
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../../../components/ui/Card';
@@ -40,7 +41,7 @@ export function ClaimsList() {
   const [dateTo, setDateTo] = useState('');
   const [groupBy, setGroupBy] = useState<'none' | 'client' | 'requestor'>('none');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const itemsPerPage = 8;
 
   const isFinance = currentUser.role === UserRole.FINANCE;
   const myClaims = isFinance
@@ -176,7 +177,7 @@ export function ClaimsList() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-4 mb-6 border-b border-outline-variant pb-4">
         <div>
           <h2 className="font-display text-display text-on-surface">{isFinance ? 'Approved Records' : 'My Requests'}</h2>
           <p className="text-body-md text-outline mt-1">
@@ -187,7 +188,6 @@ export function ClaimsList() {
         </div>
         {isFinance ? (
           <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />
             <ExportDropdown 
               onExportCsv={exportFinancialRecords}
               disabled={filteredClaims.length === 0}
@@ -374,10 +374,10 @@ export function ClaimsList() {
       <div className="space-y-0">
         <FilterBar
           className="rounded-b-none bg-white"
-          title="Claims"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search claims..."
+          searchEnd={isFinance && <GroupByControl value={groupBy} options={groupByOptions} onChange={v => setGroupBy(v as typeof groupBy)} />}
           quickFilters={[
           {
             type: 'select', key: 'status', label: 'Status', placeholder: 'All Statuses',
@@ -463,7 +463,7 @@ export function ClaimsList() {
     return (
       <>
         <div className="overflow-x-auto hidden md:block">
-          <table className="w-full min-w-[1040px] text-left">
+          <PaginatedTable paginate={groupBy !== 'none'} className="w-full min-w-[1040px] text-left">
             <thead className="bg-surface-container-lowest/80 backdrop-blur-md text-on-surface-variant font-label-sm uppercase font-bold tracking-wider border-b border-brand-border sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-4">ID</th>
@@ -550,7 +550,7 @@ export function ClaimsList() {
                 </tr>
               )}
             </tbody>
-          </table>
+          </PaginatedTable>
         </div>
 
         {/* Mobile View */}

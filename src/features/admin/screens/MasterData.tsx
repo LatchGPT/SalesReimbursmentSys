@@ -18,7 +18,7 @@ const DEMO_SAMPLES: Record<string, { name: string; code: string; notes: string }
   vendor: { name: 'Northwind Supplies Inc.', code: 'VND-NW', notes: 'Demo sample vendor' },
 };
 
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 8;
 
 export function MasterData() {
   const { masterData, refresh } = useAppContext();

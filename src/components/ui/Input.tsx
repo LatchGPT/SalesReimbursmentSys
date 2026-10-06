@@ -5,15 +5,26 @@ import { DateTimeInput } from './DateTimeInput';
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
   ({ className, ...props }, ref) => {
     const Component = props.type === 'date' || props.type === 'time' ? DateTimeInput : 'input';
-    return (
+    const input = (
       <Component
         ref={ref}
         className={cn(
           "w-full bg-white/90 backdrop-blur-sm border border-brand-field-border/80 rounded-[10px] px-4 py-2.5 text-body-base hover:border-outline-variant focus:bg-white focus:ring-[3px] focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none shadow-sm",
-          className
+          className,
+          props.type === 'search' && 'pl-10'
         )}
         {...props}
       />
+    );
+    if (props.type !== 'search') return input;
+    return (
+      <div className="relative w-full">
+        {input}
+        <svg aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-outline" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-4-4" />
+        </svg>
+      </div>
     );
   }
 );
